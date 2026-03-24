@@ -1054,6 +1054,9 @@ export class Game {
     if (this.dayNightRenderer) {
       this.dayNightRenderer.update(dt, this.dayNight, this.tileMap.width, this.tileMap.height, this.sceneManager.currentScene);
     }
+    if (this.hud && this.dayNight) {
+      this.hud.updateTime(this.dayNight.phase);
+    }
 
     // Shooting star quest detection
     if (this.dayNight && this.dayNight.isNight() && this.dayNightRenderer?.hasShootingStarInView(this.camera.three)) {

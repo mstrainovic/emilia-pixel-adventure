@@ -33,6 +33,15 @@ export class HUD {
     document.body.appendChild(this.container);
     this._addStyles();
 
+    // Time indicator
+    this.timeIndicator = document.createElement('div');
+    this.timeIndicator.style.cssText = `
+      position:absolute; top:8px; right:8px;
+      font-family:'Press Start 2P',monospace; font-size:10px;
+      color:#fff; text-shadow:1px 1px #000;
+    `;
+    this.container.appendChild(this.timeIndicator);
+
     // Mute button
     const muteBtn = document.getElementById('hud-mute');
     if (muteBtn) {
@@ -57,6 +66,12 @@ export class HUD {
       fill.style.background = hpPct > 50 ? '#5a9e3a' : hpPct > 25 ? '#cc8a20' : '#cc3333';
     }
     if (text) text.textContent = `${Math.ceil(player.hp)}/${player.maxHp}`;
+  }
+
+  updateTime(phase) {
+    const icons = { morning: '\u{1F305}', day: '\u{2600}\u{FE0F}', evening: '\u{1F307}', night: '\u{1F319}' };
+    const names = { morning: 'Morgen', day: 'Tag', evening: 'Abend', night: 'Nacht' };
+    this.timeIndicator.textContent = `${icons[phase] || ''} ${names[phase] || ''}`;
   }
 
   updateXp(progression) {
