@@ -11,7 +11,7 @@ export const RECIPES = {
     { id: 'r_sword_bone', name: 'Knochenkeule', ingredients: [{ itemId: 'bone', count: 5 }], result: { itemId: 'sword_bone', count: 1 } },
   ],
   cooking: [
-    { id: 'r_cooked_fish', name: 'Gebratener Fisch', ingredients: [{ itemId: 'fish', count: 1 }], result: { itemId: 'cooked_fish', count: 1 } },
+    { id: 'r_cooked_fish', name: 'Gebratener Fisch', ingredients: [{ itemId: 'fish_generic', count: 1 }], result: { itemId: 'cooked_fish', count: 1 } },
     { id: 'r_cooked_meat', name: 'Bratfleisch', ingredients: [{ itemId: 'meat', count: 1 }], result: { itemId: 'cooked_meat', count: 1 } },
     { id: 'r_veggie_soup', name: 'Gemuesesuppe', ingredients: [{ itemId: 'vegetable', count: 2 }], result: { itemId: 'veggie_soup', count: 1 } },
   ],

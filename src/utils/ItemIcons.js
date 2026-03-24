@@ -70,7 +70,7 @@ function drawItemIcon(ctx, itemId) {
       px(ctx, 3, 6, 250, 240, 220);
       px(ctx, 11, 6, 250, 240, 220);
     },
-    fish: () => {
+    fish_generic: () => {
       rect(ctx, 3, 6, 10, 4, 70, 140, 200);
       rect(ctx, 5, 5, 6, 1, 80, 150, 210);
       rect(ctx, 5, 10, 6, 1, 60, 120, 180);
@@ -181,7 +181,7 @@ function drawItemIcon(ctx, itemId) {
       px(ctx, 7, 6, 255, 200, 220);
       px(ctx, 8, 7, 255, 210, 225);
     },
-    shell: () => {
+    shell_common: () => {
       rect(ctx, 4, 6, 8, 5, 255, 200, 215);
       rect(ctx, 5, 5, 6, 1, 255, 210, 225);
       rect(ctx, 3, 10, 10, 1, 240, 180, 195);
