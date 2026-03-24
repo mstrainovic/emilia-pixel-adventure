@@ -1,4 +1,4 @@
-const { chromium } = require('D:/Claude_Projekte/Emilia_Spiel/.claude/skills/playwright-skill/node_modules/playwright');
+const { chromium } = require('playwright');
 
 const TARGET_URL = 'http://localhost:5173';
 
@@ -51,7 +51,7 @@ async function triggerTransition(page, target, sx, sy) {
 
   const scores = {};
   let s;
-  const shotDir = 'C:/Users/Tanja/AppData/Local/Temp';
+  const shotDir = require('os').tmpdir();
 
   // T1: HAUPTMENU
   console.log('\n=== T1: HAUPTMENU ===');
