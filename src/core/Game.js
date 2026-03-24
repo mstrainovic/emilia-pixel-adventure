@@ -87,6 +87,7 @@ export class Game {
     this.plantHealing = new PlantHealingSystem(null); // scene set per map
     this.dayNight = new DayNightSystem();
     this.dayNightRenderer = null; // created per scene
+    this._shootingStarReported = false;
     this.fishing = new FishingSystem();
     this._animatedSprites = [];
 
@@ -263,6 +264,18 @@ export class Game {
         this.plantHealing.totalHealed = save.plantsHealed || 0;
         this.plantHealing.unicornUnlocked = save.unicornUnlocked || false;
         if (save.progression) this.progression.loadSaveData(save.progression);
+        if (save.dayNight && this.dayNight) {
+          this.dayNight.loadState(save.dayNight);
+        }
+        if (save.fishCaught && this.progression) {
+          this.progression.stats.fishCaught = save.fishCaught;
+        }
+        if (save.uniqueCollected && this.progression) {
+          this.progression.stats.uniqueCollected = {};
+          for (const [k, v] of Object.entries(save.uniqueCollected)) {
+            this.progression.stats.uniqueCollected[k] = new Set(v);
+          }
+        }
         const scene = save.player?.scene || 'hub';
         const x = save.player?.x || 20;
         const y = save.player?.y || 15;
@@ -1128,6 +1141,11 @@ export class Game {
       plantsHealed: this.plantHealing.totalHealed,
       unicornUnlocked: this.plantHealing.unicornUnlocked,
       progression: this.progression.getSaveData(),
+      dayNight: this.dayNight ? this.dayNight.getState() : null,
+      fishCaught: this.progression?.stats?.fishCaught || {},
+      uniqueCollected: this.progression?.stats?.uniqueCollected
+        ? Object.fromEntries(Object.entries(this.progression.stats.uniqueCollected).map(([k, v]) => [k, [...v]]))
+        : {},
     }));
 
     // Input cleanup

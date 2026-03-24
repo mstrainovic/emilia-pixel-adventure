@@ -18,14 +18,16 @@ export class ResourceNode {
       ore:      { hitsNeeded: 2, loot: 'iron_ore', lootMin: 1, lootMax: 2, respawn: 30, color: 0x8a5533 },
       mushroom: { hitsNeeded: 1, loot: 'mushroom',  lootMin: 1, lootMax: 3, respawn: 15, color: 0xaa7744 },
       earth:    { hitsNeeded: 1, loot: 'earth',     lootMin: 1, lootMax: 2, respawn: 15, color: 0x5a3a1a },
+      shell:    { hitsNeeded: 1, loot: 'shell_common', lootMin: 1, lootMax: 1, respawn: 480, color: 0xe8d5a3 },
     };
 
     const def = defs[this.type] || defs.rock;
-    this.hitsNeeded = def.hitsNeeded;
+    this.hitsNeeded = config.hitsNeeded ?? def.hitsNeeded;
     this.lootId = def.loot;
+    this.itemId = config.itemId || null;
     this.lootMin = def.lootMin;
     this.lootMax = def.lootMax;
-    this.respawnTime = def.respawn;
+    this.respawnTime = config.respawnTime ?? def.respawn;
 
     this.currentHits = 0;
     this.depleted = false;
@@ -122,14 +124,20 @@ export class ResourceNode {
 
       const count = this.lootMin + Math.floor(Math.random() * (this.lootMax - this.lootMin + 1));
 
+      // itemId override (e.g. shell variants) takes precedence over defs loot table
+      const droppedItemId = this.itemId || this.lootId;
+
       // Grant XP for gathering + quest progress with actual loot count
       const prog = window.__game?.progression;
       if (prog) {
         prog.addXp(5);
-        prog.reportCollect(this.lootId, count);
+        prog.reportCollect(droppedItemId, count);
+        if (this.type === 'shell') {
+          prog.reportCollectUnique('shell', this.itemId);
+        }
       }
 
-      return { itemId: this.lootId, count, x: this.x + 0.5, y: this.y + 0.5 };
+      return { itemId: droppedItemId, count, x: this.x + 0.5, y: this.y + 0.5 };
     }
 
     return null; // not yet depleted, but hit registered

@@ -24,6 +24,9 @@ export class SaveManager {
       unicornUnlocked: gameState.unicornUnlocked,
       progression: gameState.progression,
     };
+    data.dayNight = gameState.dayNight || null;
+    data.fishCaught = gameState.fishCaught || {};
+    data.uniqueCollected = gameState.uniqueCollected || {};
 
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
