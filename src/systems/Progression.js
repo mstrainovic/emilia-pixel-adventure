@@ -5,6 +5,8 @@ import { QUESTS } from '../data/quests.js';
 const QUEST_ORDER = [
   'first_steps', 'wood_collector', 'nature_healer', 'slime_hunter',
   'dungeon_explorer', 'skeleton_slayer', 'unicorn_friend', 'master_crafter', 'meadow_hero',
+  // M4
+  'shell_collector', 'master_angler', 'crab_problem', 'shooting_star',
 ];
 
 /**
@@ -104,7 +106,10 @@ export class Progression {
    */
   reportKill(mobType) {
     // Track per-type kills
-    const baseType = mobType.startsWith('slime') ? 'slime' : mobType.startsWith('skeleton') ? 'skeleton' : mobType;
+    const baseType = mobType.startsWith('slime') ? 'slime'
+      : mobType.startsWith('skeleton') ? 'skeleton'
+      : mobType.startsWith('crab') ? 'crab'
+      : mobType;
     this.stats.mobsKilled[mobType] = (this.stats.mobsKilled[mobType] || 0) + 1;
     this._checkQuestType('kill', baseType, 1);
   }
@@ -137,6 +142,31 @@ export class Progression {
   reportTalk(npcId) {
     this.stats.npcsSpoken[npcId] = true;
     this._checkQuestType('talk', npcId, 1);
+  }
+
+  reportFish(fishId) {
+    if (!this.stats.fishCaught) this.stats.fishCaught = {};
+    const isNew = !this.stats.fishCaught[fishId];
+    this.stats.fishCaught[fishId] = (this.stats.fishCaught[fishId] || 0) + 1;
+    if (isNew) {
+      this._checkQuestType('fish', 'fish_unique', 1);
+    }
+  }
+
+  reportObserve(eventType) {
+    if (!this.stats.observed) this.stats.observed = {};
+    this.stats.observed[eventType] = (this.stats.observed[eventType] || 0) + 1;
+    this._checkQuestType('observe', eventType, 1);
+  }
+
+  reportCollectUnique(category, itemId) {
+    if (!this.stats.uniqueCollected) this.stats.uniqueCollected = {};
+    if (!this.stats.uniqueCollected[category]) this.stats.uniqueCollected[category] = new Set();
+    const isNew = !this.stats.uniqueCollected[category].has(itemId);
+    this.stats.uniqueCollected[category].add(itemId);
+    if (isNew) {
+      this._checkQuestType('collect_unique', category, 1);
+    }
   }
 
   _checkQuestType(type, target, increment) {
