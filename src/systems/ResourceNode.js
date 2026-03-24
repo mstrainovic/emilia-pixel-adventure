@@ -77,12 +77,15 @@ export class ResourceNode {
 
   update(dt, player, inputManager) {
     if (this.depleted) {
-      this.respawnTimer -= dt;
-      if (this.respawnTimer <= 0) {
-        this.depleted = false;
-        this.currentHits = 0;
-        this.mesh.material.opacity = 0.8;
-        this.mesh.visible = true;
+      // respawnTime < 0 means never respawn (one-time pickup)
+      if (this.respawnTime >= 0) {
+        this.respawnTimer -= dt;
+        if (this.respawnTimer <= 0) {
+          this.depleted = false;
+          this.currentHits = 0;
+          this.mesh.material.opacity = 0.8;
+          this.mesh.visible = true;
+        }
       }
       this.promptMesh.visible = false;
       return null;
@@ -137,7 +140,7 @@ export class ResourceNode {
         }
       }
 
-      return { itemId: droppedItemId, count, x: this.x + 0.5, y: this.y + 0.5 };
+      return { itemId: droppedItemId, count, x: this.x + 0.5, y: this.y + 0.5, resourceType: this.type };
     }
 
     return null; // not yet depleted, but hit registered
@@ -161,6 +164,7 @@ export class ResourceManager {
   constructor(scene) {
     this.scene = scene;
     this.nodes = [];
+    this.onGather = null; // optional callback(loot) for special gather handling
   }
 
   createFromProps(props) {
@@ -173,8 +177,13 @@ export class ResourceManager {
   update(dt, player, inputManager, itemDrops) {
     for (const node of this.nodes) {
       const loot = node.update(dt, player, inputManager);
-      if (loot && itemDrops) {
-        itemDrops.spawnDrop(loot.itemId, loot.count, loot.x, loot.y);
+      if (loot) {
+        if (itemDrops) {
+          itemDrops.spawnDrop(loot.itemId, loot.count, loot.x, loot.y);
+        }
+        if (this.onGather) {
+          this.onGather(loot);
+        }
       }
     }
   }

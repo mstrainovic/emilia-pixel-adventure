@@ -61,6 +61,7 @@ import { AmbientLife } from '../rendering/AmbientLife.js';
 import { AchievementSystem } from '../systems/Achievements.js';
 import { AchievementUI } from '../ui/AchievementUI.js';
 import { NewGamePlus } from '../systems/NewGamePlus.js';
+import { RARE_FIND_PLACEMENTS } from '../data/rare_finds.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -234,6 +235,7 @@ export class Game {
     this._bossNoHitKill = false;
     this._distanceWalked = 0;
     this._lastPlayerPos = null;
+    this._collectedRareFinds = new Set(); // tracks one-time rare find pickups
 
     // Achievement unlock callback
     this.achievements.onUnlock = (def) => {
@@ -475,6 +477,7 @@ export class Game {
         if (save.newGamePlus) this.newGamePlus.loadState(save.newGamePlus);
         if (typeof save.distanceWalked === 'number') this._distanceWalked = save.distanceWalked;
         if (save.bossNoHitKill) this._bossNoHitKill = save.bossNoHitKill;
+        if (save.collectedRareFinds) this._collectedRareFinds = new Set(save.collectedRareFinds);
         const scene = save.player?.scene || 'hub';
         const x = save.player?.x || 20;
         const y = save.player?.y || 15;
@@ -588,6 +591,46 @@ export class Game {
     // Resource nodes
     this.resources = new ResourceManager(this.scene);
     this.resources.createFromProps(mapData.props);
+
+    // Rare find placement — inject hidden collectibles per scene
+    const rareFinds = RARE_FIND_PLACEMENTS[sceneName] || [];
+    for (const rf of rareFinds) {
+      // Skip already collected (one-time pickups)
+      if (this._collectedRareFinds.has(rf.itemId)) continue;
+
+      // Check time/condition gate
+      if (rf.condition === 'night' && this.dayNight && !this.dayNight.isNight()) continue;
+      if (rf.condition === 'morning' && this.dayNight && this.dayNight.phase !== 'dawn') continue;
+      if (rf.condition === 'boss_shadow_knight_defeated' && !this._bossStates?.shadow_knight?.defeated) continue;
+
+      // Create as a gatherable resource node (never respawns)
+      const rfProp = {
+        type: 'resource',
+        resourceType: 'rare_find',
+        x: rf.x,
+        y: rf.y,
+        itemId: rf.itemId,
+        hitsNeeded: 1,
+        respawnTime: -1, // never respawn
+      };
+      this.resources.createFromProps([rfProp]);
+    }
+
+    // Wire rare find collection tracking into the ResourceManager
+    this.resources.onGather = (loot) => {
+      if (loot.resourceType === 'rare_find') {
+        this._collectedRareFinds.add(loot.itemId);
+        if (this.explorerBook) {
+          if (this.explorerBook.discover(loot.itemId)) {
+            const itemDef = getItem(loot.itemId);
+            this.hud.showInfo('Seltener Fund: ' + (itemDef?.name || loot.itemId) + '!');
+            if (this.progression.reportDiscover) {
+              this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
+            }
+          }
+        }
+      }
+    };
 
     // Plant healing
     this.plantHealing.scene = this.scene;
@@ -1685,6 +1728,7 @@ export class Game {
       newGamePlus: this.newGamePlus.getState(),
       distanceWalked: this._distanceWalked,
       bossNoHitKill: this._bossNoHitKill,
+      collectedRareFinds: [...this._collectedRareFinds],
     }));
 
     // Input cleanup
