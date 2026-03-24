@@ -18,7 +18,7 @@ import * as THREE from 'three';
  */
 
 const T = 16;
-const TILE_COUNT = 15;
+const TILE_COUNT = 19;
 
 /**
  * Loads an image and returns a promise.
@@ -213,6 +213,44 @@ export async function generateTilesetAsync() {
     ctx.fillRect(14 * T, 0, T, T);
     _addWoodGrain(ctx, 14 * T);
 
+    // 15 = underwater_dark — dark blue stone
+    ctx.fillStyle = '#2A3A5A';
+    ctx.fillRect(15 * T, 0, T, T);
+    // Add stone cracks
+    ctx.fillStyle = '#1E2E4A';
+    for (let i = 0; i < 6; i++) {
+      ctx.fillRect(15 * T + (i * 5 % 14), (i * 7 % 14), 3, 1);
+    }
+
+    // 16 = underwater_blue — blue-grey stone
+    ctx.fillStyle = '#3A5A7A';
+    ctx.fillRect(16 * T, 0, T, T);
+    ctx.fillStyle = '#2E4E6A';
+    for (let i = 0; i < 5; i++) {
+      ctx.fillRect(16 * T + (i * 5 % 14), (i * 7 % 14), 3, 1);
+    }
+
+    // 17 = underwater_moss — moss-covered stone
+    ctx.fillStyle = '#2A5A3A';
+    ctx.fillRect(17 * T, 0, T, T);
+    ctx.fillStyle = '#1E4A2E';
+    for (let i = 0; i < 4; i++) {
+      ctx.fillRect(17 * T + (i * 5 % 14), (i * 7 % 14), 3, 1);
+    }
+    // Moss dots
+    ctx.fillStyle = '#3A7A4A';
+    for (let i = 0; i < 6; i++) {
+      ctx.fillRect(17 * T + (i * 3 % 14), (i * 5 % 14), 2, 2);
+    }
+
+    // 18 = underwater_sand — wet underwater sand
+    ctx.fillStyle = '#5A6A5A';
+    ctx.fillRect(18 * T, 0, T, T);
+    ctx.fillStyle = '#4A5A4A';
+    for (let i = 0; i < 8; i++) {
+      ctx.fillRect(18 * T + (i * 3 % 14), (i * 4 % 14), 1, 1);
+    }
+
   } catch (e) {
     console.warn('Asset tiles failed to load, using fallback colors:', e);
     // Fallback: solid color tiles
@@ -221,6 +259,7 @@ export async function generateTilesetAsync() {
       '#be9e76', '#9b8060', '#917850', '#af9258',
       '#48903a', '#9b9ea8', '#3a7ab0',
       '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
+      '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
     ];
     for (let i = 0; i < TILE_COUNT; i++) {
       ctx.fillStyle = fallbackColors[i];
@@ -251,6 +290,7 @@ export function generateTileset() {
     '#be9e76', '#9b8060', '#917850', '#af9258',
     '#48903a', '#9b9ea8', '#3a7ab0',
     '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
+    '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
   ];
   for (let i = 0; i < TILE_COUNT; i++) {
     ctx.fillStyle = colors[i];
