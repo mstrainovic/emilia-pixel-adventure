@@ -11,6 +11,7 @@ import { TileMap } from '../world/TileMap.js';
 import { Player } from '../entities/Player.js';
 import { NPC } from '../entities/NPC.js';
 import { Mob } from '../entities/Mob.js';
+import { Crab } from '../entities/Crab.js';
 import { CombatSystem } from '../combat/CombatSystem.js';
 import { Inventory } from '../systems/Inventory.js';
 import { ItemDropManager } from '../systems/ItemDrop.js';
@@ -917,7 +918,10 @@ export class Game {
     for (const spawn of mobSpawns) {
       const mobDef = MOB_TYPES[spawn.mobType];
       if (!mobDef) continue;
-      const mob = new Mob(spawn.mobType, mobDef, spawn.x, spawn.y);
+      // Use Crab entity for crab spriteType, Mob for everything else
+      const mob = mobDef.spriteType === 'crab'
+        ? new Crab(spawn.mobType, mobDef, spawn.x, spawn.y)
+        : new Mob(spawn.mobType, mobDef, spawn.x, spawn.y);
       try {
         await mob.loadAnimations(this.assetLoader);
         mob.addToScene(this.scene);
