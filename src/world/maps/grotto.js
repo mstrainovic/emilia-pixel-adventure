@@ -235,19 +235,16 @@ export function generateGrottoMap() {
 
   // --- Mob spawns ---
 
-  // Jellyfish in reef (3 spawns)
+  // Jellyfish in reef (2 spawns — reduced for child-friendly balance)
   props.push({ type: 'mob_spawn', mobType: 'jellyfish_glow', x: 6,  y: 4,  id: 'jelly1', respawnTime: 20 });
   props.push({ type: 'mob_spawn', mobType: 'jellyfish_glow', x: 11, y: 7,  id: 'jelly2', respawnTime: 20 });
-  props.push({ type: 'mob_spawn', mobType: 'jellyfish_glow', x: 3,  y: 10, id: 'jelly3', respawnTime: 20 });
 
-  // Jellyfish in passage (2 spawns)
+  // Jellyfish in passage (1 spawn)
   props.push({ type: 'mob_spawn', mobType: 'jellyfish_glow', x: 38, y: 10, id: 'jelly4', respawnTime: 20 });
-  props.push({ type: 'mob_spawn', mobType: 'jellyfish_glow', x: 40, y: 21, id: 'jelly5', respawnTime: 20 });
 
-  // Octopus in ruins (3 spawns)
+  // Octopus in ruins (2 spawns)
   props.push({ type: 'mob_spawn', mobType: 'octopus', x: 19, y: 5,  id: 'octo1', respawnTime: 30 });
   props.push({ type: 'mob_spawn', mobType: 'octopus', x: 27, y: 10, id: 'octo2', respawnTime: 30 });
-  props.push({ type: 'mob_spawn', mobType: 'octopus', x: 32, y: 4,  id: 'octo3', respawnTime: 30 });
 
   // Ghost Crab in treasure chamber (2 spawns)
   props.push({ type: 'mob_spawn', mobType: 'ghost_crab', x: 21, y: 27, id: 'gcrab1', respawnTime: 35 });

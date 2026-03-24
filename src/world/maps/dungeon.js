@@ -108,15 +108,7 @@ export function generateDungeonMap() {
   fillRect(ground, 0, 13, 3, 4, 9);
   fillRect(collision, 0, 13, 3, 4, 0);
 
-  // ── Add some ground variation inside rooms ──
-  for (let r = 0; r < H; r++)
-    for (let c = 0; c < W; c++) {
-      if (ground[r][c] === 9 && collision[r][c] === 0) {
-        // Very subtle stone floor variation — keep nearly all as 9
-        const v = rng();
-        if (v < 0.02) ground[r][c] = 5; // rare dark dirt patches
-      }
-    }
+  // Dungeon floors are uniform stone — no dirt patches (they show as brown rectangles)
 
   // ── Underground pool in pool room (tile 9 stays, but mark with props) ──
   // The pool itself — make the center tiles collision
@@ -194,8 +186,8 @@ export function generateDungeonMap() {
     // ══════════════════════════════════
     //  MOB SPAWNS
     // ══════════════════════════════════
-    // Entry hall area — weaker skeletons
-    { type: 'mob_spawn', mobType: 'skeleton_base', x: 5, y: 13, id: 'skel1' },
+    // Entry hall area — weaker skeletons (skel1 moved deeper so player has safe entry zone)
+    { type: 'mob_spawn', mobType: 'skeleton_base', x: 8, y: 13, id: 'skel1' },
     { type: 'mob_spawn', mobType: 'skeleton_base', x: 9, y: 15, id: 'skel2' },
 
     // North corridor / treasure room — medium

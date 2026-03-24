@@ -1039,11 +1039,30 @@ export class Game {
           if (cfFenceTex) this.tileMapRenderer.addPropFromSheet(cfFenceTex, 0, 0, 16, 16, prop.x, prop.y, 1, 1);
           else if (farmTex) this.tileMapRenderer.addPropFromSheet(farmTex, 224, 16, 16, 32, prop.x, prop.y - 0.5, 0.8, 1.5);
           break;
-        case 'rock':
-          // Cute_Fantasy stones from Outdoor_Decor (stone rows)
-          if (cfDecorTex) this.tileMapRenderer.addPropFromSheet(cfDecorTex, 0, 48, 16, 16, prop.x, prop.y, 1, 1);
-          else if (vegTex) this.tileMapRenderer.addPropFromSheet(vegTex, 0, 176, 16, 16, prop.x + 0.1, prop.y + 0.1, 0.8, 0.8);
+        case 'rock': {
+          // Canvas-drawn stone — works in all scene contexts
+          const isDungeon = ['dungeon', 'grotto'].includes(this.sceneManager.currentScene);
+          const rkCanvas = document.createElement('canvas');
+          rkCanvas.width = 16; rkCanvas.height = 16;
+          const rkCtx = rkCanvas.getContext('2d');
+          if (isDungeon) {
+            // Dark stone for caves
+            rkCtx.fillStyle = '#555566'; rkCtx.fillRect(4, 6, 8, 6);
+            rkCtx.fillStyle = '#666677'; rkCtx.fillRect(5, 5, 6, 2);
+            rkCtx.fillStyle = '#777788'; rkCtx.fillRect(6, 4, 4, 2);
+            rkCtx.fillStyle = '#444455'; rkCtx.fillRect(5, 7, 1, 1); rkCtx.fillRect(9, 8, 1, 1);
+          } else {
+            // Light stone for outdoors
+            rkCtx.fillStyle = '#888888'; rkCtx.fillRect(4, 6, 8, 6);
+            rkCtx.fillStyle = '#999999'; rkCtx.fillRect(5, 5, 6, 2);
+            rkCtx.fillStyle = '#aaaaaa'; rkCtx.fillRect(6, 4, 4, 2);
+            rkCtx.fillStyle = '#777777'; rkCtx.fillRect(5, 7, 1, 1); rkCtx.fillRect(9, 8, 1, 1);
+          }
+          const rkTex = new THREE.CanvasTexture(rkCanvas);
+          rkTex.magFilter = THREE.NearestFilter; rkTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(rkTex, prop.x, prop.y, 0.8, 0.8, 0.11);
           break;
+        }
         case 'house':
           // Cute_Fantasy House (96x128)
           if (cfHouseTex) {
