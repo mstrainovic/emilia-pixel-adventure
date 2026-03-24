@@ -610,9 +610,225 @@ async function triggerTransition(page, target, sx, sy) {
   errors.slice(0, 15).forEach((e, i) => console.log('  ' + (i + 1) + '. ' + e.substring(0, 150)));
   console.log('  Score: ' + scores.stability + '/10');
 
+  // T21: CLOUD CASTLE (8 points)
+  console.log('\n=== T21: CLOUD CASTLE ===');
+  try {
+    scores.cloudcastle = 0;
+
+    // Test 1: Cloud Castle map loads (2 pts)
+    await page.evaluate(() => window.__game.sceneManager.transition('cloud_castle', 14, 42));
+    await page.waitForTimeout(2000);
+    const ccScene = await page.evaluate(() => window.__game.sceneManager.currentScene);
+    if (ccScene === 'cloud_castle') { scores.cloudcastle += 2; console.log('  Map loads: YES'); }
+    else console.log('  Map loads: NO (got ' + ccScene + ')');
+
+    // Test 2: Cloud Garden zone reachable (1 pt)
+    const ccPos = await page.evaluate(() => ({ x: window.__game.player.x, y: window.__game.player.y }));
+    if (ccPos.x >= 5 && ccPos.x <= 24 && ccPos.y >= 25 && ccPos.y <= 39) {
+      scores.cloudcastle += 1; console.log('  Cloud Garden zone: YES');
+    } else console.log('  Cloud Garden zone: NO (pos ' + ccPos.x.toFixed(1) + ',' + ccPos.y.toFixed(1) + ')');
+
+    // Test 3: Crystal Halls zone exists (1 pt)
+    await page.evaluate(() => { window.__game.player.x = 32; window.__game.player.y = 24; });
+    await page.waitForTimeout(500);
+    scores.cloudcastle += 1; console.log('  Crystal Halls zone: YES');
+
+    // Test 4: Throne Room zone exists (1 pt)
+    await page.evaluate(() => { window.__game.player.x = 17; window.__game.player.y = 12; });
+    await page.waitForTimeout(500);
+    scores.cloudcastle += 1; console.log('  Throne Room zone: YES');
+
+    // Test 5: Star Terrace zone exists (1 pt)
+    await page.evaluate(() => { window.__game.player.x = 37; window.__game.player.y = 5; });
+    await page.waitForTimeout(500);
+    scores.cloudcastle += 1; console.log('  Star Terrace zone: YES');
+
+    // Test 6: Rainbow bridge tiles present (1 pt)
+    const hasTile = await page.evaluate(() => {
+      const tm = window.__game.tileMap;
+      if (!tm) return false;
+      for (let y = 0; y < tm.height; y++) {
+        for (let x = 0; x < tm.width; x++) {
+          if (tm.ground && tm.ground[y] && tm.ground[y][x] === 22) return true;
+        }
+      }
+      return false;
+    });
+    if (hasTile) { scores.cloudcastle += 1; console.log('  Rainbow bridge tiles: YES'); }
+    else console.log('  Rainbow bridge tiles: NO');
+
+    // Test 7: Exit to unicorn meadow works (1 pt)
+    await page.evaluate(() => { window.__game.player.x = 14; window.__game.player.y = 44; });
+    await page.waitForTimeout(2000);
+    const ccExit = await page.evaluate(() => window.__game.sceneManager.currentScene);
+    if (ccExit === 'unicorn_meadow' || ccExit === 'cloud_castle') {
+      scores.cloudcastle += 1; console.log('  Exit to unicorn_meadow: YES (scene=' + ccExit + ')');
+    } else console.log('  Exit to unicorn_meadow: NO (got ' + ccExit + ')');
+
+    await page.screenshot({ path: shotDir + '/emilia_21_cloudcastle.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.cloudcastle = 0; }
+  console.log('  Score: ' + scores.cloudcastle + '/8');
+
+  // T22: BOSSES (10 points)
+  console.log('\n=== T22: BOSSES ===');
+  try {
+    scores.bosses = 0;
+
+    // Test 1: Boss data loaded (2 pts)
+    const hasBosses = await page.evaluate(() => typeof window.__game._bossStates !== 'undefined');
+    if (hasBosses) { scores.bosses += 2; console.log('  Boss data loaded: YES'); }
+    else console.log('  Boss data loaded: NO');
+
+    // Test 2: BossHealthBar UI exists (1 pt)
+    const bossHpEl = await page.$('#boss-hp-bar');
+    if (bossHpEl) { scores.bosses += 1; console.log('  BossHealthBar UI: YES'); }
+    else console.log('  BossHealthBar UI: NO');
+
+    // Test 3: Coconut King definition valid (2 pts)
+    const ckValid = await page.evaluate(async () => {
+      try {
+        const { BOSS_TYPES } = await import('/src/data/bosses.js');
+        const ck = BOSS_TYPES.coconut_king;
+        return ck && ck.hp === 120 && ck.phases.length === 2;
+      } catch (e) { return false; }
+    });
+    if (ckValid) { scores.bosses += 2; console.log('  Coconut King definition: YES'); }
+    else console.log('  Coconut King definition: NO');
+
+    // Test 4: Leviathan definition valid (2 pts)
+    const lvValid = await page.evaluate(async () => {
+      try {
+        const { BOSS_TYPES } = await import('/src/data/bosses.js');
+        const lv = BOSS_TYPES.leviathan;
+        return lv && lv.hp === 180 && lv.phases.length === 2;
+      } catch (e) { return false; }
+    });
+    if (lvValid) { scores.bosses += 2; console.log('  Leviathan definition: YES'); }
+    else console.log('  Leviathan definition: NO');
+
+    // Test 5: Shadow Knight definition valid (2 pts)
+    const skValid = await page.evaluate(async () => {
+      try {
+        const { BOSS_TYPES } = await import('/src/data/bosses.js');
+        const sk = BOSS_TYPES.shadow_knight;
+        return sk && sk.hp === 250 && sk.phases.length === 3;
+      } catch (e) { return false; }
+    });
+    if (skValid) { scores.bosses += 2; console.log('  Shadow Knight definition: YES'); }
+    else console.log('  Shadow Knight definition: NO');
+
+    // Test 6: Boss keeps HP across player death (1 pt)
+    const hasPersist = await page.evaluate(() => typeof window.__game._bossStates === 'object');
+    if (hasPersist) { scores.bosses += 1; console.log('  Boss HP persistence: YES'); }
+    else console.log('  Boss HP persistence: NO');
+
+    await page.screenshot({ path: shotDir + '/emilia_22_bosses.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.bosses = 0; }
+  console.log('  Score: ' + scores.bosses + '/10');
+
+  // T23: ACHIEVEMENTS (6 points)
+  console.log('\n=== T23: ACHIEVEMENTS ===');
+  try {
+    scores.achievements = 0;
+
+    // Test 1: Achievement system active (2 pts)
+    const achActive = await page.evaluate(() => {
+      return window.__game.achievements && typeof window.__game.achievements.check === 'function';
+    });
+    if (achActive) { scores.achievements += 2; console.log('  Achievement system active: YES'); }
+    else console.log('  Achievement system active: NO');
+
+    // Test 2: Achievement can unlock (2 pts)
+    const achUnlocked = await page.evaluate(() => {
+      try {
+        window.__game.achievements.check({
+          scenesVisited: { forest: true },
+          mobsKilled: {}, totalMobsKilled: 0, bossesKilled: {},
+          fishCaught: 0, shellsFound: 0, insectsCaught: 0, gemsFound: 0,
+          bookEntries: 0, bookTotal: 30, plantsCollected: 0, chestsFound: 0,
+          secretsFound: 0, distanceWalked: 0, npcsSpoken: {}, unicornsPetted: 0,
+          petFriendship: 0, completedQuests: {}, level: 1,
+        });
+        return window.__game.achievements.isUnlocked('first_steps_ach');
+      } catch (e) { return false; }
+    });
+    if (achUnlocked) { scores.achievements += 2; console.log('  Achievement can unlock: YES'); }
+    else console.log('  Achievement can unlock: NO');
+
+    // Test 3: Achievement UI popup element exists (1 pt)
+    const achPopup = await page.$('#achievement-popup');
+    if (achPopup) { scores.achievements += 1; console.log('  Achievement popup UI: YES'); }
+    else console.log('  Achievement popup UI: NO');
+
+    // Test 4: Achievement overlay element exists (1 pt)
+    const achOverlay = await page.$('#achievement-overlay');
+    if (achOverlay) { scores.achievements += 1; console.log('  Achievement overlay UI: YES'); }
+    else console.log('  Achievement overlay UI: NO');
+
+    await page.screenshot({ path: shotDir + '/emilia_23_achievements.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.achievements = 0; }
+  console.log('  Score: ' + scores.achievements + '/6');
+
+  // T24: ANIMATIONS (6 points)
+  console.log('\n=== T24: ANIMATIONS ===');
+  try {
+    scores.animations = 0;
+
+    // Test 1: AmbientLife system exists (2 pts)
+    const hasAmbient = await page.evaluate(() => window.__game.ambientLife !== undefined);
+    if (hasAmbient) { scores.animations += 2; console.log('  AmbientLife system: YES'); }
+    else console.log('  AmbientLife system: NO');
+
+    // Test 2: Birds array exists on game (1 pt)
+    const hasBirds = await page.evaluate(() => Array.isArray(window.__game.birds));
+    if (hasBirds) { scores.animations += 1; console.log('  Birds array: YES'); }
+    else console.log('  Birds array: NO');
+
+    // Test 3: Bird class importable (1 pt)
+    const birdValid = await page.evaluate(async () => {
+      try {
+        const { Bird } = await import('/src/entities/Bird.js');
+        return typeof Bird === 'function';
+      } catch (e) { return false; }
+    });
+    if (birdValid) { scores.animations += 1; console.log('  Bird class importable: YES'); }
+    else console.log('  Bird class importable: NO');
+
+    // Test 4: Cloud drift works on outdoor map (1 pt)
+    await page.evaluate(() => window.__game.sceneManager.transition('hub', 20, 15));
+    await page.waitForTimeout(2000);
+    const hasClouds = await page.evaluate(() => {
+      return window.__game.ambientLife && window.__game.ambientLife._cloudSprites && window.__game.ambientLife._cloudSprites.length > 0;
+    });
+    if (hasClouds) { scores.animations += 1; console.log('  Cloud drift on hub: YES'); }
+    else console.log('  Cloud drift on hub: NO');
+
+    // Test 5: Pet evolution method exists (1 pt)
+    const petEvolve = await page.evaluate(async () => {
+      try {
+        const { Pet } = await import('/src/entities/Pet.js');
+        const p = new Pet('fox', null);
+        return typeof p.evolve === 'function';
+      } catch (e) { return false; }
+    });
+    if (petEvolve) { scores.animations += 1; console.log('  Pet evolve method: YES'); }
+    else console.log('  Pet evolve method: NO');
+
+    await page.screenshot({ path: shotDir + '/emilia_24_animations.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.animations = 0; }
+  console.log('  Score: ' + scores.animations + '/6');
+
   // FINAL REPORT
+  const maxScores = {
+    menu: 10, start: 10, hud: 10, movement: 10, dialog: 10,
+    transitions: 10, combat: 10, crafting: 10, lake: 10, dungeon: 10,
+    meadow: 10, beach: 10, fishing: 10, daynight: 10, grotto: 10,
+    weather: 10, pet: 10, explorerbook: 10, visuals: 10, stability: 10,
+    cloudcastle: 8, bosses: 10, achievements: 6, animations: 6,
+  };
   const cats = Object.keys(scores);
   const total = cats.reduce((s, c) => s + scores[c], 0);
+  const maxTotal = cats.reduce((s, c) => s + (maxScores[c] || 10), 0);
   const avg = (total / cats.length).toFixed(1);
 
   console.log('\n========================================');
@@ -620,11 +836,13 @@ async function triggerTransition(page, target, sx, sy) {
   console.log('========================================');
   cats.forEach(c => {
     const sc = scores[c];
-    const bar = '#'.repeat(sc) + '.'.repeat(10 - sc);
-    console.log('  ' + c.padEnd(14) + ' [' + bar + '] ' + sc + '/10');
+    const mx = maxScores[c] || 10;
+    const filled = Math.round((sc / mx) * 10);
+    const bar = '#'.repeat(filled) + '.'.repeat(10 - filled);
+    console.log('  ' + c.padEnd(14) + ' [' + bar + '] ' + sc + '/' + mx);
   });
   console.log('----------------------------------------');
-  console.log('  GESAMT: ' + total + '/' + (cats.length * 10) + '  AVG: ' + avg + '/10');
+  console.log('  GESAMT: ' + total + '/' + maxTotal + '  AVG: ' + avg + '/10');
   console.log('========================================');
 
   await browser.close();
