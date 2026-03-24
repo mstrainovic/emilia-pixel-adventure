@@ -18,7 +18,7 @@ import * as THREE from 'three';
  */
 
 const T = 16;
-const TILE_COUNT = 11;
+const TILE_COUNT = 15;
 
 /**
  * Loads an image and returns a promise.
@@ -108,6 +108,33 @@ function drawStoneTile(ctx, ox, oy) {
   ctx.fillRect(ox + 1, oy + 10, 2, 2);
 }
 
+function _addSandGrain(ctx, offsetX, color, count) {
+  ctx.fillStyle = color;
+  for (let i = 0; i < count; i++) {
+    const x = offsetX + Math.random() * 16;
+    const y = Math.random() * 16;
+    ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+  }
+}
+
+function _addShellFragments(ctx, offsetX) {
+  ctx.fillStyle = '#FFCCDD';
+  ctx.fillRect(offsetX + 3, 5, 2, 1);
+  ctx.fillRect(offsetX + 10, 11, 2, 1);
+  ctx.fillStyle = '#FDEEF4';
+  ctx.fillRect(offsetX + 7, 8, 1, 1);
+}
+
+function _addWoodGrain(ctx, offsetX) {
+  ctx.fillStyle = '#7D6340';
+  for (let y = 0; y < 16; y += 4) {
+    ctx.fillRect(offsetX, y, 16, 1);
+  }
+  ctx.fillStyle = '#9A7D55';
+  ctx.fillRect(offsetX + 3, 0, 1, 16);
+  ctx.fillRect(offsetX + 11, 0, 1, 16);
+}
+
 /**
  * Async: Load real tiles from asset packs and composite into a strip.
  */
@@ -165,6 +192,27 @@ export async function generateTilesetAsync() {
     // Tile 10: water (from Cute_Fantasy Water_Middle.png)
     ctx.drawImage(waterImg, 0, 0, T, T, 10 * T, 0, T, T);
 
+    // 11 = sand_light — warm beige sand
+    ctx.fillStyle = '#F5DEB3';
+    ctx.fillRect(11 * T, 0, T, T);
+    _addSandGrain(ctx, 11 * T, '#E8D5A0', 8);
+
+    // 12 = sand_dark — wet/dark sand near water
+    ctx.fillStyle = '#C4A97D';
+    ctx.fillRect(12 * T, 0, T, T);
+    _addSandGrain(ctx, 12 * T, '#B89B6D', 10);
+
+    // 13 = sand_shells — sand with shell fragments
+    ctx.fillStyle = '#F0D9A8';
+    ctx.fillRect(13 * T, 0, T, T);
+    _addSandGrain(ctx, 13 * T, '#E0C998', 6);
+    _addShellFragments(ctx, 13 * T);
+
+    // 14 = pier_wood — wooden planks
+    ctx.fillStyle = '#8B6F47';
+    ctx.fillRect(14 * T, 0, T, T);
+    _addWoodGrain(ctx, 14 * T);
+
   } catch (e) {
     console.warn('Asset tiles failed to load, using fallback colors:', e);
     // Fallback: solid color tiles
@@ -172,6 +220,7 @@ export async function generateTilesetAsync() {
       '#3a7830', '#48903a', '#55a042', '#44953a',
       '#be9e76', '#9b8060', '#917850', '#af9258',
       '#48903a', '#9b9ea8', '#3a7ab0',
+      '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
     ];
     for (let i = 0; i < TILE_COUNT; i++) {
       ctx.fillStyle = fallbackColors[i];
@@ -201,6 +250,7 @@ export function generateTileset() {
     '#3a7830', '#48903a', '#55a042', '#44953a',
     '#be9e76', '#9b8060', '#917850', '#af9258',
     '#48903a', '#9b9ea8', '#3a7ab0',
+    '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
   ];
   for (let i = 0; i < TILE_COUNT; i++) {
     ctx.fillStyle = colors[i];
