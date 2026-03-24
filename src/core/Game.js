@@ -33,6 +33,7 @@ import { generateDungeonMap } from '../world/maps/dungeon.js';
 import { generateLakeMap } from '../world/maps/lake.js';
 import { generateUnicornMeadowMap } from '../world/maps/unicorn_meadow.js';
 import { generateTileset, generateTilesetAsync, GENERATED_TILE_DEFS } from '../rendering/TilesetGenerator.js';
+import { GroundDecorationRenderer } from '../rendering/GroundDecorationRenderer.js';
 
 export class Game {
   constructor() {
@@ -52,6 +53,7 @@ export class Game {
     this.audio = new AudioManager();
     this.progression = new Progression();
     this.tileMapRenderer = null; // created per scene
+    this.groundDeco = null; // ground decoration overlay
     this.combat = new CombatSystem();
     this.hud = new HUD();
     this.dialog = new DialogSystem();
@@ -146,6 +148,23 @@ export class Game {
     } catch (e) {
       console.warn('Async tileset failed, using sync fallback:', e);
     }
+
+    // Load decor texture for ground decorations
+    this._decorTexture = null;
+    try {
+      const base = import.meta.env.BASE_URL || '/';
+      this._decorTexture = await new Promise((resolve, reject) => {
+        new THREE.TextureLoader().load(
+          `${base}Cute_Fantasy_Free/Outdoor decoration/Outdoor_Decor_Free.png`,
+          (tex) => {
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            tex.generateMipmaps = false;
+            tex.colorSpace = THREE.SRGBColorSpace;
+            resolve(tex);
+          }, undefined, reject);
+      });
+    } catch (e) { console.warn('Decor texture not loaded:', e); }
 
     // Crafting system
     this.crafting = new CraftingSystem(this.inventory, this.hud);
@@ -287,6 +306,10 @@ export class Game {
       tilesetTexture: this.tilesetTexture,
       tileDefs: mapData.tileDefs || GENERATED_TILE_DEFS,
     });
+
+    // Ground decoration overlay (flowers, grass tufts, pebbles)
+    this.groundDeco = new GroundDecorationRenderer(this.scene);
+    this.groundDeco.build(mapData.ground, mapData.collision, sceneName, this._decorTexture);
 
     // Load props
     await this._loadProps(mapData.props);
@@ -431,6 +454,12 @@ export class Game {
       s.dispose();
     }
     this._animatedSprites = [];
+
+    // Dispose ground decorations
+    if (this.groundDeco) {
+      this.groundDeco.dispose();
+      this.groundDeco = null;
+    }
 
     // Dispose tile renderer
     if (this.tileMapRenderer) {

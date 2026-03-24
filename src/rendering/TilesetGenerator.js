@@ -129,17 +129,17 @@ export async function generateTilesetAsync() {
     // Tile 1: grass medium (source image as-is)
     ctx.drawImage(grassImg, 0, 0, T, T, 1 * T, 0, T, T);
 
-    // Tile 0: grass dark (tinted darker)
+    // Tile 0: grass dark (subtly darker — less blocky)
     ctx.drawImage(grassImg, 0, 0, T, T, 0 * T, 0, T, T);
-    tintRegion(ctx, 0, 0, 0.78, 0.82, 0.72);
+    tintRegion(ctx, 0, 0, 0.90, 0.92, 0.88);
 
-    // Tile 2: grass light (tinted brighter)
+    // Tile 2: grass light (subtly brighter)
     ctx.drawImage(grassImg, 0, 0, T, T, 2 * T, 0, T, T);
-    tintRegion(ctx, 2 * T, 0, 1.15, 1.12, 1.05);
+    tintRegion(ctx, 2 * T, 0, 1.06, 1.05, 1.02);
 
-    // Tile 3: grass variant (slight hue shift — more yellow-green)
+    // Tile 3: grass variant (very subtle hue shift)
     ctx.drawImage(grassImg, 0, 0, T, T, 3 * T, 0, T, T);
-    tintRegion(ctx, 3 * T, 0, 1.0, 1.08, 0.85);
+    tintRegion(ctx, 3 * T, 0, 0.98, 1.04, 0.94);
 
     // Tile 4: dirt path
     ctx.drawImage(pathImg, 0, 0, T, T, 4 * T, 0, T, T);
