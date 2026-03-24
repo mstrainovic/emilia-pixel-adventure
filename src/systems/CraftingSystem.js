@@ -72,8 +72,14 @@ export class CraftingSystem {
 
     // Remove ingredients (safe — space was checked)
     for (const ing of recipe.ingredients) {
-      if (!this.inventory.removeItem(ing.itemId, ing.count)) {
-        return;
+      if (ing.itemId) {
+        if (!this.inventory.removeItem(ing.itemId, ing.count)) return;
+      } else if (ing.category) {
+        const matchId = this.inventory.findItemByCategory(ing.category);
+        if (!matchId || !this.inventory.removeItem(matchId, ing.count)) {
+          this.hud.showInfo('Zutat fehlt!');
+          return;
+        }
       }
     }
 

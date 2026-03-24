@@ -118,6 +118,20 @@ export class Inventory {
   }
 
   /**
+   * Find the first item in inventory matching a given category.
+   * Returns the itemId if found, null otherwise.
+   */
+  findItemByCategory(category) {
+    for (const slot of this.slots) {
+      if (slot.itemId) {
+        const def = getItem(slot.itemId);
+        if (def && def.category === category && slot.count > 0) return slot.itemId;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Get the currently selected hotbar item.
    */
   getSelectedItem() {

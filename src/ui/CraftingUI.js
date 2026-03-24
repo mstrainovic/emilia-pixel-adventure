@@ -62,9 +62,11 @@ export class CraftingUI {
     }
 
     for (const recipe of recipes) {
-      const canCraft = recipe.ingredients.every(
-        ing => inventory.hasItem(ing.itemId, ing.count)
-      );
+      const canCraft = recipe.ingredients.every(ing => {
+        if (ing.itemId) return inventory.countItem(ing.itemId) >= ing.count;
+        if (ing.category) return !!inventory.findItemByCategory(ing.category);
+        return false;
+      });
       const resultItem = getItem(recipe.result.itemId);
 
       const el = document.createElement('div');
@@ -79,12 +81,12 @@ export class CraftingUI {
         </div>
         <div class="craft-ingredients">
           ${recipe.ingredients.map(ing => {
-            const item = getItem(ing.itemId);
-            const has = inventory.countItem(ing.itemId);
+            const name = ing.itemId ? (getItem(ing.itemId)?.name || ing.itemId) : 'Beliebiger ' + ing.category;
+            const has = ing.itemId ? inventory.countItem(ing.itemId) : (inventory.findItemByCategory(ing.category) ? 1 : 0);
             const enough = has >= ing.count;
             return `<span class="craft-ing ${enough ? '' : 'craft-ing-missing'}">
-              <img class="craft-ing-icon" src="${getItemIconDataURL(ing.itemId)}" draggable="false">
-              ${item?.name || ing.itemId} ${has}/${ing.count}
+              <img class="craft-ing-icon" src="${getItemIconDataURL(ing.itemId || '')}" draggable="false">
+              ${name} ${has}/${ing.count}
             </span>`;
           }).join('')}
         </div>
