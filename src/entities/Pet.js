@@ -15,6 +15,12 @@ const PET_TYPES = {
   rabbit: { name: 'Magischer Hase',   ability: 'collect_boost', color: '#E0E0FF' },
 };
 
+const PET_EVOLUTIONS = {
+  fox:    { name: 'Feuerfuchs',     ability: 'find_items_plus', color: '#FF4500' },
+  dragon: { name: 'Grosser Drache', ability: 'fire_attack_plus', color: '#FF2200' },
+  rabbit: { name: 'Goldener Hase',  ability: 'collect_boost_plus', color: '#FFD700' },
+};
+
 export class Pet {
   constructor(type, scene) {
     this.type = type;
@@ -27,6 +33,7 @@ export class Pet {
 
     this.friendship = 0;
     this._friendshipTimer = 0;
+    this.evolved = false;
 
     // Animation state
     this._animFrame = 0;
@@ -358,6 +365,11 @@ export class Pet {
       this._friendshipTimer -= 60;
     }
 
+    // ── Evolution check ──
+    if (this.friendship >= 100 && !this.evolved) {
+      this.evolve();
+    }
+
     // ── Frame animation ──
     this._animTimer += dt * 1000; // convert to ms
     if (this._animTimer >= this._animSpeed) {
@@ -402,6 +414,7 @@ export class Pet {
     return {
       type: this.type,
       friendship: this.friendship,
+      evolved: this.evolved,
     };
   }
 
@@ -411,6 +424,225 @@ export class Pet {
    */
   loadState(state) {
     this.friendship = state?.friendship || 0;
+    if (state?.evolved && !this.evolved) {
+      this.evolve();
+    }
+  }
+
+  /**
+   * Evolve the pet (called when friendship reaches 100).
+   * Redraws sprite with evolved visuals.
+   */
+  evolve() {
+    if (this.evolved) return;
+    this.evolved = true;
+    const evoDef = PET_EVOLUTIONS[this.type];
+    if (evoDef) {
+      this.name = evoDef.name;
+      this.ability = evoDef.ability;
+    }
+    // Apply stat upgrades based on type
+    switch (this.type) {
+      case 'dragon':
+        this.damage = 10;       // up from 5
+        break;
+      case 'rabbit':
+        this.collectRadius = 4; // up from 2
+        break;
+      case 'fox':
+        this.detectRadius = 6;  // up from 3 — finds hidden items from further away
+        break;
+    }
+    // Recreate sprite with evolved visuals
+    this._recreateEvolvedSprite();
+  }
+
+  _recreateEvolvedSprite() {
+    // Remove old mesh
+    if (this._scene && this._mesh) {
+      this._scene.remove(this._mesh);
+    }
+    if (this._mesh) {
+      this._mesh.geometry.dispose();
+      if (this._texture) this._texture.dispose();
+      if (this._baseTexture) this._baseTexture.dispose();
+      this._mesh.material.dispose();
+    }
+
+    // Draw evolved sprite (larger: 96x24, 4 frames of 24x24)
+    const canvas = document.createElement('canvas');
+    canvas.width = 96;
+    canvas.height = 24;
+    const ctx = canvas.getContext('2d');
+
+    switch (this.type) {
+      case 'fox':    this._drawEvolvedFox(ctx);    break;
+      case 'dragon': this._drawEvolvedDragon(ctx); break;
+      case 'rabbit': this._drawEvolvedRabbit(ctx); break;
+      default:       this._drawEvolvedFox(ctx);    break;
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+    texture.generateMipmaps = false;
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    const clonedTex = texture.clone();
+    clonedTex.needsUpdate = true;
+    clonedTex.magFilter = THREE.NearestFilter;
+    clonedTex.minFilter = THREE.NearestFilter;
+    clonedTex.repeat.set(0.25, 1);
+    clonedTex.offset.set(0, 0);
+
+    const geo = new THREE.PlaneGeometry(1.5, 1.5); // 50% larger
+    const mat = new THREE.MeshBasicMaterial({
+      map: clonedTex,
+      transparent: true,
+      alphaTest: 0.1,
+      depthWrite: false,
+    });
+
+    this._mesh = new THREE.Mesh(geo, mat);
+    this._texture = clonedTex;
+    this._baseTexture = texture;
+
+    if (this._scene) {
+      this._scene.add(this._mesh);
+    }
+  }
+
+  _drawEvolvedFox(ctx) {
+    // Feuerfuchs: orange with flame particles, larger
+    for (let frame = 0; frame < 4; frame++) {
+      const ox = frame * 24;
+      // Flame aura
+      ctx.fillStyle = 'rgba(255, 100, 0, 0.2)';
+      ctx.fillRect(ox + 1, 1, 22, 22);
+      // Body (larger)
+      ctx.fillStyle = '#FF4500';
+      ctx.fillRect(ox + 6, 8, 12, 10);
+      ctx.fillRect(ox + 4, 10, 16, 7);
+      // White belly
+      ctx.fillStyle = '#FFD0A0';
+      ctx.fillRect(ox + 8, 11, 6, 5);
+      // Head
+      ctx.fillStyle = '#FF4500';
+      ctx.fillRect(ox + 8, 2, 10, 8);
+      // Ears
+      ctx.fillRect(ox + 8, 0, 3, 3);
+      ctx.fillRect(ox + 15, 0, 3, 3);
+      // Flame particles (animated)
+      const flameOff = (frame % 2 === 0) ? 0 : 1;
+      ctx.fillStyle = '#FF6600';
+      ctx.fillRect(ox + 2, 6 + flameOff, 2, 3);
+      ctx.fillRect(ox + 20, 8 - flameOff, 2, 3);
+      ctx.fillStyle = '#FFAA00';
+      ctx.fillRect(ox + 3, 4 + flameOff, 1, 2);
+      ctx.fillRect(ox + 21, 6 - flameOff, 1, 2);
+      // Eyes
+      ctx.fillStyle = '#FF0000';
+      ctx.fillRect(ox + 10, 4, 2, 2);
+      ctx.fillRect(ox + 15, 4, 2, 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(ox + 11, 4, 1, 1);
+      ctx.fillRect(ox + 16, 4, 1, 1);
+      // Tail (flame tip)
+      ctx.fillStyle = '#FF4500';
+      ctx.fillRect(ox + 1, 10, 4, 6);
+      ctx.fillStyle = '#FFAA00';
+      ctx.fillRect(ox + 0, 14, 2, 3);
+      // Legs
+      ctx.fillStyle = '#CC3300';
+      ctx.fillRect(ox + 7, 17, 3, 4);
+      ctx.fillRect(ox + 14, 17, 3, 4);
+    }
+  }
+
+  _drawEvolvedDragon(ctx) {
+    // Grosser Drache: wings spread, fire breath glow
+    for (let frame = 0; frame < 4; frame++) {
+      const ox = frame * 24;
+      const wingFlap = (frame % 2 === 0) ? 0 : 3;
+      // Wings
+      ctx.fillStyle = '#1A6B1A';
+      ctx.fillRect(ox + 1, 4 - wingFlap, 4, 8 + wingFlap);
+      ctx.fillRect(ox + 19, 4 - wingFlap, 4, 8 + wingFlap);
+      // Body
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(ox + 5, 8, 14, 10);
+      // Gold belly
+      ctx.fillStyle = '#DAA520';
+      ctx.fillRect(ox + 8, 10, 8, 6);
+      // Head
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(ox + 7, 2, 10, 7);
+      // Fire breath
+      ctx.fillStyle = '#FF4400';
+      ctx.fillRect(ox + 17, 4, 4, 2);
+      ctx.fillStyle = '#FFAA00';
+      ctx.fillRect(ox + 20, 4, 2, 2);
+      // Eyes
+      ctx.fillStyle = '#FF2200';
+      ctx.fillRect(ox + 9, 3, 2, 2);
+      ctx.fillRect(ox + 14, 3, 2, 2);
+      // Horns
+      ctx.fillStyle = '#FF6600';
+      ctx.fillRect(ox + 8, 0, 2, 3);
+      ctx.fillRect(ox + 15, 0, 2, 3);
+      // Legs
+      ctx.fillStyle = '#1A7A1A';
+      ctx.fillRect(ox + 8, 17, 3, 4);
+      ctx.fillRect(ox + 14, 17, 3, 4);
+      // Tail
+      ctx.fillRect(ox + 1, 12, 4, 3);
+    }
+  }
+
+  _drawEvolvedRabbit(ctx) {
+    // Goldener Hase: gold glow, sparkles
+    for (let frame = 0; frame < 4; frame++) {
+      const ox = frame * 24;
+      // Gold glow aura
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+      ctx.fillRect(ox + 1, 1, 22, 22);
+      // Body
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(ox + 5, 8, 14, 10);
+      ctx.fillRect(ox + 4, 10, 16, 7);
+      // Belly
+      ctx.fillStyle = '#FFF8DC';
+      ctx.fillRect(ox + 8, 11, 6, 5);
+      // Head
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(ox + 7, 2, 10, 7);
+      // Long ears
+      const earTwitch = (frame % 2 === 0) ? 0 : 1;
+      ctx.fillRect(ox + 7 - earTwitch, 0, 3, 6);
+      ctx.fillRect(ox + 15 + earTwitch, 0, 3, 6);
+      // Inner ear
+      ctx.fillStyle = '#FFB0C0';
+      ctx.fillRect(ox + 8 - earTwitch, 1, 1, 4);
+      ctx.fillRect(ox + 16 + earTwitch, 1, 1, 4);
+      // Eyes
+      ctx.fillStyle = '#8B6914';
+      ctx.fillRect(ox + 9, 4, 2, 2);
+      ctx.fillRect(ox + 14, 4, 2, 2);
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(ox + 10, 4, 1, 1);
+      ctx.fillRect(ox + 15, 4, 1, 1);
+      // Gold sparkles
+      ctx.fillStyle = 'rgba(255, 255, 200, 0.8)';
+      ctx.fillRect(ox + 2, 3 + (frame % 2), 1, 1);
+      ctx.fillRect(ox + 21, 5 - (frame % 2), 1, 1);
+      ctx.fillRect(ox + 4, 18 + (frame % 2), 1, 1);
+      // Tail
+      ctx.fillRect(ox + 2, 12, 3, 3);
+      // Legs
+      ctx.fillStyle = '#DAA520';
+      ctx.fillRect(ox + 7, 17, 4, 4);
+      ctx.fillRect(ox + 14, 17, 4, 4);
+    }
   }
 
   /**
