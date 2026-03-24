@@ -674,6 +674,18 @@ reportAchievementUnlock(totalCount) {
   this.stats.achievementCount = totalCount;
   this._setQuestProgress('star_collector', totalCount);
 }
+
+/**
+ * Reset all quest progress for New Game+.
+ * Preserves stats but clears quest completion state.
+ */
+resetQuests() {
+  this.completedQuests = {};
+  this.activeQuest = null;
+  this.questProgress = {};
+  // Re-assign first quest
+  this._assignNextQuest();
+}
 ```
 
 4. In `loadSaveData()`, restore new stats:
@@ -772,39 +784,40 @@ In `generateTilesetAsync()`, after tile 18 (underwater_sand) section, add:
     ctx.fillStyle = 'rgba(220, 180, 200, 0.3)';
     ctx.fillRect(20 * T + 1, 13, 14, 2);
 
-    // 21 = crystal_floor — sparkling crystal floor
-    ctx.fillStyle = '#C8D8F0';
+    // 21 = cloud_gold — golden cloud floor (spec: Goldener Wolken-Boden)
+    ctx.fillStyle = '#FFE8AA';
     ctx.fillRect(21 * T, 0, T, T);
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(21 * T + 3, 2, 5, 4);
+    ctx.fillRect(21 * T + 8, 5, 5, 4);
+    ctx.fillRect(21 * T + 2, 9, 6, 3);
+    // Gold sparkles
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(21 * T + 5, 3, 1, 1);
+    ctx.fillRect(21 * T + 11, 7, 1, 1);
+    ctx.fillRect(21 * T + 4, 11, 1, 1);
+    // Subtle shadow
+    ctx.fillStyle = 'rgba(200, 160, 60, 0.3)';
+    ctx.fillRect(21 * T + 1, 13, 14, 2);
+
+    // 22 = crystal_floor — sparkling crystal floor
+    ctx.fillStyle = '#C8D8F0';
+    ctx.fillRect(22 * T, 0, T, T);
     // Crystal facets
     ctx.fillStyle = '#D8E8FF';
-    ctx.fillRect(21 * T + 2, 1, 5, 5);
-    ctx.fillRect(21 * T + 9, 4, 4, 6);
-    ctx.fillRect(21 * T + 3, 8, 6, 5);
+    ctx.fillRect(22 * T + 2, 1, 5, 5);
+    ctx.fillRect(22 * T + 9, 4, 4, 6);
+    ctx.fillRect(22 * T + 3, 8, 6, 5);
     // Sparkle highlights
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(21 * T + 4, 2, 1, 1);
-    ctx.fillRect(21 * T + 11, 5, 1, 1);
-    ctx.fillRect(21 * T + 6, 10, 1, 1);
-    ctx.fillRect(21 * T + 13, 13, 1, 1);
+    ctx.fillRect(22 * T + 4, 2, 1, 1);
+    ctx.fillRect(22 * T + 11, 5, 1, 1);
+    ctx.fillRect(22 * T + 6, 10, 1, 1);
+    ctx.fillRect(22 * T + 13, 13, 1, 1);
     // Dark lines between crystals
     ctx.fillStyle = 'rgba(100, 120, 160, 0.3)';
-    ctx.fillRect(21 * T + 7, 0, 1, T);
-    ctx.fillRect(21 * T, 7, T, 1);
-
-    // 22 = rainbow_bridge — animated rainbow bridge tile (static base, animation via UV offset)
-    // Draw a gradient rainbow effect
-    const rainbowColors = ['#FF6B6B', '#FFAA6B', '#FFE66B', '#6BFF6B', '#6BB5FF', '#AA6BFF'];
-    for (let i = 0; i < 6; i++) {
-      ctx.fillStyle = rainbowColors[i];
-      const bandY = Math.floor(i * T / 6);
-      const bandH = Math.ceil(T / 6);
-      ctx.fillRect(22 * T, bandY, T, bandH);
-    }
-    // Add sparkle dots
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.fillRect(22 * T + 3, 2, 1, 1);
-    ctx.fillRect(22 * T + 10, 7, 1, 1);
-    ctx.fillRect(22 * T + 6, 12, 1, 1);
+    ctx.fillRect(22 * T + 7, 0, 1, T);
+    ctx.fillRect(22 * T, 7, T, 1);
 ```
 
 Also update the fallback color arrays in both `generateTileset()` and `generateTilesetAsync()`:
@@ -815,7 +828,7 @@ const fallbackColors = [
   '#48903a', '#9b9ea8', '#3a7ab0',
   '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
   '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
-  '#F0F0FF', '#FFE8F0', '#C8D8F0', '#FF6B6B',
+  '#F0F0FF', '#FFE8F0', '#FFE8AA', '#C8D8F0',
 ];
 ```
 
@@ -823,7 +836,7 @@ const fallbackColors = [
 
 ```bash
 git add src/rendering/TilesetGenerator.js
-git commit -m "feat(m6): add 4 cloud castle tile types (19-22: cloud white/pink, crystal, rainbow)"
+git commit -m "feat(m6): add 4 cloud castle tile types (19-22: cloud white/pink/gold, crystal floor)"
 ```
 
 ---
@@ -1058,8 +1071,14 @@ export function generateCloudCastleMap() {
   // Crafting station — alchemy (Star Terrace)
   props.push({ type: 'station', station: 'alchemy', x: 40, y: 3 });
 
+  // Rainbow bridge prop (rendered as overlay, not a tile — per spec)
+  props.push({ type: 'rainbow_bridge', x: 34, y: 4, width: 5, height: 1 });
+
   // Exit south → unicorn_meadow
   props.push({ type: 'exit', x: 14, y: 44, width: 3, target: 'unicorn_meadow', spawnX: 12, spawnY: 2 });
+
+  // Exit north-east → Starsky secret area (Star Terrace, requires 25 achievements)
+  props.push({ type: 'exit', x: 37, y: 0, width: 1, target: 'starsky', spawnX: 2, spawnY: 4 });
 
   return {
     width: W,
@@ -3176,6 +3195,18 @@ evolve() {
     this.name = evoDef.name;
     this.ability = evoDef.ability;
   }
+  // Apply stat upgrades based on type
+  switch (this.type) {
+    case 'dragon':
+      this.damage = 10;       // up from 5
+      break;
+    case 'rabbit':
+      this.collectRadius = 4; // up from 2
+      break;
+    case 'fox':
+      this.detectRadius = 6;  // up from 3 — finds hidden items from further away
+      break;
+  }
   // Recreate sprite with evolved visuals
   this._recreateEvolvedSprite();
 }
@@ -3545,7 +3576,7 @@ starsky: 'Der Sternenhimmel',
 
 Add to `particleTypes`:
 ```javascript
-cloud_castle: 'magic',
+cloud_castle: 'snow',
 starsky: 'magic',
 ```
 
@@ -3604,11 +3635,11 @@ if (this._activeBoss && this._activeBoss.alive && !uiBlocking) {
   this._activeBoss.update(dt, this.player, this.tileMap);
   this.bossHealthBar.update(this._activeBoss.hp, this._activeBoss.maxHp);
 
-  // Check player attacks against boss
-  if (this.combat.lastAttackHit) {
-    const weapon = this.inventory.getSelectedItem();
-    const dmg = weapon?.damage || 15;
-    this._activeBoss.takeDamage(dmg);
+  // Check player attacks against boss (reuse combat system's attack check)
+  // Pass boss as a mob-like object in the mobs array for hit detection
+  const bossAsMob = this._activeBoss;
+  const bossHits = this.combat.update(dt, this.player, [bossAsMob]);
+  if (bossHits.length > 0) {
     if (this.vfx) this.vfx.hitSparks(this._activeBoss.x, this._activeBoss.y);
     this.juice.shakeMedium();
   }
@@ -3695,27 +3726,42 @@ props.push({ type: 'exit', x: 11, y: 0, width: 3, target: 'cloud_castle', spawnX
 
 The exit should only be usable when cloud_castle is accessible (level 22 + unicorns befriended).
 
-- [ ] **Step 8b: Add scene access gate checks in Game.js exit handling**
+- [ ] **Step 8b: Add scene access gate via SceneManager.beforeTransition hook**
 
-In `_handleExits()` (or wherever scene transitions from exits are processed), add before triggering the transition:
+In `src/core/SceneManager.js`, in the `checkExits()` method, add a hook call before `this.transition()`:
 
 ```javascript
-// ── Scene access gates ──
-if (exit.target === 'cloud_castle') {
-  const unicornsPetted = this.progression.stats.unicornsPetted || 0;
-  if (this.progression.level < 22 || unicornsPetted < 1) {
-    this.hud.showInfo('Du brauchst Level 22 und musst ein Einhorn gestreichelt haben!');
-    return; // block transition
-  }
-}
-if (exit.target === 'starsky') {
-  const achieveCount = this.achievements ? this.achievements.getCount() : 0;
-  if (achieveCount < 25) {
-    this.hud.showInfo(`Du brauchst 25 Achievements! (${achieveCount}/25)`);
-    return; // block transition
-  }
+// In checkExits(), right before calling this.transition():
+if (this.beforeTransition) {
+  const blocked = this.beforeTransition(exit.target, exit);
+  if (blocked) return; // gate blocked the transition
 }
 ```
+
+Then in `src/core/Game.js` constructor, set the hook:
+
+```javascript
+// Scene access gates
+this.sceneManager.beforeTransition = (target, exit) => {
+  if (target === 'cloud_castle') {
+    const unicornsPetted = this.progression.stats.unicornsPetted || 0;
+    if (this.progression.level < 22 || unicornsPetted < 1) {
+      this.hud.showInfo('Du brauchst Level 22 und musst ein Einhorn gestreichelt haben!');
+      return true; // blocked
+    }
+  }
+  if (target === 'starsky') {
+    const achieveCount = this.achievements ? this.achievements.getCount() : 0;
+    if (achieveCount < 25) {
+      this.hud.showInfo(`Du brauchst 25 Achievements! (${achieveCount}/25)`);
+      return true; // blocked
+    }
+  }
+  return false; // allowed
+};
+```
+
+**Note:** Also add `src/core/SceneManager.js` to the "Existing files to modify" table and this Step's git add.
 
 - [ ] **Step 9: Add boss arena zones to beach.js and grotto.js**
 
@@ -3860,6 +3906,7 @@ data.achievements = gameState.achievements || [];
 data.bossStates = gameState.bossStates || {};
 data.newGamePlus = gameState.newGamePlus || null;
 data.distanceWalked = gameState.distanceWalked || 0;
+data.bossNoHitKill = gameState.bossNoHitKill || false;
 ```
 
 Update version to 3:
@@ -3880,6 +3927,7 @@ achievements: this.achievements.getState(),
 bossStates: this._bossStates,
 newGamePlus: this.newGamePlus.getState(),
 distanceWalked: this._distanceWalked,
+bossNoHitKill: this._bossNoHitKill,
 ```
 
 In the load handler (`menu.onContinue`), add:
@@ -3888,6 +3936,7 @@ if (save.achievements) this.achievements.loadState(save.achievements);
 if (save.bossStates) this._bossStates = save.bossStates;
 if (save.newGamePlus) this.newGamePlus.loadState(save.newGamePlus);
 if (typeof save.distanceWalked === 'number') this._distanceWalked = save.distanceWalked;
+if (save.bossNoHitKill) this._bossNoHitKill = save.bossNoHitKill;
 ```
 
 - [ ] **Step 7: Add cloud_crystal to ExplorerBook gems category**
@@ -3910,44 +3959,41 @@ In `src/core/Game.js`, in the boss defeated section (Task 21 Step 5), after the 
 ```javascript
 // ── Endgame: Shadow Knight defeated → cutscene + NG+ offer ──
 if (boss.bossType === 'shadow_knight') {
-  // Short delay, then show victory dialog
+  // Short delay, then show victory dialog via showChoiceDialog (existing API)
   setTimeout(() => {
-    this.dialog.show('Emilia', [
-      'Der Schatten-Ritter ist besiegt!',
-      'Das Wolkenschloss ist befreit!',
-      'Alle Freunde und Familie warten auf dich...',
-      'Du bist eine wahre Heldin, Emilia!',
+    this.dialog.showChoiceDialog('Emilia', 'Der Schatten-Ritter ist besiegt! Das Wolkenschloss ist befreit! Alle Freunde und Familie warten auf dich... Du bist eine wahre Heldin, Emilia!', [
+      {
+        text: 'Weiter...',
+        action: () => {
+          // After victory message, offer NG+ if applicable
+          if (this.newGamePlus.canActivate(this._bossStates)) {
+            this.dialog.showChoiceDialog('Sternenwaechterin', 'Moechtest du ein neues Abenteuer beginnen? (Deine Items und Achievements bleiben erhalten!)', [
+              {
+                text: 'Ja, neues Abenteuer! (NG+)',
+                action: () => {
+                  const ngData = this.newGamePlus.activate();
+                  // Reset quests and boss states
+                  this.progression.resetQuests();
+                  this._bossStates = {};
+                  // Apply mob multipliers (stored for _createMobs to use)
+                  this._ngMobMultipliers = ngData;
+                  this.hud.showNgPlus(this.newGamePlus.cycleCount);
+                  this.hud.showInfo('Neues Abenteuer+ gestartet!');
+                  // Transition to hub
+                  this.sceneManager.transition('hub', 10, 10);
+                },
+              },
+              {
+                text: 'Nein, ich erkunde weiter',
+                action: () => {
+                  this.hud.showInfo('Du kannst jederzeit bei Mama Tanja NG+ starten!');
+                },
+              },
+            ]);
+          }
+        },
+      },
     ]);
-
-    // After dialog closes, offer NG+ if applicable
-    this.dialog.onClose = () => {
-      this.dialog.onClose = null;
-      if (this.newGamePlus.canActivate(this._bossStates)) {
-        this.dialog.showChoiceDialog('Sternenwaechterin', 'Moechtest du ein neues Abenteuer beginnen? (Deine Items und Achievements bleiben erhalten!)', [
-          {
-            text: 'Ja, neues Abenteuer! (NG+)',
-            action: () => {
-              const ngData = this.newGamePlus.activate();
-              // Reset quests and boss states
-              this.progression.resetQuests();
-              this._bossStates = {};
-              // Apply mob multipliers (stored for _createMobs to use)
-              this._ngMobMultipliers = ngData;
-              this.hud.showNgPlus(this.newGamePlus.cycleCount);
-              this.hud.showInfo('Neues Abenteuer+ gestartet!');
-              // Transition to hub
-              this.sceneManager.transition('hub', 10, 10);
-            },
-          },
-          {
-            text: 'Nein, ich erkunde weiter',
-            action: () => {
-              this.hud.showInfo('Du kannst jederzeit bei Mama Tanja NG+ starten!');
-            },
-          },
-        ]);
-      }
-    };
   }, 1500);
 }
 ```
@@ -4021,11 +4067,15 @@ git commit -m "feat(m6): integrate achievements, save/load, HUD counter, endgame
 
 In `src/core/Game.js`, in the `_buildScene` method, after the resource nodes section, add:
 
+At the top of Game.js (with other imports), add:
 ```javascript
-// Rare find placement
 import { RARE_FIND_PLACEMENTS } from '../data/rare_finds.js';
-// (Move import to top of file)
+import { getItem } from '../data/items.js';
+```
 
+In `_buildScene`, after the resource nodes section:
+```javascript
+// Rare find placement — inject into props array before createFromProps
 const rareFinds = RARE_FIND_PLACEMENTS[sceneName] || [];
 for (const rf of rareFinds) {
   // Check if already collected (tracked in save)
@@ -4036,24 +4086,32 @@ for (const rf of rareFinds) {
   if (rf.condition === 'morning' && this.dayNight && this.dayNight.phase !== 'dawn') continue;
   if (rf.condition === 'boss_shadow_knight_defeated' && !this._bossStates?.shadow_knight?.defeated) continue;
 
-  // Create as resource node
-  this.resources.addNode({
+  // Create as gatherable resource (uses existing ResourceNode pattern via props)
+  const rfProp = {
+    type: 'resource',
+    resourceType: 'rare_find',
     x: rf.x,
     y: rf.y,
-    resource: rf.itemId,
-    respawn: false,
-    onCollect: () => {
-      this._collectedRareFinds.add(rf.itemId);
-      // Discover in explorer book
-      if (this.explorerBook.discover(rf.itemId)) {
-        this.hud.showInfo('Seltener Fund: ' + (getItem(rf.itemId)?.name || rf.itemId) + '!');
-        if (this.progression.reportDiscover) {
-          this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
-        }
-      }
-    },
-  });
+    itemId: rf.itemId,
+    hitsNeeded: 1,
+    respawnTime: -1, // never respawn
+  };
+  this.resources.createFromProps([rfProp]);
 }
+
+// Track rare find collection via the existing resource onCollect pattern
+this.resources.onCollect = (node) => {
+  if (node.resourceType === 'rare_find' && node.itemId) {
+    this._collectedRareFinds.add(node.itemId);
+    // Discover in explorer book
+    if (this.explorerBook.discover(node.itemId)) {
+      this.hud.showInfo('Seltener Fund: ' + (getItem(node.itemId)?.name || node.itemId) + '!');
+      if (this.progression.reportDiscover) {
+        this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
+      }
+    }
+  }
+};
 ```
 
 - [ ] **Step 2: Add tracking set to constructor and save/load**
