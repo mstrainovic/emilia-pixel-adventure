@@ -108,4 +108,33 @@ export const MOB_TYPES = {
     ],
     xp: 25,
   },
+  crab_beach: {
+    name: 'Strand-Krabbe',
+    spriteType: 'crab',
+    tint: null,
+    hp: 20,
+    damage: 3,
+    speed: 1.8,
+    detectionRange: 3.0,
+    drops: [
+      { itemId: 'shell_common', chance: 0.6, min: 1, max: 1 },
+      { itemId: 'sand_dollar', chance: 0.2, min: 1, max: 1 },
+    ],
+    xp: 12,
+  },
+  crab_coconut: {
+    name: 'Kokosnuss-Krabbe',
+    spriteType: 'crab',
+    tint: [0.6, 0.4, 0.2],
+    hp: 35,
+    damage: 5,
+    speed: 1.2,
+    detectionRange: 5.0,
+    drops: [
+      { itemId: 'coconut', chance: 0.5, min: 1, max: 1 },
+      { itemId: 'shell_common', chance: 0.3, min: 1, max: 1 },
+      { itemId: 'pearl', chance: 0.1, min: 1, max: 1 },
+    ],
+    xp: 20,
+  },
 };
