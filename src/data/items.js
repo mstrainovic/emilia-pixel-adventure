@@ -111,6 +111,28 @@ export const ITEMS = {
   gem_ring:       { id: 'gem_ring',       name: 'Edelstein-Ring',     category: 'equipment', stackSize: 1, color: '#9966FF' },
   treasure_map:   { id: 'treasure_map',   name: 'Schatzkarte',        category: 'equipment', stackSize: 1, color: '#DEB887' },
   collectors_badge:{ id: 'collectors_badge',name: 'Sammler-Abzeichen', category: 'equipment', stackSize: 1, color: '#C0C0C0' },
+
+  // ── Boss Rewards (M6) ──
+  beach_crown:    { id: 'beach_crown',    name: 'Strandkrone',        category: 'equipment', stackSize: 1,  color: '#FFD700' },
+  leviathan_pearl:{ id: 'leviathan_pearl',name: 'Leviathan-Perle',    category: 'resource',  stackSize: 1,  color: '#7B68EE' },
+  sword_gem_plus: { id: 'sword_gem_plus', name: 'Edelstein-Schwert+', category: 'weapon',    stackSize: 1,  color: '#AA77FF', damage: 55 },
+  rainbow_sword:  { id: 'rainbow_sword',  name: 'Regenbogenschwert',  category: 'weapon',    stackSize: 1,  color: '#FF69B4', damage: 70 },
+
+  // ── Cloud Castle Resources (M6) ──
+  cloud_crystal:  { id: 'cloud_crystal',  name: 'Wolkenkristall',     category: 'gem',       stackSize: 99, color: '#E0E8FF' },
+  rainbow_shard:  { id: 'rainbow_shard',  name: 'Regenbogen-Splitter',category: 'resource',  stackSize: 99, color: '#FF77CC' },
+  star_fragment:  { id: 'star_fragment',  name: 'Sternen-Fragment',   category: 'resource',  stackSize: 99, color: '#FFFFAA' },
+  shadow_essence: { id: 'shadow_essence', name: 'Schatten-Essenz',    category: 'resource',  stackSize: 99, color: '#4A0066' },
+
+  // ── Cloud Castle Food (M6) ──
+  cloud_cake:     { id: 'cloud_cake',     name: 'Wolkenkuchen',       category: 'food_cooked', stackSize: 10, color: '#FFF0F5', healAmount: 80 },
+
+  // ── Potions (M6) ──
+  star_elixir:    { id: 'star_elixir',    name: 'Sternen-Elixier',    category: 'potion',    stackSize: 5,  color: '#FFFACD', healAmount: 150 },
+
+  // ── Equipment (M6) ──
+  cloud_boots:    { id: 'cloud_boots',    name: 'Wolkenstiefel',      category: 'equipment', stackSize: 1,  color: '#B0E0E6' },
+  star_amulet:    { id: 'star_amulet',    name: 'Sternen-Amulett',    category: 'equipment', stackSize: 1,  color: '#FFD700' },
 };
 
 export function getItem(id) {
