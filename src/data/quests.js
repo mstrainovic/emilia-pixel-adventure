@@ -1,0 +1,100 @@
+/**
+ * Quest definitions for Emilia's adventure.
+ * type: 'talk' | 'collect' | 'kill' | 'heal' | 'craft' | 'visit' | 'pet' | 'reach_level'
+ * target: what to do (item ID, mob type, NPC ID, scene name, etc.)
+ * count: how many times
+ * xpReward: XP granted on completion
+ * itemReward: optional items given
+ */
+export const QUESTS = {
+  first_steps: {
+    id: 'first_steps',
+    name: 'Erste Schritte',
+    description: 'Sprich mit Mama Tanja',
+    type: 'talk',
+    target: 'mama_tanja',
+    count: 1,
+    xpReward: 20,
+    itemReward: [{ itemId: 'berry', count: 5 }],
+  },
+  wood_collector: {
+    id: 'wood_collector',
+    name: 'Holzsammlerin',
+    description: 'Sammle 5 Holz',
+    type: 'collect',
+    target: 'wood',
+    count: 5,
+    xpReward: 30,
+    itemReward: [{ itemId: 'wood', count: 5 }],
+  },
+  nature_healer: {
+    id: 'nature_healer',
+    name: 'Naturheilerin',
+    description: 'Heile 3 Pflanzen',
+    type: 'heal',
+    target: 'plant',
+    count: 3,
+    xpReward: 40,
+    itemReward: [{ itemId: 'magic_herb', count: 2 }],
+  },
+  slime_hunter: {
+    id: 'slime_hunter',
+    name: 'Mutige Abenteurerin',
+    description: 'Besiege 5 Slimes',
+    type: 'kill',
+    target: 'slime',
+    count: 5,
+    xpReward: 60,
+    itemReward: [{ itemId: 'heal_potion', count: 2 }],
+  },
+  dungeon_explorer: {
+    id: 'dungeon_explorer',
+    name: 'Dungeon-Forscherin',
+    description: 'Betrete den Dungeon',
+    type: 'visit',
+    target: 'dungeon',
+    count: 1,
+    xpReward: 50,
+    itemReward: [{ itemId: 'iron_ore', count: 3 }],
+  },
+  skeleton_slayer: {
+    id: 'skeleton_slayer',
+    name: 'Skelett-Jaegerin',
+    description: 'Besiege 10 Skelette',
+    type: 'kill',
+    target: 'skeleton',
+    count: 10,
+    xpReward: 80,
+    itemReward: [{ itemId: 'crystal', count: 3 }],
+  },
+  unicorn_friend: {
+    id: 'unicorn_friend',
+    name: 'Einhornfreundin',
+    description: 'Streichle ein Einhorn',
+    type: 'pet',
+    target: 'unicorn',
+    count: 1,
+    xpReward: 100,
+    itemReward: [{ itemId: 'rainbow_flower', count: 1 }],
+  },
+  master_crafter: {
+    id: 'master_crafter',
+    name: 'Meister-Crafterin',
+    description: 'Crafte 5 Items',
+    type: 'craft',
+    target: 'any',
+    count: 5,
+    xpReward: 80,
+    itemReward: [{ itemId: 'heal_potion', count: 3 }],
+  },
+  meadow_hero: {
+    id: 'meadow_hero',
+    name: 'Heldin der Wiese',
+    description: 'Erreiche Level 15',
+    type: 'reach_level',
+    target: 15,
+    count: 1,
+    xpReward: 0, // final quest, no more XP needed
+    itemReward: [{ itemId: 'unicorn_tear', count: 5 }],
+  },
+};

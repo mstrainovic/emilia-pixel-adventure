@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.claude/
+*.log
+tests/*.png
+test-artifacts/
+.playwright-mcp/
+~$*.docx
+temp_docx*/

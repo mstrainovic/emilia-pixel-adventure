@@ -1,0 +1,65 @@
+const SAVE_KEY = 'emilia_pixel_adventure_save';
+
+/**
+ * Save/Load game state to localStorage.
+ */
+export class SaveManager {
+  constructor() {
+    this.autoSaveInterval = 60; // seconds
+    this.autoSaveTimer = this.autoSaveInterval;
+  }
+
+  save(gameState) {
+    const data = {
+      version: 2,
+      timestamp: Date.now(),
+      player: {
+        hp: gameState.playerHp,
+        scene: gameState.currentScene,
+        x: gameState.playerX,
+        y: gameState.playerY,
+      },
+      inventory: gameState.inventorySlots,
+      plantsHealed: gameState.plantsHealed,
+      unicornUnlocked: gameState.unicornUnlocked,
+      progression: gameState.progression,
+    };
+
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      return true;
+    } catch (e) {
+      console.warn('Save failed:', e);
+      return false;
+    }
+  }
+
+  load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (data.version !== 1 && data.version !== 2) return null;
+      return data;
+    } catch (e) {
+      console.warn('Load failed:', e);
+      return null;
+    }
+  }
+
+  hasSave() {
+    return !!localStorage.getItem(SAVE_KEY);
+  }
+
+  deleteSave() {
+    localStorage.removeItem(SAVE_KEY);
+  }
+
+  update(dt, getState) {
+    this.autoSaveTimer -= dt;
+    if (this.autoSaveTimer <= 0) {
+      this.autoSaveTimer = this.autoSaveInterval;
+      this.save(getState());
+    }
+  }
+}
