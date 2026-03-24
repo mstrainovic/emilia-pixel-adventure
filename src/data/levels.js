@@ -44,11 +44,21 @@ export const LEVEL_TABLE = [
   { level: 18, xpRequired: 3300, statBonus: { maxHp: 10, speedPct: 5 }, rewards: [], unlockQuest: 'crab_problem' },
   // Level 19
   { level: 19, xpRequired: 4000, statBonus: { damagePct: 5 }, rewards: [], unlockQuest: 'shooting_star' },
-  // Level 20 — MAX
+  // Level 20
   { level: 20, xpRequired: 4800, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: null },
+  // Level 21
+  { level: 21, xpRequired: 5800, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: 'coral_healer' },
+  // Level 22
+  { level: 22, xpRequired: 7000, statBonus: { damagePct: 10 }, rewards: [], unlockQuest: 'deep_explorer' },
+  // Level 23
+  { level: 23, xpRequired: 8400, statBonus: { maxHp: 15, speedPct: 5 }, rewards: [], unlockQuest: 'best_friend' },
+  // Level 24
+  { level: 24, xpRequired: 10000, statBonus: { damagePct: 10 }, rewards: [], unlockQuest: 'collector_page1' },
+  // Level 25 — M5 MAX
+  { level: 25, xpRequired: 12000, statBonus: { maxHp: 20 }, rewards: [{ itemId: 'ghost_pearl', count: 5 }], unlockQuest: 'sunken_treasure' },
 ];
 
-export const MAX_LEVEL = 20;
+export const MAX_LEVEL = 25;
 
 /**
  * Get cumulative XP needed for a given level.
