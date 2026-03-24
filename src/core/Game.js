@@ -1171,8 +1171,35 @@ export class Game {
           this.tileMapRenderer.addProp(spTex, prop.x - 0.5, prop.y - 1, 2, 1.5, 0.15);
           break;
         }
-        case 'crystal':
-        case 'torch':
+        case 'crystal': {
+          // Canvas-drawn crystal formation prop
+          const crCanvas = document.createElement('canvas');
+          crCanvas.width = 16; crCanvas.height = 16;
+          const crCtx = crCanvas.getContext('2d');
+          crCtx.fillStyle = '#6688cc'; crCtx.fillRect(7, 2, 2, 12);
+          crCtx.fillStyle = '#7799dd'; crCtx.fillRect(5, 4, 6, 8);
+          crCtx.fillStyle = '#5577bb'; crCtx.fillRect(4, 6, 2, 4);
+          crCtx.fillStyle = '#99bbee'; crCtx.fillRect(7, 3, 1, 2); // highlight
+          crCtx.fillStyle = '#aaccff'; crCtx.fillRect(9, 5, 1, 1);
+          const crTex = new THREE.CanvasTexture(crCanvas);
+          crTex.magFilter = THREE.NearestFilter; crTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(crTex, prop.x, prop.y - 0.5, 1, 1.2, 0.13);
+          break;
+        }
+        case 'torch': {
+          // Canvas-drawn torch with warm glow
+          const toCanvas = document.createElement('canvas');
+          toCanvas.width = 16; toCanvas.height = 16;
+          const toCtx = toCanvas.getContext('2d');
+          toCtx.fillStyle = '#5a3a1a'; toCtx.fillRect(7, 6, 2, 8); // stick
+          toCtx.fillStyle = '#ff8800'; toCtx.fillRect(6, 2, 4, 5); // flame
+          toCtx.fillStyle = '#ffcc00'; toCtx.fillRect(7, 1, 2, 3); // bright core
+          toCtx.fillStyle = '#ff4400'; toCtx.fillRect(6, 5, 1, 2); toCtx.fillRect(9, 5, 1, 2);
+          const toTex = new THREE.CanvasTexture(toCanvas);
+          toTex.magFilter = THREE.NearestFilter; toTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(toTex, prop.x, prop.y - 0.3, 0.8, 1.0, 0.13);
+          break;
+        }
         case 'fishing_spot':
         case 'wilted_plant':
         case 'unicorn_spawn':
@@ -1180,7 +1207,7 @@ export class Game {
         case 'rainbow_zone':
         case 'resource':
         case 'npc_marker':
-          // These are gameplay markers, handled by their respective systems (M2/M3)
+          // These are gameplay markers, handled by their respective systems
           break;
         case 'mob_spawn':
           // Handled by _createMobs

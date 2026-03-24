@@ -34,13 +34,13 @@ export class ResourceNode {
     this.respawnTimer = 0;
     this.interactRange = 2.0;
 
-    // Visual indicator
-    const size = this.type === 'mushroom' || this.type === 'earth' ? 0.6 : 1.0;
+    // Visual indicator — canvas-drawn pixel art
+    const size = this.type === 'mushroom' || this.type === 'earth' ? 0.8 : 1.0;
+    const tex = ResourceNode._drawSprite(this.type, def.color);
     const geo = new THREE.PlaneGeometry(size, size);
     const mat = new THREE.MeshBasicMaterial({
-      color: def.color,
+      map: tex,
       transparent: true,
-      opacity: 0.8,
       depthWrite: false,
     });
     this.mesh = new THREE.Mesh(geo, mat);
@@ -83,7 +83,7 @@ export class ResourceNode {
         if (this.respawnTimer <= 0) {
           this.depleted = false;
           this.currentHits = 0;
-          this.mesh.material.opacity = 0.8;
+          this.mesh.scale.set(1, 1, 1);
           this.mesh.visible = true;
         }
       }
@@ -116,8 +116,9 @@ export class ResourceNode {
       else audio.playChop();
     }
 
-    // Shake animation
-    this.mesh.material.opacity = 0.5 + 0.3 * Math.sin(this.currentHits * 3);
+    // Shake animation — pulse scale for feedback
+    const pulse = 0.8 + 0.2 * Math.sin(this.currentHits * 3);
+    this.mesh.scale.set(pulse, pulse, 1);
 
     if (this.currentHits >= this.hitsNeeded) {
       this.depleted = true;
@@ -150,10 +151,96 @@ export class ResourceNode {
     if (this.mesh.parent) this.scene.remove(this.mesh);
     if (this.promptMesh.parent) this.scene.remove(this.promptMesh);
     this.mesh.geometry.dispose();
+    if (this.mesh.material.map) this.mesh.material.map.dispose();
     this.mesh.material.dispose();
     this.promptMesh.geometry.dispose();
     this.promptMesh.material.map.dispose();
     this.promptMesh.material.dispose();
+  }
+
+  /** Draw a small pixel-art sprite on canvas for each resource type. */
+  static _drawSprite(type, fallbackColor) {
+    const s = 16; // pixel size
+    const canvas = document.createElement('canvas');
+    canvas.width = s;
+    canvas.height = s;
+    const ctx = canvas.getContext('2d');
+
+    // Helper: draw pixel
+    const px = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, 1, 1); };
+    // Helper: fill area
+    const fill = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+
+    switch (type) {
+      case 'tree':
+        // Small stump with green top
+        fill(6, 8, 4, 6, '#5a3a1a'); // trunk
+        fill(4, 4, 8, 5, '#2d8a3e'); // leaves
+        fill(5, 3, 6, 2, '#3aaa4e'); // top
+        break;
+      case 'rock':
+        // Grey boulder
+        fill(4, 6, 8, 6, '#888888');
+        fill(5, 5, 6, 2, '#999999');
+        fill(6, 4, 4, 2, '#aaaaaa');
+        px(5, 7, '#777777'); px(9, 8, '#777777'); // shading
+        break;
+      case 'ore':
+        // Brown rock with orange/gold flecks
+        fill(4, 6, 8, 7, '#6a4a2a');
+        fill(5, 5, 6, 2, '#7a5a3a');
+        fill(6, 4, 4, 2, '#8a6a4a');
+        px(5, 8, '#ffaa33'); px(8, 7, '#ffaa33'); px(6, 10, '#ffcc44'); // ore flecks
+        px(10, 9, '#ffaa33'); px(7, 6, '#ffcc44');
+        break;
+      case 'mushroom':
+        // Red mushroom with white dots
+        fill(7, 8, 2, 5, '#c8a070'); // stem
+        fill(4, 4, 8, 5, '#cc3333'); // cap
+        fill(5, 3, 6, 2, '#dd4444'); // top
+        px(5, 5, '#ffffff'); px(8, 4, '#ffffff'); px(10, 6, '#ffffff'); // dots
+        break;
+      case 'earth':
+        // Dirt mound
+        fill(4, 8, 8, 5, '#5a3a1a');
+        fill(5, 7, 6, 2, '#6a4a2a');
+        fill(6, 6, 4, 2, '#7a5a3a');
+        px(5, 9, '#4a2a0a'); px(9, 10, '#4a2a0a'); // dark spots
+        break;
+      case 'shell':
+        // Spiral shell shape
+        fill(5, 6, 6, 5, '#e8d5a3');
+        fill(6, 5, 4, 2, '#f0e0b0');
+        fill(7, 4, 2, 2, '#f5ecc5');
+        px(7, 7, '#d0c090'); px(8, 8, '#c8b880'); // spiral detail
+        px(6, 9, '#d0c090');
+        break;
+      case 'crystal':
+        // Blue crystal shard
+        fill(7, 3, 2, 10, '#6688cc');
+        fill(6, 5, 4, 6, '#7799dd');
+        fill(5, 7, 2, 3, '#5577bb');
+        px(7, 4, '#99bbee'); px(8, 6, '#aaccff'); // highlights
+        break;
+      case 'gem':
+        // Glowing gem
+        fill(6, 5, 4, 6, '#44aacc');
+        fill(5, 6, 6, 4, '#55bbdd');
+        fill(7, 4, 2, 2, '#66ccee');
+        px(6, 6, '#88eeff'); px(8, 7, '#88eeff'); // sparkle
+        break;
+      default:
+        // Generic colored square with border
+        fill(3, 3, 10, 10, '#' + (fallbackColor & 0xffffff).toString(16).padStart(6, '0'));
+        fill(4, 4, 8, 8, '#' + ((fallbackColor + 0x222222) & 0xffffff).toString(16).padStart(6, '0'));
+        break;
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+    return tex;
   }
 }
 

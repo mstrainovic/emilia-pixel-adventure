@@ -13,9 +13,10 @@ export const FAMILY_NPCS = [
     x: 8, y: 11,
     direction: 'down',
     dialogs: [
-      'Hallo mein Schatz! Hast du Hunger? Bring mir Fisch und ich koche dir etwas Leckeres!',
-      'Pass auf dich auf da draussen, Emilia! Und vergiss nicht zu essen!',
-      'Du bist die beste kleine Abenteurerin der Welt!'
+      'Hallo mein Schatz! Schoen, dass du da bist! Die Welt wartet auf dich — aber iss erstmal was!',
+      'Emilia, wenn du Fisch mitbringst, koche ich dir mein Geheimrezept! Geh doch mal zum See!',
+      'Du wirst jeden Tag mutiger, mein Schatz! Ich bin so stolz auf dich!',
+      'Hast du schon Opa besucht? Er braucht Holz fuer seine Werkstatt!'
     ]
   },
   {
@@ -28,9 +29,10 @@ export const FAMILY_NPCS = [
     x: 30, y: 11,
     direction: 'down',
     dialogs: [
-      'Hey mala moja! Schau mal was ich gebaut habe! Soll ich dir auch was bauen?',
-      'Im Wald gibt es tolle Sachen zu entdecken — aber nimm dein Schwert mit!',
-      'Bring mir Holz und Steine, dann bauen wir zusammen etwas Tolles!'
+      'Hey mala moja! Willst du was bauen? An der Werkbank kannst du tolle Sachen herstellen!',
+      'Im Osten gibt es eine geheimnisvolle Hoehle... traust du dich rein?',
+      'Du bist genau wie ich — eine echte Entdeckerin! Nimm dein Schwert mit!',
+      'Wenn du Erz aus der Hoehle mitbringst, schmieden wir zusammen ein starkes Schwert!'
     ]
   },
   {
@@ -43,9 +45,10 @@ export const FAMILY_NPCS = [
     x: 16, y: 13,
     direction: 'side',
     dialogs: [
-      'Emilia! Komm, lass uns den Wald erkunden! Ich hab was Tolles gefunden!',
-      'Psst! Ich glaub ich hab hinter dem grossen Baum etwas Magisches gesehen...',
-      'Hast du schon die leuchtenden Pilze in der Hoehle gesehen? Die sind so cool!'
+      'Emilia! Im Wald Richtung Norden gibt es lustige Schleime! Komm, wir schauen!',
+      'Psst! Ich hab hinter einem grossen Baum im Wald etwas Magisches gesehen...',
+      'Hast du schon die leuchtenden Pilze in der Hoehle gesehen? Die sind so cool!',
+      'Ich hab gehoert, wenn man genug Pflanzen heilt, oeffnet sich ein geheimer Weg!'
     ]
   },
   {
@@ -58,9 +61,10 @@ export const FAMILY_NPCS = [
     x: 20, y: 26,
     direction: 'down',
     dialogs: [
-      'Hey Emilia! Die Fische beissen heute besonders gut!',
-      'Papa Milos hat mir das Fischen beigebracht — der ist der Beste!',
-      'Ich hab gehoert, dass im Wasser manchmal ein Einhorn trinken kommt...'
+      'Hey Emilia! Geh zum See im Sueden — da kann man toll fischen! Drueck F am Wasser!',
+      'Am Strand noch weiter suedlich gibt es Muscheln und Krabben!',
+      'Wenn du nachts rausschaust, siehst du manchmal Sternschnuppen — wuensch dir was!',
+      'Papa Milos hat mir das Fischen beigebracht. Du schaffst das auch!'
     ]
   },
   {
@@ -73,9 +77,10 @@ export const FAMILY_NPCS = [
     x: 8, y: 23,
     direction: 'side',
     dialogs: [
-      'Emilia, mein Sonnenschein! Schau mal, die Tomaten sind fast reif!',
-      'Vergiss nicht die Blumen zu giessen — sie brauchen dein magisches Wasser!',
-      'Bring mir 3 Erde aus dem Wald und wir legen ein neues Beet an!'
+      'Emilia, mein Sonnenschein! Siehst du die welken Pflanzen? Drueck F um sie zu heilen!',
+      'Wenn du genug Pflanzen heilst, passiert etwas ganz Wunderbares... wart nur ab!',
+      'Mein Garten ist so schoen geworden! Danke fuer deine Hilfe, Liebes!',
+      'Die Natur hat viele Geheimnisse — schau dich ueberall gut um!'
     ]
   },
   {
@@ -88,9 +93,10 @@ export const FAMILY_NPCS = [
     x: 30, y: 24,
     direction: 'down',
     dialogs: [
-      'Na, meine Kleine! Holz ist das wichtigste Material — damit fing alles an!',
-      'Frueher hab ich ganz alleine dieses Dorf aus Holz gebaut, weisst du?',
-      'Bring mir Holz und ich saege dir die schoensten Bretter!'
+      'Na, meine Kleine! Holz ist das wichtigste Material! Sammle welches im Wald mit E!',
+      'Frueher hab ich ganz alleine dieses Dorf gebaut, weisst du?',
+      'An meiner Saege kannst du Holz zu tollen Sachen verarbeiten!',
+      'Du bist fleissig wie eine Biene! Weiter so, Emilia!'
     ]
   },
   {
@@ -103,9 +109,10 @@ export const FAMILY_NPCS = [
     x: 21, y: 16,
     direction: 'side',
     dialogs: [
-      'Dobar dan, Emilia! Dodji ovamo, sedi pored vatre!',
-      'Baba hat Fleisch ueber dem Feuer — soll ich dir was braten, zlato moje?',
-      'Weisst du, frueher in Serbien hatten wir auch einen magischen Wald...'
+      'Dobar dan, Emilia! Dodji ovamo, sedi pored vatre! Setz dich ans Feuer, zlato moje!',
+      'Baba kocht ueber dem Feuer — bring Pilze und Beeren mit, ja?',
+      'Weisst du, frueher in Serbien gab es auch magische Waelder und Einhoerner...',
+      'Svaka cast, Emilia! Du bist so tapfer! Baba ist sehr stolz auf dich!'
     ]
   },
   {
@@ -118,9 +125,10 @@ export const FAMILY_NPCS = [
     x: 33, y: 13,
     direction: 'down',
     dialogs: [
-      'Ah, Emilia! Mein Deda hat mir Geschichten von magischen Einhoernern erzaehlt...',
-      'Diese Pilze hier — die leuchten im Dunkeln! Damit machen wir einen Zaubertrank!',
-      'Donesi mi kristale iz pecine — pokazacu ti pravu magiju!'
+      'Ah, Emilia! Mein Deda hat mir von magischen Einhoernern erzaehlt... sie verstecken sich!',
+      'Donesi mi kristale iz pecine — pokazacu ti pravu magiju! Bring Kristalle aus der Hoehle!',
+      'Mit Kristallen braue ich dir einen Zaubertrank am Alchemie-Tisch!',
+      'Hoch ueber den Wolken gibt es ein Schloss... aber nur die Mutigsten finden es!'
     ]
   }
 ];

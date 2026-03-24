@@ -72,61 +72,51 @@ export class AmbientLife {
   _createDriftClouds(count) {
     for (let i = 0; i < count; i++) {
       const canvas = document.createElement('canvas');
-      canvas.width = 32;
-      canvas.height = 16;
+      canvas.width = 64;
+      canvas.height = 32;
       const ctx = canvas.getContext('2d');
 
-      // Draw fluffy cloud
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.fillRect(4, 4, 24, 10);
-      ctx.fillRect(8, 2, 16, 12);
-      ctx.fillRect(2, 6, 28, 6);
-      // Lighter center
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.fillRect(10, 4, 12, 8);
+      // Draw fluffy cloud with rounded circles (no visible rectangles)
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = '#ffffff';
+      // Main body — overlapping ellipses for organic cloud shape
+      ctx.beginPath(); ctx.ellipse(32, 18, 22, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(22, 14, 12, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(42, 15, 10, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(30, 12, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+      // Brighter center
+      ctx.globalAlpha = 0.15;
+      ctx.beginPath(); ctx.ellipse(32, 16, 14, 7, 0, 0, Math.PI * 2); ctx.fill();
 
       const tex = new THREE.CanvasTexture(canvas);
-      tex.magFilter = THREE.NearestFilter;
-      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearFilter;
       tex.generateMipmaps = false;
 
-      const size = 4 + Math.random() * 4; // 4-8 tiles wide
+      const size = 5 + Math.random() * 4; // 5-9 tiles wide
       const geo = new THREE.PlaneGeometry(size, size * 0.5);
       const mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
         depthWrite: false,
-        opacity: 0.4,
+        opacity: 0.3,
       });
 
       const mesh = new THREE.Mesh(geo, mat);
-      // Random starting position
       mesh.position.set(
         Math.random() * this._mapWidth,
         -(Math.random() * this._mapHeight),
-        0.6 // above entities
+        0.6
       );
 
       this._scene.add(mesh);
 
-      // Cloud ground shadow — darker oval below each cloud
-      const shadowGeo = new THREE.PlaneGeometry(size * 0.8, size * 0.3);
-      const shadowMat = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        depthWrite: false,
-        opacity: 0.1,
-      });
-      const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-      shadowMesh.position.set(mesh.position.x, mesh.position.y - 2, 0.01); // on ground
-      this._scene.add(shadowMesh);
-      this._cloudShadows.push(shadowMesh);
-
+      // No ground shadows — they looked like stray rectangles
       this._cloudSprites.push({
         mesh,
-        shadow: shadowMesh,
+        shadow: null,
         texture: tex,
-        speed: 0.3 + Math.random() * 0.4, // tiles per second
+        speed: 0.2 + Math.random() * 0.3, // slower, more natural
         startX: -size,
         endX: this._mapWidth + size,
       });
@@ -164,7 +154,7 @@ export class AmbientLife {
       map: tex,
       transparent: true,
       depthWrite: false,
-      opacity: 0.3,
+      opacity: 0.15, // subtle — not a visible rectangle
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(mapWidth / 2, -mapHeight / 2, 0.02);
@@ -228,14 +218,9 @@ export class AmbientLife {
       tree.mesh.position.x = tree.baseX + offset;
     }
 
-    // ── Cloud drift + ground shadows ──
+    // ── Cloud drift ──
     for (const cloud of this._cloudSprites) {
       cloud.mesh.position.x += cloud.speed * dt;
-      // Move shadow to follow cloud (offset below)
-      if (cloud.shadow) {
-        cloud.shadow.position.x = cloud.mesh.position.x;
-        cloud.shadow.position.y = cloud.mesh.position.y - 2;
-      }
       // Wrap around
       if (cloud.mesh.position.x > cloud.endX) {
         cloud.mesh.position.x = cloud.startX;

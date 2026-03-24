@@ -277,9 +277,22 @@ export class VisualEffects {
     const cfg = configs[type] || configs.pollen;
     const isBubbles = (type === 'bubbles');
 
+    // Create a shared circular particle texture (avoids flat colored rectangles)
+    if (!VisualEffects._particleTex) {
+      const c = document.createElement('canvas');
+      c.width = 8; c.height = 8;
+      const cx = c.getContext('2d');
+      cx.fillStyle = '#ffffff';
+      cx.beginPath(); cx.arc(4, 4, 3.5, 0, Math.PI * 2); cx.fill();
+      VisualEffects._particleTex = new THREE.CanvasTexture(c);
+      VisualEffects._particleTex.magFilter = THREE.LinearFilter;
+      VisualEffects._particleTex.minFilter = THREE.LinearFilter;
+    }
+
     for (let i = 0; i < cfg.count; i++) {
       const geo = new THREE.PlaneGeometry(cfg.size, cfg.size);
       const mat = new THREE.MeshBasicMaterial({
+        map: VisualEffects._particleTex,
         color: new THREE.Color(cfg.color[0] / 255, cfg.color[1] / 255, cfg.color[2] / 255),
         transparent: true,
         opacity: cfg.alpha * (0.5 + Math.random() * 0.5),

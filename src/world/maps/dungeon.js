@@ -112,9 +112,9 @@ export function generateDungeonMap() {
   for (let r = 0; r < H; r++)
     for (let c = 0; c < W; c++) {
       if (ground[r][c] === 9 && collision[r][c] === 0) {
-        // Slight stone floor variation — keep most as 9
+        // Very subtle stone floor variation — keep nearly all as 9
         const v = rng();
-        if (v < 0.08) ground[r][c] = 5; // dark dirt patches
+        if (v < 0.02) ground[r][c] = 5; // rare dark dirt patches
       }
     }
 

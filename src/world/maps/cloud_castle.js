@@ -144,11 +144,21 @@ export function generateCloudCastleMap() {
   // Rainbow bridge prop (rendered as overlay, not a tile — per spec)
   props.push({ type: 'rainbow_bridge', x: 34, y: 4, width: 5, height: 1 });
 
-  // Exit south → unicorn_meadow
-  props.push({ type: 'exit', x: 14, y: 44, width: 3, target: 'unicorn_meadow', spawnX: 12, spawnY: 2 });
+  // ── Exits ──────────────────────────────────────────────────────────────
+  const exits = [
+    // South exit → unicorn_meadow (rainbow bridge descent)
+    { id: 'south', x: 13, y: H - 1, w: 3, h: 1, target: 'unicorn_meadow', spawnX: 12, spawnY: 2 },
+    // North-east exit → Starsky secret area (Star Terrace, requires 25 achievements)
+    { id: 'north_starsky', x: 37, y: 0, w: 2, h: 1, target: 'starsky', spawnX: 2, spawnY: 4, hidden: true, requirement: 'achievements_25' },
+  ];
 
-  // Exit north-east → Starsky secret area (Star Terrace, requires 25 achievements)
-  props.push({ type: 'exit', x: 37, y: 0, width: 1, target: 'starsky', spawnX: 2, spawnY: 4 });
+  // Ensure south exit tiles are walkable
+  fillRect(ground, 13, H - 1, 3, 1, 22);
+  fillRect(collision, 13, H - 1, 3, 1, 0);
+
+  // Ensure starsky exit tiles are walkable
+  fillRect(ground, 37, 0, 2, 1, 19);
+  fillRect(collision, 37, 0, 2, 1, 0);
 
   return {
     width: W,
@@ -156,6 +166,7 @@ export function generateCloudCastleMap() {
     ground,
     collision,
     props,
+    exits,
     playerSpawn: { x: 14, y: 42 },
   };
 }
