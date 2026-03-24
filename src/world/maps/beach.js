@@ -145,7 +145,7 @@ export function generateBeachMap() {
 
   // ── Exits ──
   const exits = [
-    { id: 'north', x: 25, y: 0, w: 5, h: 2, target: 'lake', spawnX: 21, spawnY: 30 },
+    { id: 'north', x: 24, y: 5, w: 6, h: 2, target: 'lake', spawnX: 21, spawnY: 33 },
   ];
 
   return {

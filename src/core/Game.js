@@ -220,7 +220,7 @@ export class Game {
       dungeon: 0x1a1a2a,
       lake: 0x1a3a4a,
       unicorn_meadow: 0x3a4a2a,
-      beach: 0x87CEEB,
+      beach: 0x4a8aaa,
     };
 
     window.addEventListener('resize', () => {
@@ -505,7 +505,7 @@ export class Game {
       dungeon:         { ambient: 0x9988bb, ambientI: 1.8, sun: 0xaabbcc, sunI: 1.0, fog: [0x222233, 0.006] },
       lake:            { ambient: 0xccddff, ambientI: 2.0, sun: 0xffffff, sunI: 1.5, fog: null },
       unicorn_meadow:  { ambient: 0xffeecc, ambientI: 2.2, sun: 0xffddaa, sunI: 1.8, fog: null },
-      beach:           { ambient: 0xfff8ee, ambientI: 2.2, sun: 0xffeedd, sunI: 1.6, fog: null },
+      beach:           { ambient: 0xeee8cc, ambientI: 1.5, sun: 0xffeedd, sunI: 1.2, fog: null },
     };
     const lc = lightConfigs[sceneName] || lightConfigs.hub;
 
@@ -1181,9 +1181,9 @@ export class Game {
     }
 
     // Fishing (F key) — MUST be BEFORE plantHealing to get first crack at KeyF
-    if (!uiBlocking) {
-      this.fishing.update(dt, this.player, this.input, this.dayNight, this.inventory, this.progression, this.hud);
-    }
+    // Always call update: the state machine must keep ticking while active.
+    // Idle→casting is gated internally by proximity + KeyF.
+    this.fishing.update(dt, this.player, this.input, this.dayNight, this.inventory, this.progression, this.hud);
 
     // Plant healing (F key) — after fishing so fishing gets priority
     // (justPressed is single-consumer, so order matters)
