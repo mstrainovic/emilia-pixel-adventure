@@ -49,6 +49,15 @@ import { ExplorerBook, BOOK_CATEGORIES } from '../systems/ExplorerBook.js';
 import { ExplorerBookUI } from '../ui/ExplorerBookUI.js';
 import { Pet } from '../entities/Pet.js';
 import { createInsectsForScene } from '../entities/Insect.js';
+import { generateCloudCastleMap } from '../world/maps/cloud_castle.js';
+import { generateStarskyMap } from '../world/maps/starsky.js';
+import { BOSS_TYPES, isBossUnlocked } from '../data/bosses.js';
+import { CoconutKing } from '../entities/CoconutKing.js';
+import { Leviathan } from '../entities/Leviathan.js';
+import { ShadowKnight } from '../entities/ShadowKnight.js';
+import { BossHealthBar } from '../ui/BossHealthBar.js';
+import { createBirdsForScene } from '../entities/Bird.js';
+import { AmbientLife } from '../rendering/AmbientLife.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -211,6 +220,11 @@ export class Game {
     this.explorerBookUI = new ExplorerBookUI();
     this.pet = null; // created when player chooses pet via Marie dialog
     this.insects = [];
+    this._bossStates = {};   // bossType -> { hp, defeated, playerDamageTaken }
+    this._activeBoss = null;
+    this.bossHealthBar = new BossHealthBar();
+    this.birds = [];
+    this.ambientLife = null;
     // Hook fishing catches into explorer book discovery
     this.fishing.onCatch = (fishId) => this._discoverItem(fishId);
     this._animatedSprites = [];
@@ -243,6 +257,8 @@ export class Game {
       unicorn_meadow: generateUnicornMeadowMap,
       beach: generateBeachMap,
       grotto: generateGrottoMap,
+      cloud_castle: generateCloudCastleMap,
+      starsky: generateStarskyMap,
     };
 
     // Scene backgrounds
@@ -254,6 +270,8 @@ export class Game {
       unicorn_meadow: 0x3a4a2a,
       beach: 0x4a8aaa,
       grotto: 0x0a1a2a,
+      cloud_castle: 0x1a1a3a,
+      starsky: 0x0a0a1a,
     };
 
     window.addEventListener('resize', () => {
@@ -275,6 +293,25 @@ export class Game {
         this._dropSelectedItem(e.shiftKey);
       }
     });
+
+    // Scene access gates
+    this.sceneManager.beforeTransition = (target, exit) => {
+      if (target === 'cloud_castle') {
+        const unicornsPetted = this.progression.stats.unicornsPetted || 0;
+        if (this.progression.level < 22 || unicornsPetted < 1) {
+          this.hud.showInfo('Du brauchst Level 22 und musst ein Einhorn gestreichelt haben!');
+          return true; // blocked
+        }
+      }
+      if (target === 'starsky') {
+        const achieveCount = this.achievements ? this.achievements.getCount() : 0;
+        if (achieveCount < 25) {
+          this.hud.showInfo(`Du brauchst 25 Achievements! (${achieveCount}/25)`);
+          return true; // blocked
+        }
+      }
+      return false; // allowed
+    };
   }
 
   async init() {
@@ -512,6 +549,8 @@ export class Game {
       unicorn_meadow: 'magic',
       beach: 'pollen',
       grotto: 'bubbles',
+      cloud_castle: 'snow',
+      starsky: 'magic',
     };
     this.vfx.startAmbientParticles(
       finalSpawn.x, finalSpawn.y,
@@ -542,6 +581,35 @@ export class Game {
       const unicorn = new Unicorn(spawn.x, spawn.y);
       unicorn.addToScene(this.scene);
       this.unicorns.push(unicorn);
+    }
+
+    // Boss spawns
+    const bossSpawns = mapData.props.filter(p => p.type === 'boss_spawn');
+    for (const spawn of bossSpawns) {
+      const bossDef = BOSS_TYPES[spawn.bossType];
+      if (!bossDef) continue;
+      // Check unlock condition
+      const unicornsPetted = this.progression.stats.unicornsPetted || 0;
+      if (!isBossUnlocked(spawn.bossType, this.progression, this.player, unicornsPetted)) continue;
+      // Check if already defeated
+      if (this._bossStates[spawn.bossType]?.defeated) continue;
+
+      let boss;
+      switch (spawn.bossType) {
+        case 'coconut_king': boss = new CoconutKing(bossDef, spawn.x, spawn.y); break;
+        case 'leviathan':    boss = new Leviathan(bossDef, spawn.x, spawn.y); break;
+        case 'shadow_knight': boss = new ShadowKnight(bossDef, spawn.x, spawn.y); break;
+        default: continue;
+      }
+
+      // Restore persisted HP
+      if (this._bossStates[spawn.bossType]?.hp) {
+        boss.loadPersistedHp(this._bossStates[spawn.bossType].hp);
+      }
+
+      boss.createSprite(this.scene);
+      this._activeBoss = boss;
+      this.bossHealthBar.show(bossDef.name);
     }
 
     // Fishing spots
@@ -579,6 +647,15 @@ export class Game {
       };
     }
 
+    // Birds (per scene)
+    for (const bird of this.birds) bird.dispose();
+    this.birds = createBirdsForScene(sceneName, this.scene, mapData.props);
+
+    // Ambient life (swaying trees, clouds, waves, constellations)
+    if (this.ambientLife) this.ambientLife.dispose();
+    this.ambientLife = new AmbientLife(this.scene, this.camera);
+    this.ambientLife.init(sceneName, mapData.props, mapData.width, mapData.height, this.tileMapRenderer?.propMeshes || []);
+
     // Teleport pet to new scene
     if (this.pet) {
       this.pet.teleportTo(this.player.x, this.player.y);
@@ -593,6 +670,8 @@ export class Game {
       unicorn_meadow:  { ambient: 0xffeecc, ambientI: 2.2, sun: 0xffddaa, sunI: 1.8, fog: null },
       beach:           { ambient: 0xeee8cc, ambientI: 1.5, sun: 0xffeedd, sunI: 1.2, fog: null },
       grotto:          { ambient: 0x4488aa, ambientI: 1.2, sun: 0x3366aa, sunI: 0.6, fog: [0x0a1a2a, 0.01] },
+      cloud_castle:    { ambient: 0xeeeeff, ambientI: 2.2, sun: 0xffeedd, sunI: 1.8, fog: null },
+      starsky:         { ambient: 0x6666aa, ambientI: 1.5, sun: 0x8888cc, sunI: 0.8, fog: [0x0a0a1a, 0.02] },
     };
     const lc = lightConfigs[sceneName] || lightConfigs.hub;
 
@@ -627,6 +706,8 @@ export class Game {
       unicorn_meadow: 'Die Magische Wiese',
       beach: 'Der Sonnenstrand',
       grotto: 'Die Unterwasser-Grotte',
+      cloud_castle: 'Das Wolkenschloss',
+      starsky: 'Der Sternenhimmel',
     };
     if (sceneNames[sceneName]) {
       this.hud.showInfo(sceneNames[sceneName]);
@@ -676,6 +757,16 @@ export class Game {
     // Dispose insects
     for (const ins of this.insects) ins.dispose();
     this.insects = [];
+
+    // Dispose boss
+    if (this._activeBoss) {
+      this._activeBoss.dispose(this.scene);
+      this._activeBoss = null;
+    }
+    this.bossHealthBar.hide();
+    for (const bird of this.birds) bird.dispose();
+    this.birds = [];
+    if (this.ambientLife) { this.ambientLife.dispose(); this.ambientLife = null; }
 
     // Clear fishing spots
     this.fishing.setSpots([]);
@@ -1269,6 +1360,62 @@ export class Game {
         this.hud.showInfo(`+${xp} XP`);
       }
     }
+
+    // Boss combat
+    if (this._activeBoss && this._activeBoss.alive && !uiBlocking) {
+      this._activeBoss.update(dt, this.player, this.tileMap);
+      this.bossHealthBar.update(this._activeBoss.hp, this._activeBoss.maxHp);
+
+      // Check player attacks against boss (reuse combat system's attack check)
+      const bossAsMob = this._activeBoss;
+      const bossHits = this.combat.update(dt, this.player, [bossAsMob]);
+      if (bossHits.length > 0) {
+        if (this.vfx) this.vfx.hitSparks(this._activeBoss.x, this._activeBoss.y);
+        this.juice.shakeMedium();
+      }
+
+      // Boss defeated
+      if (this._activeBoss.defeated) {
+        const boss = this._activeBoss;
+        this._bossStates[boss.bossType] = boss.getState();
+        // Drop rewards
+        if (this.itemDrops) {
+          for (const drop of boss.drops) {
+            this.itemDrops.spawnMobDrops([{ itemId: drop.itemId, chance: 1.0, min: drop.count, max: drop.count }], boss.x, boss.y);
+          }
+        }
+        // Grant XP
+        this.progression.addXp(boss.xp);
+        this.progression.reportBossKill(boss.bossType);
+        this.hud.showInfo(`Boss besiegt! +${boss.xp} XP`);
+        this.bossHealthBar.hide();
+
+        // sword_gem_plus auto-upgrade after Leviathan
+        if (boss.bossType === 'leviathan' && this.inventory.hasItem('sword_gem', 1)) {
+          this.inventory.removeItem('sword_gem', 1);
+          this.inventory.addItem('sword_gem_plus', 1);
+          this.hud.showInfo('Edelstein-Schwert wurde verstaerkt!');
+        }
+
+        // Check untouchable achievement
+        if (boss.playerDamageTaken === 0) {
+          this._bossNoHitKill = true;
+        }
+
+        this._activeBoss = null;
+      }
+
+      // Persist boss HP for respawn
+      if (this._activeBoss) {
+        this._bossStates[this._activeBoss.bossType] = this._activeBoss.getState();
+      }
+    }
+
+    // Birds update
+    for (const bird of this.birds) bird.update(dt);
+
+    // Ambient life update
+    if (this.ambientLife) this.ambientLife.update(dt);
 
     // Day/Night cycle
     this.dayNight.update(dt);

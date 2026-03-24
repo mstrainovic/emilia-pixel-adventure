@@ -186,6 +186,22 @@ export class PostProcessingPipeline {
         saturation: 0.9,
         bloomStrength: 0.5,
       },
+      cloud_castle: {
+        tint: [0.95, 0.95, 1.05],
+        tintStrength: 0.1,
+        brightness: 1.15,
+        contrast: 1.0,
+        saturation: 1.1,
+        bloomStrength: 0.5,
+      },
+      starsky: {
+        tint: [0.8, 0.8, 1.2],
+        tintStrength: 0.2,
+        brightness: 0.85,
+        contrast: 1.1,
+        saturation: 0.95,
+        bloomStrength: 0.7,
+      },
     };
 
     const mood = moods[sceneName] || moods.hub;

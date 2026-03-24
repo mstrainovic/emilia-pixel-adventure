@@ -152,8 +152,16 @@ export function generateUnicornMeadowMap() {
     { type: 'flower', x: 14, y: 6 },
   ];
 
+  // Exit north → Cloud Castle (rainbow ascent)
+  props.push({ type: 'exit', x: 11, y: 0, width: 3, target: 'cloud_castle', spawnX: 14, spawnY: 42 });
+
+  // Clear north border collision for exit (cols 11-13)
+  fillRect(collision, 11, 0, 3, 1, 0);
+  fillRect(ground, 11, 0, 3, 1, 8);
+
   const exits = [
     { id: 'south', x: 10, y: H - 1, w: 4, h: 1, target: 'forest', spawnX: 10, spawnY: 2 },
+    { id: 'north', x: 11, y: 0, w: 3, h: 1, target: 'cloud_castle', spawnX: 14, spawnY: 42 },
   ];
 
   return {

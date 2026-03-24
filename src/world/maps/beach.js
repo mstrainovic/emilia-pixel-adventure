@@ -143,6 +143,9 @@ export function generateBeachMap() {
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'coral_piece',     x: 11, y: 26, hitsNeeded: 1, respawnTime: 480 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'coral_piece',     x: 48, y: 24, hitsNeeded: 1, respawnTime: 480 });
 
+  // Boss arena marker — Coconut King
+  props.push({ type: 'boss_spawn', bossType: 'coconut_king', x: 25, y: 10 });
+
   // ── Exits ──
   const exits = [
     { id: 'north', x: 24, y: 5, w: 6, h: 2, target: 'lake', spawnX: 21, spawnY: 33 },

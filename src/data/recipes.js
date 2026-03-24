@@ -23,6 +23,8 @@ export const RECIPES = {
     { id: 'r_heal_potion', name: 'Heiltrank', ingredients: [{ itemId: 'mushroom', count: 2 }, { itemId: 'magic_herb', count: 1 }], result: { itemId: 'heal_potion', count: 1 } },
     { id: 'r_unicorn_potion', name: 'Einhorntraene-Trank', ingredients: [{ itemId: 'unicorn_tear', count: 1 }, { itemId: 'crystal', count: 2 }], result: { itemId: 'heal_potion', count: 3 } },
     { id: 'r_glow_potion', name: 'Leuchttrank', ingredients: [{ itemId: 'glow_orb', count: 2 }, { itemId: 'jelly_essence', count: 1 }], result: { itemId: 'glow_potion', count: 1 } },
+    { id: 'r_star_elixir', name: 'Sternen-Elixier', ingredients: [{ itemId: 'star_fragment', count: 3 }, { itemId: 'rainbow_shard', count: 1 }], result: { itemId: 'star_elixir', count: 1 } },
+    { id: 'r_rainbow_sword', name: 'Regenbogenschwert', ingredients: [{ itemId: 'sword_gem_plus', count: 1 }, { itemId: 'rainbow_shard', count: 3 }, { itemId: 'cloud_crystal', count: 5 }], result: { itemId: 'rainbow_sword', count: 1 } },
   ],
   sawmill: [
     { id: 'r_planks', name: 'Bretter', ingredients: [{ itemId: 'wood', count: 2 }], result: { itemId: 'wood', count: 4 } },

@@ -253,6 +253,9 @@ export function generateGrottoMap() {
   props.push({ type: 'mob_spawn', mobType: 'ghost_crab', x: 21, y: 27, id: 'gcrab1', respawnTime: 35 });
   props.push({ type: 'mob_spawn', mobType: 'ghost_crab', x: 24, y: 32, id: 'gcrab2', respawnTime: 35 });
 
+  // Boss arena marker — Leviathan
+  props.push({ type: 'boss_spawn', bossType: 'leviathan', x: 22, y: 28 });
+
   // ── Exits ──────────────────────────────────────────────────────────────────
   const exits = [
     { id: 'west', x: 0, y: 4, w: 2, h: 3, target: 'dungeon', spawnX: 33, spawnY: 14 },

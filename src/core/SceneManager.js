@@ -40,6 +40,11 @@ export class SceneManager {
         player.x >= exit.x && player.x < exit.x + exit.w &&
         player.y >= exit.y && player.y < exit.y + exit.h
       ) {
+        // Scene access gate hook
+        if (this.beforeTransition) {
+          const blocked = this.beforeTransition(exit.target, exit);
+          if (blocked) return; // gate blocked the transition
+        }
         this.transition(exit.target, exit.spawnX, exit.spawnY);
         return;
       }
