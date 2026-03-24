@@ -18,7 +18,7 @@ import * as THREE from 'three';
  */
 
 const T = 16;
-const TILE_COUNT = 19;
+const TILE_COUNT = 23;
 
 /**
  * Loads an image and returns a promise.
@@ -251,6 +251,56 @@ export async function generateTilesetAsync() {
       ctx.fillRect(18 * T + (i * 3 % 14), (i * 4 % 14), 1, 1);
     }
 
+    // 19 = cloud_white — fluffy white cloud floor
+    ctx.fillStyle = '#F0F0FF';
+    ctx.fillRect(19 * T, 0, T, T);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(19 * T + 2, 2, 4, 3);
+    ctx.fillRect(19 * T + 8, 5, 5, 3);
+    ctx.fillRect(19 * T + 4, 9, 6, 4);
+    ctx.fillStyle = 'rgba(180, 180, 220, 0.3)';
+    ctx.fillRect(19 * T + 1, 13, 14, 2);
+
+    // 20 = cloud_pink — pink-tinted cloud
+    ctx.fillStyle = '#FFE8F0';
+    ctx.fillRect(20 * T, 0, T, T);
+    ctx.fillStyle = '#FFF0F5';
+    ctx.fillRect(20 * T + 3, 2, 5, 4);
+    ctx.fillRect(20 * T + 7, 6, 6, 3);
+    ctx.fillRect(20 * T + 2, 10, 7, 3);
+    ctx.fillStyle = 'rgba(220, 180, 200, 0.3)';
+    ctx.fillRect(20 * T + 1, 13, 14, 2);
+
+    // 21 = cloud_gold — golden cloud floor
+    ctx.fillStyle = '#FFE8AA';
+    ctx.fillRect(21 * T, 0, T, T);
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(21 * T + 3, 2, 5, 4);
+    ctx.fillRect(21 * T + 8, 5, 5, 4);
+    ctx.fillRect(21 * T + 2, 9, 6, 3);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(21 * T + 5, 3, 1, 1);
+    ctx.fillRect(21 * T + 11, 7, 1, 1);
+    ctx.fillRect(21 * T + 4, 11, 1, 1);
+    ctx.fillStyle = 'rgba(200, 160, 60, 0.3)';
+    ctx.fillRect(21 * T + 1, 13, 14, 2);
+
+    // 22 = crystal_floor — sparkling crystal floor
+    ctx.fillStyle = '#C8D8F0';
+    ctx.fillRect(22 * T, 0, T, T);
+    ctx.fillStyle = '#D8E8FF';
+    ctx.fillRect(22 * T + 2, 1, 5, 5);
+    ctx.fillRect(22 * T + 9, 4, 4, 6);
+    ctx.fillRect(22 * T + 3, 8, 6, 5);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(22 * T + 4, 2, 1, 1);
+    ctx.fillRect(22 * T + 11, 5, 1, 1);
+    ctx.fillRect(22 * T + 6, 10, 1, 1);
+    ctx.fillRect(22 * T + 13, 13, 1, 1);
+    ctx.fillStyle = 'rgba(100, 120, 160, 0.3)';
+    ctx.fillRect(22 * T + 7, 0, 1, T);
+    ctx.fillRect(22 * T, 7, T, 1);
+
   } catch (e) {
     console.warn('Asset tiles failed to load, using fallback colors:', e);
     // Fallback: solid color tiles
@@ -260,6 +310,7 @@ export async function generateTilesetAsync() {
       '#48903a', '#9b9ea8', '#3a7ab0',
       '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
       '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
+      '#F0F0FF', '#FFE8F0', '#FFE8AA', '#C8D8F0',
     ];
     for (let i = 0; i < TILE_COUNT; i++) {
       ctx.fillStyle = fallbackColors[i];
@@ -291,6 +342,7 @@ export function generateTileset() {
     '#48903a', '#9b9ea8', '#3a7ab0',
     '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
     '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
+    '#F0F0FF', '#FFE8F0', '#FFE8AA', '#C8D8F0',
   ];
   for (let i = 0; i < TILE_COUNT; i++) {
     ctx.fillStyle = colors[i];
