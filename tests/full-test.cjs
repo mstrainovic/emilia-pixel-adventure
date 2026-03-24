@@ -425,8 +425,165 @@ async function triggerTransition(page, target, sx, sy) {
   } catch (e) { console.log('  ERROR: ' + e.message); scores.daynight = 0; }
   console.log('  Score: ' + scores.daynight + '/10');
 
-  // T15: VISUALS
-  console.log('\n=== T15: VISUALS ===');
+  // T15: GROTTO
+  console.log('\n=== T15: GROTTO ===');
+  try {
+    scores.grotto = 0;
+    // Transition to grotto
+    await page.evaluate(() => window.__game.sceneManager.transition('grotto', 2, 5));
+    await page.waitForTimeout(2000);
+
+    // Check scene loaded
+    const grottoScene = await page.evaluate(() => window.__game.sceneManager.currentScene);
+    if (grottoScene === 'grotto') { scores.grotto += 3; console.log('  Scene loaded: YES'); }
+    else console.log('  Scene loaded: NO (got ' + grottoScene + ')');
+
+    // Check mobs exist (jellyfish, octopus, or ghost_crab)
+    const grottoMobs = await page.evaluate(() => window.__game.mobs?.length || 0);
+    if (grottoMobs > 0) { scores.grotto += 3; console.log('  Mobs: ' + grottoMobs); }
+    else console.log('  Mobs: 0');
+
+    // Check zone markers exist
+    const zoneMarkers = await page.evaluate(() => window.__game._zoneMarkers?.length || 0);
+    if (zoneMarkers >= 4) { scores.grotto += 2; console.log('  Zone markers: ' + zoneMarkers); }
+    else console.log('  Zone markers: ' + zoneMarkers + ' (need >= 4)');
+
+    // Check can exit back to dungeon
+    await page.evaluate(() => window.__game.sceneManager.transition('dungeon', 16, 14));
+    await page.waitForTimeout(1500);
+    const grottoBack = await page.evaluate(() => window.__game.sceneManager.currentScene);
+    if (grottoBack === 'dungeon') { scores.grotto += 2; console.log('  Exit to dungeon: YES'); }
+    else console.log('  Exit to dungeon: NO (got ' + grottoBack + ')');
+
+    await page.screenshot({ path: shotDir + '/emilia_15_grotto.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.grotto = 0; }
+  console.log('  Score: ' + scores.grotto + '/10');
+
+  // T16: WEATHER
+  console.log('\n=== T16: WEATHER ===');
+  try {
+    scores.weather = 0;
+    // Check weather system exists
+    const hasWeather = await page.evaluate(() => !!window.__game.weather);
+    if (hasWeather) { scores.weather += 2; console.log('  Weather system: YES'); }
+    else console.log('  Weather system: NO');
+
+    // Check current weather is a valid type
+    const weatherType = await page.evaluate(() => window.__game.weather?.current);
+    if (['sunny', 'rain', 'fog', 'sunbeams'].includes(weatherType)) {
+      scores.weather += 2; console.log('  Valid weather type (' + weatherType + '): YES');
+    } else console.log('  Valid weather type: NO (got ' + weatherType + ')');
+
+    // Force weather change and verify
+    await page.evaluate(() => { window.__game.weather._setWeather('rain'); });
+    await page.waitForTimeout(500);
+    const isRain = await page.evaluate(() => window.__game.weather.current === 'rain');
+    if (isRain) { scores.weather += 2; console.log('  Force rain works: YES'); }
+    else console.log('  Force rain works: NO');
+
+    // Check weather renderer exists
+    const hasRenderer = await page.evaluate(() => !!window.__game.weatherRenderer);
+    if (hasRenderer) { scores.weather += 2; console.log('  Weather renderer: YES'); }
+    else console.log('  Weather renderer: NO');
+
+    // Check getDayNightModifier works
+    const modifier = await page.evaluate(() => {
+      const mod = window.__game.weather.getDayNightModifier('night');
+      return mod && mod.extraDark !== undefined;
+    });
+    if (modifier) { scores.weather += 2; console.log('  getDayNightModifier: YES'); }
+    else console.log('  getDayNightModifier: NO');
+
+    await page.screenshot({ path: shotDir + '/emilia_16_weather.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.weather = 0; }
+  console.log('  Score: ' + scores.weather + '/10');
+
+  // T17: PET
+  console.log('\n=== T17: PET ===');
+  try {
+    scores.pet = 0;
+    // Check pet system readiness (_createPet exists)
+    const canCreate = await page.evaluate(() => typeof window.__game._createPet === 'function');
+    if (canCreate) { scores.pet += 2; console.log('  _createPet exists: YES'); }
+    else console.log('  _createPet exists: NO');
+
+    // Create a pet programmatically for testing
+    await page.evaluate(() => window.__game._createPet('fox'));
+    await page.waitForTimeout(500);
+
+    // Check pet exists
+    const hasPet = await page.evaluate(() => !!window.__game.pet);
+    if (hasPet) { scores.pet += 2; console.log('  Pet created: YES'); }
+    else console.log('  Pet created: NO');
+
+    // Check pet type
+    const petType = await page.evaluate(() => window.__game.pet?.type);
+    if (petType === 'fox') { scores.pet += 2; console.log('  Pet type (fox): YES'); }
+    else console.log('  Pet type: NO (got ' + petType + ')');
+
+    // Check pet follows player (position near player)
+    const positions = await page.evaluate(() => ({
+      px: window.__game.player.x,
+      py: window.__game.player.y,
+      petX: window.__game.pet?.x || 0,
+      petY: window.__game.pet?.y || 0,
+    }));
+    const petDist = Math.sqrt((positions.px - positions.petX) ** 2 + (positions.py - positions.petY) ** 2);
+    if (petDist < 5) { scores.pet += 2; console.log('  Pet near player (dist=' + petDist.toFixed(2) + '): YES'); }
+    else console.log('  Pet near player: NO (dist=' + petDist.toFixed(2) + ')');
+
+    // Check friendship tracking
+    const friendship = await page.evaluate(() => window.__game.pet?.friendship);
+    if (friendship !== undefined && friendship >= 0) { scores.pet += 2; console.log('  Friendship tracked (' + friendship + '): YES'); }
+    else console.log('  Friendship tracked: NO');
+
+    await page.screenshot({ path: shotDir + '/emilia_17_pet.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.pet = 0; }
+  console.log('  Score: ' + scores.pet + '/10');
+
+  // T18: EXPLORER BOOK
+  console.log('\n=== T18: EXPLORER BOOK ===');
+  try {
+    scores.explorerbook = 0;
+    // Check explorer book system exists
+    const hasBook = await page.evaluate(() => !!window.__game.explorerBook);
+    if (hasBook) { scores.explorerbook += 2; console.log('  ExplorerBook system: YES'); }
+    else console.log('  ExplorerBook system: NO');
+
+    // Check discover method works
+    const discovered = await page.evaluate(() => {
+      const result = window.__game.explorerBook.discover('crystal');
+      return result === true;
+    });
+    if (discovered) { scores.explorerbook += 2; console.log('  discover() works: YES'); }
+    else console.log('  discover() works: NO');
+
+    // Check duplicate discovery returns false
+    const dupe = await page.evaluate(() => {
+      return window.__game.explorerBook.discover('crystal') === false;
+    });
+    if (dupe) { scores.explorerbook += 2; console.log('  Duplicate returns false: YES'); }
+    else console.log('  Duplicate returns false: NO');
+
+    // Check progress tracking
+    const progress = await page.evaluate(() => {
+      return window.__game.explorerBook.getTotalProgress();
+    });
+    if (progress && progress.found === 1 && progress.total > 0) {
+      scores.explorerbook += 2; console.log('  Progress tracking (found=1, total=' + (progress?.total || '?') + '): YES');
+    } else console.log('  Progress tracking: NO (got ' + JSON.stringify(progress) + ')');
+
+    // Check UI exists and can toggle
+    const hasUI = await page.evaluate(() => !!window.__game.explorerBookUI);
+    if (hasUI) { scores.explorerbook += 2; console.log('  ExplorerBook UI: YES'); }
+    else console.log('  ExplorerBook UI: NO');
+
+    await page.screenshot({ path: shotDir + '/emilia_18_explorerbook.png' });
+  } catch (e) { console.log('  ERROR: ' + e.message); scores.explorerbook = 0; }
+  console.log('  Score: ' + scores.explorerbook + '/10');
+
+  // T19: VISUALS
+  console.log('\n=== T19: VISUALS ===');
   try {
     await triggerTransition(page, 'hub', 20, 15);
     await waitMs(page, 2000);
@@ -442,12 +599,12 @@ async function triggerTransition(page, target, sx, sy) {
     });
     console.log('  PP:' + v.pp + ' VFX:' + v.vfx + ' Juice:' + v.juice + ' Lights:' + v.lights + ' Shadows:' + v.shadows);
     scores.visuals = (v.pp ? 2 : 0) + (v.vfx ? 2 : 0) + (v.juice ? 2 : 0) + (v.lights ? 2 : 0) + (v.shadows ? 2 : 0);
-    await page.screenshot({ path: shotDir + '/emilia_14_visuals.png' });
+    await page.screenshot({ path: shotDir + '/emilia_19_visuals.png' });
   } catch (e) { console.log('  ERROR: ' + e.message); scores.visuals = 0; }
   console.log('  Score: ' + scores.visuals + '/10');
 
-  // T16: STABILITY
-  console.log('\n=== T16: STABILITY ===');
+  // T20: STABILITY
+  console.log('\n=== T20: STABILITY ===');
   scores.stability = Math.max(0, 10 - errors.length * 2);
   console.log('  Errors: ' + errors.length);
   errors.slice(0, 15).forEach((e, i) => console.log('  ' + (i + 1) + '. ' + e.substring(0, 150)));
