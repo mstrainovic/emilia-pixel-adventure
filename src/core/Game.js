@@ -182,6 +182,7 @@ export class Game {
     this.dialog.onDialogEnd = (npcId, stationId) => {
       if (this.crafting && stationId) {
         this.crafting.openStation(stationId);
+        this.crafting.cooldown = 0.5; // prevent double-open from manual E press
       }
       // Oma: garden expansion with earth
       if (npcId === 'oma' && this.inventory && this.inventory.hasItem('earth', 3)) {
@@ -1393,9 +1394,12 @@ export class Game {
     // Dialog system
     this.dialog.update(dt, this.player, this.npcs, this.input);
 
-    // Crafting system
-    if (!this.dialog.isActive) {
+    // Crafting system — skip if dialog is active or just finished (cooldown prevents overlap)
+    if (!this.dialog.isActive && this.dialog.cooldown <= 0) {
       this.crafting.update(dt, this.player, this.tileMap, this.input);
+    } else if (this.dialog.isActive) {
+      // Consume any E press so it doesn't leak to crafting after dialog closes
+      this.input.justPressed('KeyE');
     }
 
     // Player

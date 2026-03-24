@@ -271,7 +271,7 @@ export function generateLakeMap() {
 
   const exits = [
     { id: 'north', x: 20, y: 0, w: 4, h: 2, target: 'hub', spawnX: 20, spawnY: 28 },
-    { id: 'south', x: 20, y: H - 1, w: 4, h: 2, target: 'beach', spawnX: 26, spawnY: 10 },
+    { id: 'south', x: 20, y: H - 1, w: 4, h: 2, target: 'beach', spawnX: 26, spawnY: 14 },
   ];
 
   return {

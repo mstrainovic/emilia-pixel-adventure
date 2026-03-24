@@ -158,7 +158,7 @@ export function generateBeachMap() {
     collision,
     props,
     exits,
-    playerSpawn: { x: 26, y: 10 },
+    playerSpawn: { x: 26, y: 14 },
     tileDefs: null,
   };
 }
