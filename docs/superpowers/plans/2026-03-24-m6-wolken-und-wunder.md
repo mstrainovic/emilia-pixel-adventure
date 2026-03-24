@@ -40,6 +40,8 @@
 | `src/data/levels.js` | Extend to level 30, unlock M6 quests |
 | `src/data/recipes.js` | +1 recipe (rainbow_sword via alchemy) |
 | `src/rendering/TilesetGenerator.js` | +4 cloud castle tile IDs (19-22) |
+| `src/rendering/TileMapRenderer.js` | +`propMeshes` array, `userData.isTree` on tree props |
+| `src/core/SceneManager.js` | +`beforeTransition` hook in `checkExits()` |
 | `src/rendering/PostProcessing.js` | +cloud_castle and starsky moods |
 | `src/systems/Progression.js` | +boss/achieve quest types, M6 quest tracking |
 | `src/systems/SaveManager.js` | Persist achievements, boss states, NG+ flag |
@@ -948,7 +950,7 @@ function seededRandom(seed) {
 
 /**
  * The Cloud Castle — ethereal sky fortress with 4 zones.
- * Tiles: 19=cloud_white, 20=cloud_pink, 21=crystal_floor, 22=rainbow_bridge
+ * Tiles: 19=cloud_white, 20=cloud_pink, 21=cloud_gold, 22=crystal_floor
  * Background tile (void/starsky): -1 (collision=1, not walkable)
  *
  * Zone layout (50x45):
@@ -1936,6 +1938,7 @@ git commit -m "feat(m6): add Leviathan boss entity — tentacle slam + ink AoE, 
 import * as THREE from 'three';
 import { Boss } from './Boss.js';
 import { distance } from '../utils/MathUtils.js';
+import { DIR_LEFT } from '../utils/Constants.js';
 
 /**
  * Boss 3: Shadow Knight — Cloud Castle Throne Room final boss.
@@ -2058,7 +2061,7 @@ export class ShadowKnight extends Boss {
 
       case 'teleport_combo':
         // Teleport behind player, then combo
-        this.x = player.x + (player.direction === 'left' ? 2 : -2);
+        this.x = player.x + (player.direction === DIR_LEFT ? 2 : -2);
         this.y = player.y;
         this.facingLeft = player.x < this.x;
         // Delayed strike (player has ~0.5s to react)
@@ -3696,9 +3699,12 @@ After the insect creation section:
 for (const bird of this.birds) bird.dispose();
 this.birds = createBirdsForScene(sceneName, this.scene, mapData.props);
 
-// Ambient life (swaying trees, clouds)
+// Ambient life (swaying trees, clouds, waves, constellations)
 if (this.ambientLife) this.ambientLife.dispose();
 this.ambientLife = new AmbientLife(this.scene, this.camera);
+// Collect tree meshes for swaying — TileMapRenderer must expose propMeshes array
+// In TileMapRenderer.addPropFromSheet(), push each created mesh to this.propMeshes
+// and set mesh.userData.isTree = true for tree-type props
 this.ambientLife.init(sceneName, mapData.props, mapData.width, mapData.height, this.tileMapRenderer?.propMeshes || []);
 ```
 
@@ -3796,6 +3802,7 @@ case 'starsky':
 In `src/data/recipes.js`, add to the `alchemy` array:
 ```javascript
 { id: 'r_star_elixir', name: 'Sternen-Elixier', ingredients: [{ itemId: 'star_fragment', count: 3 }, { itemId: 'rainbow_shard', count: 1 }], result: { itemId: 'star_elixir', count: 1 } },
+{ id: 'r_rainbow_sword', name: 'Regenbogenschwert', ingredients: [{ itemId: 'sword_gem_plus', count: 1 }, { itemId: 'rainbow_shard', count: 3 }, { itemId: 'cloud_crystal', count: 5 }], result: { itemId: 'rainbow_sword', count: 1 } },
 ```
 
 - [ ] **Step 12: Commit**
@@ -4099,19 +4106,19 @@ for (const rf of rareFinds) {
   this.resources.createFromProps([rfProp]);
 }
 
-// Track rare find collection via the existing resource onCollect pattern
-this.resources.onCollect = (node) => {
-  if (node.resourceType === 'rare_find' && node.itemId) {
-    this._collectedRareFinds.add(node.itemId);
-    // Discover in explorer book
-    if (this.explorerBook.discover(node.itemId)) {
-      this.hud.showInfo('Seltener Fund: ' + (getItem(node.itemId)?.name || node.itemId) + '!');
-      if (this.progression.reportDiscover) {
-        this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
-      }
-    }
-  }
-};
+// Note: Rare find collection tracking is handled in Game.js _loop()
+// where resource gather results are processed. After the existing loot-handling
+// loop (where itemDrops.spawnDrop is called), add:
+//
+//   if (gatherResult && gatherResult.resourceType === 'rare_find') {
+//     this._collectedRareFinds.add(gatherResult.itemId);
+//     if (this.explorerBook.discover(gatherResult.itemId)) {
+//       this.hud.showInfo('Seltener Fund: ' + (getItem(gatherResult.itemId)?.name || gatherResult.itemId) + '!');
+//       if (this.progression.reportDiscover) {
+//         this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
+//       }
+//     }
+//   }
 ```
 
 - [ ] **Step 2: Add tracking set to constructor and save/load**
