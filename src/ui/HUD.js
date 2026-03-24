@@ -212,7 +212,7 @@ export class HUD {
       info.textContent = text;
       info.style.opacity = '1';
       clearTimeout(this._infoTimeout);
-      this._infoTimeout = setTimeout(() => { info.style.opacity = '0'; }, 3000);
+      this._infoTimeout = setTimeout(() => { info.style.opacity = '0'; }, 5000);
     }
   }
 

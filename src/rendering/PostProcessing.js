@@ -179,12 +179,12 @@ export class PostProcessingPipeline {
         bloomStrength: 0.3,
       },
       grotto: {
-        tint: [0.7, 0.85, 1.1],
-        tintStrength: 0.2,
-        brightness: 0.9,
-        contrast: 1.05,
-        saturation: 0.9,
-        bloomStrength: 0.5,
+        tint: [0.75, 0.9, 1.1],
+        tintStrength: 0.12,
+        brightness: 1.1,
+        contrast: 1.0,
+        saturation: 1.0,
+        bloomStrength: 0.4,
       },
       cloud_castle: {
         tint: [0.95, 0.95, 1.05],

@@ -1,5 +1,5 @@
 const PHASES = ['morning', 'day', 'evening', 'night'];
-const PHASE_DURATION = 120; // 2 minutes per phase = 8 min full cycle
+const PHASE_DURATION = 187.5; // ~3 minutes per phase = ~12.5 min full cycle (day phase alone = ~3 min)
 
 const PHASE_COLORS = {
   morning: { r: 1.0, g: 0.89, b: 0.69 },

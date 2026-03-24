@@ -276,7 +276,7 @@ export async function loadCuteFantasyNPC(hairColor, clothColor) {
 
 // NPC color configs for Emilia's family
 export const NPC_PALETTE_CONFIGS = {
-  emilia:      { hairColor: [15, 10, 5],     clothColor: [220, 130, 170] },  // Black hair, pink dress
+  emilia:      { hairColor: [61, 43, 31],    clothColor: [235, 150, 185] },  // Dark brown hair, bright pink dress
   mama_tanja:  { hairColor: [90, 55, 30],    clothColor: [230, 130, 160] },  // Brown hair, pink top
   papa_milos:  { hairColor: [15, 12, 8],     clothColor: [70, 110, 180] },   // Black hair, blue shirt
   marie:       { hairColor: [180, 140, 60],  clothColor: [255, 180, 50] },   // Blonde, yellow dress

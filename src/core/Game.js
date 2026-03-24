@@ -291,7 +291,7 @@ export class Game {
       unicorn_meadow: 0x3a4a2a,
       beach: 0x4a8aaa,
       grotto: 0x0a1a2a,
-      cloud_castle: 0x1a1a3a,
+      cloud_castle: 0x2a3a6a,
       starsky: 0x0a0a1a,
     };
 
@@ -741,7 +741,7 @@ export class Game {
       lake:            { ambient: 0xccddff, ambientI: 2.0, sun: 0xffffff, sunI: 1.5, fog: null },
       unicorn_meadow:  { ambient: 0xffeecc, ambientI: 2.2, sun: 0xffddaa, sunI: 1.8, fog: null },
       beach:           { ambient: 0xeee8cc, ambientI: 1.5, sun: 0xffeedd, sunI: 1.2, fog: null },
-      grotto:          { ambient: 0x4488aa, ambientI: 1.2, sun: 0x3366aa, sunI: 0.6, fog: [0x0a1a2a, 0.01] },
+      grotto:          { ambient: 0x55aacc, ambientI: 1.8, sun: 0x44aacc, sunI: 1.0, fog: [0x0a1a2a, 0.01] },
       cloud_castle:    { ambient: 0xeeeeff, ambientI: 2.2, sun: 0xffeedd, sunI: 1.8, fog: null },
       starsky:         { ambient: 0x6666aa, ambientI: 1.5, sun: 0x8888cc, sunI: 0.8, fog: [0x0a0a1a, 0.02] },
     };

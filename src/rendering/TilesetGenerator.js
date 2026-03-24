@@ -251,14 +251,14 @@ export async function generateTilesetAsync() {
       ctx.fillRect(18 * T + (i * 3 % 14), (i * 4 % 14), 1, 1);
     }
 
-    // 19 = cloud_white — fluffy white cloud floor
-    ctx.fillStyle = '#F0F0FF';
+    // 19 = cloud_white — fluffy soft-lavender cloud floor (less glaring)
+    ctx.fillStyle = '#D8D8F0';
     ctx.fillRect(19 * T, 0, T, T);
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#E4E4F8';
     ctx.fillRect(19 * T + 2, 2, 4, 3);
     ctx.fillRect(19 * T + 8, 5, 5, 3);
     ctx.fillRect(19 * T + 4, 9, 6, 4);
-    ctx.fillStyle = 'rgba(180, 180, 220, 0.3)';
+    ctx.fillStyle = 'rgba(140, 140, 200, 0.4)';
     ctx.fillRect(19 * T + 1, 13, 14, 2);
 
     // 20 = cloud_pink — pink-tinted cloud
@@ -310,7 +310,7 @@ export async function generateTilesetAsync() {
       '#48903a', '#9b9ea8', '#3a7ab0',
       '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
       '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
-      '#F0F0FF', '#FFE8F0', '#FFE8AA', '#C8D8F0',
+      '#D8D8F0', '#FFE8F0', '#FFE8AA', '#C8D8F0',
     ];
     for (let i = 0; i < TILE_COUNT; i++) {
       ctx.fillStyle = fallbackColors[i];
