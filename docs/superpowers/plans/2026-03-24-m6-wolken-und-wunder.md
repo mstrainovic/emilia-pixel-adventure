@@ -1237,30 +1237,11 @@ export class Boss {
 
   _updateCurrentPhase() {
     const hpPct = this.hp / this.maxHp;
-    for (let i = this.phases.length - 1; i >= 0; i--) {
-      if (hpPct <= this.phases[i].hpThreshold || i === this.phases.length - 1) {
-        if (this.currentPhaseIndex !== i) {
-          this.currentPhaseIndex = i;
-          this._onPhaseChange(i);
-        }
-        break;
-      }
-    }
-    // Reverse: find highest-index phase whose hpThreshold is >= hpPct
-    // Phases are ordered high-to-low threshold, so Phase 1 = index 0 (>60%), Phase 2 = index 1 (<60%)
-    for (let i = this.phases.length - 1; i >= 0; i--) {
-      if (hpPct <= this.phases[i].hpThreshold + 0.001 || i === this.phases.length - 1) {
-        // This is the most advanced phase we qualify for
-        // But we want the LAST phase whose threshold we've passed
-      }
-    }
-    // Simpler: iterate forward, last matching phase wins
+    // Phases ordered: index 0 = Phase 1 (threshold 1.0), index 1 = Phase 2 (threshold 0.6), etc.
+    // Highest qualifying index wins (last phase whose threshold >= hpPct).
     let bestPhase = 0;
     for (let i = 0; i < this.phases.length; i++) {
-      if (hpPct <= this.phases[i].hpThreshold + 0.001 || i === 0) {
-        bestPhase = i;
-      }
-      if (hpPct <= this.phases[i].hpThreshold + 0.001) {
+      if (hpPct <= this.phases[i].hpThreshold) {
         bestPhase = i;
       }
     }
@@ -1684,7 +1665,9 @@ export class CoconutKing extends Boss {
 
     // Melee if very close
     if (dist < 2.0) {
-      player.takeDamage(phase.damage || 8);
+      const dmg = phase.damage || 8;
+      player.takeDamage(dmg);
+      this.playerDamageTaken += dmg;
     }
   }
 
@@ -1723,6 +1706,7 @@ export class CoconutKing extends Boss {
       // Hit detection
       if (distance(proj.x, proj.y, player.x, player.y) < 1.0) {
         player.takeDamage(proj.damage);
+        this.playerDamageTaken += proj.damage;
         proj.alive = false;
       }
     }
@@ -1882,6 +1866,7 @@ export class Leviathan extends Boss {
         // Apply damage at the moment
         if (distance(tent.x, tent.y, player.x, player.y) < tent.radius) {
           player.takeDamage(tent.damage);
+          this.playerDamageTaken += tent.damage;
         }
       }
     }
@@ -1895,6 +1880,7 @@ export class Leviathan extends Boss {
         this._inkCloud.tickTimer = 0;
         if (distance(this._inkCloud.x, this._inkCloud.y, player.x, player.y) < this._inkCloud.radius) {
           player.takeDamage(this._inkCloud.damage);
+          this.playerDamageTaken += this._inkCloud.damage;
         }
       }
       if (this._inkCloud.duration <= 0) {
@@ -2030,7 +2016,9 @@ export class ShadowKnight extends Boss {
       case 'sword_block_counter':
         // Dash toward player and strike
         if (dist < 2.5) {
-          player.takeDamage(phase.damage || 12);
+          const dmg = phase.damage || 12;
+          player.takeDamage(dmg);
+          this.playerDamageTaken += dmg;
         } else if (dist < 6) {
           // Quick dash toward player
           const dx = player.x - this.x;
@@ -2042,7 +2030,9 @@ export class ShadowKnight extends Boss {
           }
           // Check hit after dash
           if (distance(this.x, this.y, player.x, player.y) < 2.0) {
-            player.takeDamage(phase.dashDamage || 8);
+            const dashDmg = phase.dashDamage || 8;
+            player.takeDamage(dashDmg);
+            this.playerDamageTaken += dashDmg;
           }
         }
         break;
@@ -2054,7 +2044,9 @@ export class ShadowKnight extends Boss {
         this.facingLeft = player.x < this.x;
         // Delayed strike (player has ~0.5s to react)
         if (distance(this.x, this.y, player.x, player.y) < 2.5) {
-          player.takeDamage(phase.damage || 12);
+          const teleDmg = phase.damage || 12;
+          player.takeDamage(teleDmg);
+          this.playerDamageTaken += teleDmg;
         }
         break;
 
@@ -2065,7 +2057,9 @@ export class ShadowKnight extends Boss {
         }
         // Also do a normal attack
         if (dist < 2.5) {
-          player.takeDamage(phase.damage || 12);
+          const cloneDmg = phase.damage || 12;
+          player.takeDamage(cloneDmg);
+          this.playerDamageTaken += cloneDmg;
         }
         break;
     }
@@ -2107,6 +2101,7 @@ export class ShadowKnight extends Boss {
       clone.attackCooldown -= dt;
       if (clone.attackCooldown <= 0 && len < 2.0) {
         player.takeDamage(clone.damage);
+        this.playerDamageTaken += clone.damage;
         clone.attackCooldown = 1.5;
       }
     }
@@ -2402,7 +2397,10 @@ export class AmbientLife {
     this._camera = camera;
     this._swayingProps = [];    // refs to tree prop meshes
     this._cloudSprites = [];   // drifting cloud overlay sprites
+    this._cloudShadows = [];   // ground shadow meshes that follow clouds
     this._waveOffsets = [];    // water tile UV animation state
+    this._waveMeshes = [];     // wave overlay meshes on water tiles
+    this._constellationMeshes = []; // star pattern meshes (starsky)
     this._time = 0;
     this._mapWidth = 0;
     this._mapHeight = 0;
@@ -2440,6 +2438,20 @@ export class AmbientLife {
     // Cloud drift — semi-transparent clouds on outdoor maps
     if (outdoorScenes.includes(sceneName)) {
       this._createDriftClouds(3 + Math.floor(Math.random() * 3)); // 3-5 clouds
+    }
+
+    // Wave animation — on scenes with water tiles (lake, beach, grotto)
+    const waterScenes = ['lake', 'beach', 'grotto'];
+    if (waterScenes.includes(sceneName) && propMeshes) {
+      this._createWaveOverlays(mapWidth, mapHeight, props);
+    }
+
+    // Constellation rendering — starsky only
+    if (sceneName === 'starsky') {
+      const constellationProp = props.find(p => p.type === 'constellation');
+      if (constellationProp) {
+        this._createConstellation(constellationProp.text, constellationProp.x, constellationProp.y);
+      }
     }
   }
 
@@ -2482,12 +2494,113 @@ export class AmbientLife {
       );
 
       this._scene.add(mesh);
+
+      // Cloud ground shadow — darker oval below each cloud
+      const shadowGeo = new THREE.PlaneGeometry(size * 0.8, size * 0.3);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        depthWrite: false,
+        opacity: 0.1,
+      });
+      const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+      shadowMesh.position.set(mesh.position.x, mesh.position.y - 2, 0.01); // on ground
+      this._scene.add(shadowMesh);
+      this._cloudShadows.push(shadowMesh);
+
       this._cloudSprites.push({
         mesh,
+        shadow: shadowMesh,
         texture: tex,
         speed: 0.3 + Math.random() * 0.4, // tiles per second
         startX: -size,
         endX: this._mapWidth + size,
+      });
+    }
+  }
+
+  _createWaveOverlays(mapWidth, mapHeight, props) {
+    // Find water tile positions from props (type: 'water_zone') or generate for water scenes
+    // Creates subtle wave overlay meshes that animate UV offset
+    const canvas = document.createElement('canvas');
+    canvas.width = 48; // 3 frames x 16px
+    canvas.height = 16;
+    const ctx = canvas.getContext('2d');
+
+    // 3-frame wave animation: gentle ripple lines
+    for (let frame = 0; frame < 3; frame++) {
+      const ox = frame * 16;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      const yOff = frame * 2;
+      ctx.fillRect(ox + 2, 4 + yOff % 6, 12, 1);
+      ctx.fillRect(ox + 4, 8 + yOff % 6, 8, 1);
+      ctx.fillRect(ox + 1, 12 + yOff % 6, 10, 1);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.set(1/3, 1); // show 1 of 3 frames
+
+    // Create wave overlay covering water area (approximate)
+    const geo = new THREE.PlaneGeometry(mapWidth * 0.6, mapHeight * 0.4);
+    const mat = new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      opacity: 0.3,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(mapWidth / 2, -mapHeight / 2, 0.02);
+    this._scene.add(mesh);
+    this._waveMeshes.push({ mesh, texture: tex, frameTimer: 0 });
+  }
+
+  _createConstellation(text, cx, cy) {
+    // Render "Danke Emilia" as a star constellation pattern
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+
+    // Write text in pixel font, then convert lit pixels to star positions
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, 64, 16);
+
+    // Read pixel data and create star dots
+    const imageData = ctx.getImageData(0, 0, 128, 32);
+    const starPositions = [];
+    for (let py = 0; py < 32; py += 3) {
+      for (let px = 0; px < 128; px += 3) {
+        const idx = (py * 128 + px) * 4;
+        if (imageData.data[idx + 3] > 128) {
+          starPositions.push({
+            x: cx + (px - 64) * 0.03,
+            y: cy + (py - 16) * 0.03,
+          });
+        }
+      }
+    }
+
+    // Create star point meshes
+    for (const star of starPositions) {
+      const geo = new THREE.PlaneGeometry(0.08, 0.08);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xFFFFAA,
+        transparent: true,
+        opacity: 0.6 + Math.random() * 0.4,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(star.x, -star.y, 0.5);
+      this._scene.add(mesh);
+      this._constellationMeshes.push({
+        mesh,
+        baseOpacity: mat.opacity,
+        phase: Math.random() * Math.PI * 2,
       });
     }
   }
@@ -2501,14 +2614,36 @@ export class AmbientLife {
       tree.mesh.position.x = tree.baseX + offset;
     }
 
-    // ── Cloud drift ──
+    // ── Cloud drift + ground shadows ──
     for (const cloud of this._cloudSprites) {
       cloud.mesh.position.x += cloud.speed * dt;
+      // Move shadow to follow cloud (offset below)
+      if (cloud.shadow) {
+        cloud.shadow.position.x = cloud.mesh.position.x;
+        cloud.shadow.position.y = cloud.mesh.position.y - 2;
+      }
       // Wrap around
       if (cloud.mesh.position.x > cloud.endX) {
         cloud.mesh.position.x = cloud.startX;
         cloud.mesh.position.y = -(Math.random() * this._mapHeight);
       }
+    }
+
+    // ── Wave animation (3-frame UV shift) ──
+    for (const wave of this._waveMeshes) {
+      wave.frameTimer += dt;
+      if (wave.frameTimer >= 0.6) { // switch frame every 0.6s
+        wave.frameTimer = 0;
+        const currentFrame = Math.floor(wave.texture.offset.x * 3) || 0;
+        const nextFrame = (currentFrame + 1) % 3;
+        wave.texture.offset.x = nextFrame / 3;
+      }
+    }
+
+    // ── Constellation twinkle ──
+    for (const star of this._constellationMeshes) {
+      const twinkle = 0.5 + Math.sin(this._time * 2 + star.phase) * 0.5;
+      star.mesh.material.opacity = star.baseOpacity * twinkle;
     }
   }
 
@@ -2519,15 +2654,37 @@ export class AmbientLife {
     }
     this._swayingProps = [];
 
-    // Remove cloud sprites
+    // Remove cloud sprites + shadows
     for (const cloud of this._cloudSprites) {
       if (this._scene) this._scene.remove(cloud.mesh);
       cloud.mesh.geometry.dispose();
       cloud.mesh.material.dispose();
       cloud.texture.dispose();
+      if (cloud.shadow && this._scene) {
+        this._scene.remove(cloud.shadow);
+        cloud.shadow.geometry.dispose();
+        cloud.shadow.material.dispose();
+      }
     }
     this._cloudSprites = [];
-    this._waveOffsets = [];
+    this._cloudShadows = [];
+
+    // Remove wave overlays
+    for (const wave of this._waveMeshes) {
+      if (this._scene) this._scene.remove(wave.mesh);
+      wave.mesh.geometry.dispose();
+      wave.mesh.material.dispose();
+      wave.texture.dispose();
+    }
+    this._waveMeshes = [];
+
+    // Remove constellation stars
+    for (const star of this._constellationMeshes) {
+      if (this._scene) this._scene.remove(star.mesh);
+      star.mesh.geometry.dispose();
+      star.mesh.material.dispose();
+    }
+    this._constellationMeshes = [];
   }
 }
 ```
@@ -2536,7 +2693,7 @@ export class AmbientLife {
 
 ```bash
 git add src/rendering/AmbientLife.js
-git commit -m "feat(m6): add AmbientLife renderer — swaying trees, drifting clouds"
+git commit -m "feat(m6): add AmbientLife renderer — swaying trees, clouds+shadows, waves, constellations"
 ```
 
 ---
@@ -3536,7 +3693,29 @@ In `src/world/maps/unicorn_meadow.js`, add a north exit prop:
 props.push({ type: 'exit', x: 11, y: 0, width: 3, target: 'cloud_castle', spawnX: 14, spawnY: 42 });
 ```
 
-The exit should only be usable when cloud_castle is accessible (level 22 + unicorns). This is handled in Game.js exit handling via the `isBossUnlocked('shadow_knight', ...)` check or a simpler scene unlock check.
+The exit should only be usable when cloud_castle is accessible (level 22 + unicorns befriended).
+
+- [ ] **Step 8b: Add scene access gate checks in Game.js exit handling**
+
+In `_handleExits()` (or wherever scene transitions from exits are processed), add before triggering the transition:
+
+```javascript
+// ── Scene access gates ──
+if (exit.target === 'cloud_castle') {
+  const unicornsPetted = this.progression.stats.unicornsPetted || 0;
+  if (this.progression.level < 22 || unicornsPetted < 1) {
+    this.hud.showInfo('Du brauchst Level 22 und musst ein Einhorn gestreichelt haben!');
+    return; // block transition
+  }
+}
+if (exit.target === 'starsky') {
+  const achieveCount = this.achievements ? this.achievements.getCount() : 0;
+  if (achieveCount < 25) {
+    this.hud.showInfo(`Du brauchst 25 Achievements! (${achieveCount}/25)`);
+    return; // block transition
+  }
+}
+```
 
 - [ ] **Step 9: Add boss arena zones to beach.js and grotto.js**
 
@@ -3724,6 +3903,66 @@ gems: {
 
 **Note:** `cloud_crystal` is already in the gems entries list in the current code. Verify this is the case and skip if already present.
 
+- [ ] **Step 7b: Add endgame cutscene trigger after Shadow Knight defeat**
+
+In `src/core/Game.js`, in the boss defeated section (Task 21 Step 5), after the `this._activeBoss = null;` line, add:
+
+```javascript
+// ── Endgame: Shadow Knight defeated → cutscene + NG+ offer ──
+if (boss.bossType === 'shadow_knight') {
+  // Short delay, then show victory dialog
+  setTimeout(() => {
+    this.dialog.show('Emilia', [
+      'Der Schatten-Ritter ist besiegt!',
+      'Das Wolkenschloss ist befreit!',
+      'Alle Freunde und Familie warten auf dich...',
+      'Du bist eine wahre Heldin, Emilia!',
+    ]);
+
+    // After dialog closes, offer NG+ if applicable
+    this.dialog.onClose = () => {
+      this.dialog.onClose = null;
+      if (this.newGamePlus.canActivate(this._bossStates)) {
+        this.dialog.showChoiceDialog('Sternenwaechterin', 'Moechtest du ein neues Abenteuer beginnen? (Deine Items und Achievements bleiben erhalten!)', [
+          {
+            text: 'Ja, neues Abenteuer! (NG+)',
+            action: () => {
+              const ngData = this.newGamePlus.activate();
+              // Reset quests and boss states
+              this.progression.resetQuests();
+              this._bossStates = {};
+              // Apply mob multipliers (stored for _createMobs to use)
+              this._ngMobMultipliers = ngData;
+              this.hud.showNgPlus(this.newGamePlus.cycleCount);
+              this.hud.showInfo('Neues Abenteuer+ gestartet!');
+              // Transition to hub
+              this.sceneManager.transition('hub', 10, 10);
+            },
+          },
+          {
+            text: 'Nein, ich erkunde weiter',
+            action: () => {
+              this.hud.showInfo('Du kannst jederzeit bei Mama Tanja NG+ starten!');
+            },
+          },
+        ]);
+      }
+    };
+  }, 1500);
+}
+```
+
+- [ ] **Step 7c: Apply NG+ mob multipliers in _createMobs**
+
+In the `_createMobs` section of `_buildScene`, before creating each mob:
+```javascript
+// Apply NG+ scaling if active
+let mobDef = MOB_TYPES[spawn.mobType];
+if (this.newGamePlus.active) {
+  mobDef = this.newGamePlus.applyToMob(mobDef);
+}
+```
+
 - [ ] **Step 8: Add achievement counter to HUD**
 
 In `src/ui/HUD.js`, add a method:
@@ -3743,6 +3982,23 @@ updateAchievements(count, total) {
     document.body.appendChild(el);
   }
   el.textContent = `\u2605 ${count}/${total}`;
+}
+
+showNgPlus(cycleCount) {
+  let el = document.getElementById('hud-ngplus');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'hud-ngplus';
+    el.style.cssText = `
+      position: fixed; top: 20px; right: 8px;
+      color: #FF69B4; font-family: 'Press Start 2P', monospace;
+      font-size: 7px; z-index: 1000;
+      text-shadow: 1px 1px 0 #000;
+    `;
+    document.body.appendChild(el);
+  }
+  el.textContent = `NG+${cycleCount}`;
+  el.style.display = 'block';
 }
 ```
 
