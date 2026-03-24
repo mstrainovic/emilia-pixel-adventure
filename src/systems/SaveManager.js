@@ -27,6 +27,9 @@ export class SaveManager {
     data.dayNight = gameState.dayNight || null;
     data.fishCaught = gameState.fishCaught || {};
     data.uniqueCollected = gameState.uniqueCollected || {};
+    data.weather = gameState.weather || null;
+    data.pet = gameState.pet || null;
+    data.explorerBook = gameState.explorerBook || { discovered: [], rewardsClaimed: [] };
 
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));

@@ -74,6 +74,16 @@ export class HUD {
     this.timeIndicator.textContent = `${icons[phase] || ''} ${names[phase] || ''}`;
   }
 
+  updateWeather(type) {
+    if (!this._weatherEl) {
+      this._weatherEl = document.createElement('div');
+      this._weatherEl.style.cssText = 'position:absolute; top:8px; right:120px; font-family:"Press Start 2P",monospace; font-size:10px; color:#fff; text-shadow:1px 1px #000;';
+      this.container.appendChild(this._weatherEl);
+    }
+    const icons = { sunny: '\u2600\uFE0F', rain: '\uD83C\uDF27\uFE0F', fog: '\uD83C\uDF2B\uFE0F', sunbeams: '\u2728' };
+    this._weatherEl.textContent = icons[type] || '';
+  }
+
   updateXp(progression) {
     const badge = document.getElementById('hud-level-badge');
     const fill = document.getElementById('hud-xp-bar-fill');

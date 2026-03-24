@@ -19,6 +19,10 @@ export class DialogSystem {
     this.cooldown = 0;
     this.onDialogEnd = null; // callback: (npcId, stationId) => open crafting
 
+    /** Optional pre-dialog hook: (npc) => boolean.
+     *  Return true to cancel normal dialog (e.g. for pet selection). */
+    this.beforeDialog = null;
+
     this.ui.onAdvance = () => this._advance();
   }
 
@@ -41,6 +45,8 @@ export class DialogSystem {
     }
 
     if (nearest && inputManager.justPressed('KeyE')) {
+      // Allow external hook to intercept (e.g. pet selection via Marie)
+      if (this.beforeDialog && this.beforeDialog(nearest)) return;
       this._startDialog(nearest);
     }
   }
@@ -92,6 +98,16 @@ export class DialogSystem {
       ? '#' + (npc._labelColor.toString(16)).padStart(6, '0')
       : '#FFD700';
     this.ui.show(npc.name, text, colorHex);
+  }
+
+  /**
+   * Show a choice dialog with buttons (e.g. pet selection).
+   * @param {string} name — NPC name
+   * @param {string} text — Prompt text
+   * @param {Array<{text:string, action:Function}>} choices
+   */
+  showChoiceDialog(name, text, choices) {
+    this.ui.showChoices(name, text, '#FFD700', choices);
   }
 
   get isActive() {

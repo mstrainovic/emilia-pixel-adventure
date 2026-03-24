@@ -55,6 +55,9 @@ export class FishingSystem {
 
     // Catalogue of fish the player has already caught (id set)
     this._caughtFish = new Set();
+
+    /** Optional callback: (fishId) => void — called when a fish is caught */
+    this.onCatch = null;
   }
 
   /**
@@ -282,6 +285,9 @@ export class FishingSystem {
     }
 
     if (hud) hud.showInfo(`${fishName} gefangen! +${xp} XP`);
+
+    // Notify external systems (e.g. ExplorerBook)
+    if (this.onCatch) this.onCatch(fishId);
 
     this.ui.showCatch(fishName, isNew);
     this._toState('result');

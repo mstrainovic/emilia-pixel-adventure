@@ -79,9 +79,71 @@ export class DialogUI {
     }
   }
 
+  /**
+   * Show a choice dialog with buttons (e.g. pet selection).
+   * @param {string} npcName
+   * @param {string} text — Prompt text
+   * @param {string} color — Name color
+   * @param {Array<{text:string, action:Function}>} choices
+   */
+  showChoices(npcName, text, color, choices) {
+    this.isOpen = true;
+    this.container.style.display = 'flex';
+    if (window.__game?.audio) window.__game.audio.playDialogOpen();
+
+    const nameEl = document.getElementById('dialog-name');
+    const textEl = document.getElementById('dialog-text');
+    const hintEl = document.getElementById('dialog-hint');
+
+    if (nameEl) {
+      nameEl.textContent = npcName;
+      nameEl.style.color = color || '#FFD700';
+    }
+    if (textEl) {
+      textEl.textContent = text;
+    }
+    if (hintEl) hintEl.textContent = '';
+
+    // Remove old choice buttons
+    const old = this.container.querySelector('.dialog-choices');
+    if (old) old.remove();
+
+    // Create choice buttons
+    const choiceDiv = document.createElement('div');
+    choiceDiv.className = 'dialog-choices';
+    choiceDiv.style.cssText = 'display:flex; gap:8px; margin-top:12px; justify-content:center; flex-wrap:wrap;';
+
+    for (const choice of choices) {
+      const btn = document.createElement('button');
+      btn.textContent = choice.text;
+      btn.style.cssText = `
+        font-family:'Press Start 2P','Segoe UI',monospace; font-size:11px;
+        background:rgba(40,30,15,0.9); color:#FFD700;
+        border:2px solid #8B6914; border-radius:4px;
+        padding:8px 16px; cursor:pointer;
+        pointer-events:auto;
+        transition: background 0.15s, transform 0.1s;
+      `;
+      btn.addEventListener('mouseenter', () => { btn.style.background = 'rgba(80,60,20,0.9)'; });
+      btn.addEventListener('mouseleave', () => { btn.style.background = 'rgba(40,30,15,0.9)'; });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.hide();
+        if (choice.action) choice.action();
+      });
+      choiceDiv.appendChild(btn);
+    }
+
+    const bubble = document.getElementById('dialog-bubble');
+    if (bubble) bubble.appendChild(choiceDiv);
+  }
+
   hide() {
     this.isOpen = false;
     this.container.style.display = 'none';
+    // Clean up choice buttons if present
+    const choices = this.container.querySelector('.dialog-choices');
+    if (choices) choices.remove();
     if (window.__game?.audio) window.__game.audio.playDialogClose();
     if (this.onClose) this.onClose();
   }

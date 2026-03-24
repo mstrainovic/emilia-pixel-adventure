@@ -43,6 +43,12 @@ import { GroundDecorationRenderer } from '../rendering/GroundDecorationRenderer.
 import { DayNightSystem } from '../systems/DayNight.js';
 import { DayNightRenderer } from '../rendering/DayNightRenderer.js';
 import { FishingSystem } from '../systems/FishingSystem.js';
+import { WeatherSystem } from '../systems/Weather.js';
+import { WeatherRenderer } from '../rendering/WeatherRenderer.js';
+import { ExplorerBook, BOOK_CATEGORIES } from '../systems/ExplorerBook.js';
+import { ExplorerBookUI } from '../ui/ExplorerBookUI.js';
+import { Pet } from '../entities/Pet.js';
+import { createInsectsForScene } from '../entities/Insect.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -169,6 +175,19 @@ export class Game {
         this._expandOmaGarden();
       }
     };
+    // Marie pet selection — intercept dialog before normal flow
+    this.dialog.beforeDialog = (npc) => {
+      const npcId = npc._characterId;
+      if (npcId === 'marie' && this.progression.completedQuests && this.progression.completedQuests['deep_explorer'] && !this.pet) {
+        this.dialog.showChoiceDialog('Marie', 'Du hast alle Grotten-Bereiche entdeckt! Waehle deinen Begleiter:', [
+          { text: 'Kleiner Fuchs', action: () => this._createPet('fox') },
+          { text: 'Baby-Drache', action: () => this._createPet('dragon') },
+          { text: 'Magischer Hase', action: () => this._createPet('rabbit') },
+        ]);
+        return true; // cancel normal dialog
+      }
+      return false;
+    };
     this._gardenExpansions = 0; // track how many beds Oma has added
     this.saveManager = new SaveManager();
     this.itemDrops = null; // created per scene
@@ -186,6 +205,14 @@ export class Game {
     this.dayNightRenderer = null; // created per scene
     this._shootingStarReported = false;
     this.fishing = new FishingSystem();
+    this.weather = new WeatherSystem();
+    this.weatherRenderer = null; // created per scene in _buildScene
+    this.explorerBook = new ExplorerBook();
+    this.explorerBookUI = new ExplorerBookUI();
+    this.pet = null; // created when player chooses pet via Marie dialog
+    this.insects = [];
+    // Hook fishing catches into explorer book discovery
+    this.fishing.onCatch = (fishId) => this._discoverItem(fishId);
     this._animatedSprites = [];
 
     // Inventory (persists across scenes)
@@ -375,12 +402,25 @@ export class Game {
             this.progression.stats.uniqueCollected[k] = new Set(v);
           }
         }
+        // Restore weather state
+        if (save.weather && this.weather) {
+          this.weather.loadState(save.weather);
+        }
+        // Restore explorer book
+        if (save.explorerBook && this.explorerBook) {
+          this.explorerBook.loadState(save.explorerBook);
+        }
         const scene = save.player?.scene || 'hub';
         const x = save.player?.x || 20;
         const y = save.player?.y || 15;
         await this._buildScene(scene, { x, y });
         this.player.hp = save.player?.hp || 100;
         this.progression.applyToPlayer(this.player);
+        // Restore pet (after _buildScene so scene is available)
+        if (save.pet && save.pet.type) {
+          this._createPet(save.pet.type);
+          this.pet.loadState(save.pet);
+        }
       } else {
         this.progression.initNewGame();
         await this._buildScene('hub', { x: 20, y: 15 });
@@ -514,6 +554,36 @@ export class Game {
     if (this.dayNightRenderer) this.dayNightRenderer.dispose();
     this.dayNightRenderer = new DayNightRenderer(this.scene);
 
+    // Weather renderer (per scene)
+    if (this.weatherRenderer) this.weatherRenderer.dispose();
+    this.weatherRenderer = new WeatherRenderer(this.scene, this.camera.three);
+
+    // Insects (per scene)
+    for (const ins of this.insects) ins.dispose();
+    this.insects = createInsectsForScene(sceneName, this.scene, mapData.width, mapData.height);
+    // Hook insect catch to explorer book
+    for (const ins of this.insects) {
+      ins.onCatch = (type) => {
+        if (this.explorerBook.discover(type)) {
+          this.hud.showInfo('Neu entdeckt: ' + (ins.def?.name || type) + '!');
+          if (this.progression.reportDiscover) this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
+          // Check category rewards
+          for (const catKey of Object.keys(BOOK_CATEGORIES)) {
+            const rewardId = this.explorerBook.checkCategoryReward(catKey);
+            if (rewardId) {
+              this.inventory.addItem(rewardId, 1);
+              this.hud.showInfo('Kategorie komplett! Belohnung erhalten!');
+            }
+          }
+        }
+      };
+    }
+
+    // Teleport pet to new scene
+    if (this.pet) {
+      this.pet.teleportTo(this.player.x, this.player.y);
+    }
+
     // ── LIGHTING ──
     const lightConfigs = {
       hub:             { ambient: 0xfff8ee, ambientI: 2.0, sun: 0xffeecc, sunI: 1.5, fog: null },
@@ -596,6 +666,16 @@ export class Game {
       this.dayNightRenderer.dispose();
       this.dayNightRenderer = null;
     }
+
+    // Dispose weather renderer
+    if (this.weatherRenderer) {
+      this.weatherRenderer.dispose();
+      this.weatherRenderer = null;
+    }
+
+    // Dispose insects
+    for (const ins of this.insects) ins.dispose();
+    this.insects = [];
 
     // Clear fishing spots
     this.fishing.setSpots([]);
@@ -1141,8 +1221,8 @@ export class Game {
       return;
     }
 
-    // Skip gameplay updates if dialog, crafting, or fishing UI is open
-    const uiBlocking = this.dialog.isActive || this.crafting.isActive || this.fishing.isActive;
+    // Skip gameplay updates if dialog, crafting, fishing, or explorer book UI is open
+    const uiBlocking = this.dialog.isActive || this.crafting.isActive || this.fishing.isActive || this.explorerBookUI.isOpen;
 
     // Dialog system
     this.dialog.update(dt, this.player, this.npcs, this.input);
@@ -1212,6 +1292,31 @@ export class Game {
       this._shootingStarReported = false;
     }
 
+    // Weather update (always runs, like dayNight)
+    this.weather.update(dt);
+    if (this.weatherRenderer) {
+      const dayPhase = this.dayNight ? this.dayNight.phase : 'day';
+      this.weatherRenderer.update(dt, this.weather, this.tileMap.width, this.tileMap.height, this.sceneManager.currentScene, dayPhase);
+    }
+    if (this.hud && this.weather) {
+      this.hud.updateWeather(this.weather.current);
+    }
+
+    // Pet update
+    if (this.pet) {
+      this.pet.update(dt, this.player.x, this.player.y);
+    }
+
+    // Insect updates
+    for (const insect of this.insects) {
+      insect.update(dt, this.player);
+    }
+
+    // Explorer Book toggle (Tab key) — check AFTER uiBlocking check
+    if (!uiBlocking && this.input.justPressed('Tab')) {
+      this.explorerBookUI.toggle(this.explorerBook);
+    }
+
     // Fishing (F key) — MUST be BEFORE plantHealing to get first crack at KeyF
     // Always call update: the state machine must keep ticking while active.
     // Idle→casting is gated internally by proximity + KeyF.
@@ -1255,6 +1360,10 @@ export class Game {
       if (picked.length > 0) {
         this.hud.updateHotbar(this.inventory);
         if (this.vfx) this.vfx.pickupGlow(this.player.x, this.player.y);
+        // Explorer book discovery for picked-up items
+        for (const drop of picked) {
+          this._discoverItem(drop.itemId);
+        }
       }
     }
 
@@ -1314,6 +1423,9 @@ export class Game {
       uniqueCollected: this.progression?.stats?.uniqueCollected
         ? Object.fromEntries(Object.entries(this.progression.stats.uniqueCollected).map(([k, v]) => [k, [...v]]))
         : {},
+      weather: this.weather ? this.weather.getState() : null,
+      pet: this.pet ? this.pet.getState() : null,
+      explorerBook: this.explorerBook ? this.explorerBook.getState() : null,
     }));
 
     // Input cleanup
@@ -1404,10 +1516,41 @@ export class Game {
     this.hud.showInfo(`Oma hat ein neues Beet angelegt! (-3 Erde, +15 XP) [${this._gardenExpansions}/4]`);
   }
 
+  /**
+   * Explorer book discovery for any item (called from item pickup, fishing, etc.)
+   */
+  _discoverItem(itemId) {
+    if (!this.explorerBook || !itemId) return;
+    if (this.explorerBook.discover(itemId)) {
+      const itemDef = getItem(itemId);
+      this.hud.showInfo('Neu entdeckt: ' + (itemDef?.name || itemId) + '!');
+      if (this.progression.reportDiscover) this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
+      for (const catKey of Object.keys(BOOK_CATEGORIES)) {
+        const rewardId = this.explorerBook.checkCategoryReward(catKey);
+        if (rewardId) {
+          this.inventory.addItem(rewardId, 1);
+          this.hud.showInfo('Kategorie komplett! Belohnung erhalten!');
+        }
+      }
+    }
+  }
+
+  /**
+   * Create a pet companion for the player.
+   */
+  _createPet(type) {
+    this.pet = new Pet(type, this.scene);
+    this.pet.teleportTo(this.player.x, this.player.y);
+    if (this.progression.reportPetChosen) this.progression.reportPetChosen();
+    this.hud.showInfo(this.pet.def.name + ' ist jetzt dein Begleiter!');
+  }
+
   dispose() {
     this.running = false;
     this._clearScene();
     this.hud.dispose();
+    if (this.explorerBookUI) this.explorerBookUI.dispose();
+    if (this.pet) this.pet.dispose();
     this.sceneManager.dispose();
     this.renderer.dispose();
   }
