@@ -689,6 +689,8 @@ export class Game {
       .filter(p => p.type === 'fishing_spot')
       .map(p => ({ x: p.x, y: p.y, location: sceneName }));
     this.fishing.setSpots(fishingSpots);
+    // Create [F] Angeln prompt meshes in the current scene
+    if (fishingSpots.length > 0) this.fishing._createPrompts(this.scene);
 
     // Day/Night renderer (per scene)
     if (this.dayNightRenderer) this.dayNightRenderer.dispose();
@@ -1131,6 +1133,44 @@ export class Game {
             this.tileMapRenderer.addProp(lhTex, prop.x, prop.y - 3, 3, 4, 0.1);
           }
           break;
+        case 'signpost': {
+          // Canvas-drawn signpost with directional arrow + label
+          const spCanvas = document.createElement('canvas');
+          spCanvas.width = 64;
+          spCanvas.height = 48;
+          const spCtx = spCanvas.getContext('2d');
+
+          // Post
+          spCtx.fillStyle = '#8B5E3C';
+          spCtx.fillRect(29, 28, 6, 20);
+
+          // Sign board background
+          spCtx.fillStyle = '#C8924A';
+          spCtx.fillRect(4, 4, 56, 28);
+          // Board outline
+          spCtx.strokeStyle = '#5a3010';
+          spCtx.lineWidth = 2;
+          spCtx.strokeRect(4, 4, 56, 28);
+
+          // Arrow indicator based on direction
+          spCtx.fillStyle = '#3a1a00';
+          spCtx.font = 'bold 11px sans-serif';
+          spCtx.textAlign = 'center';
+          spCtx.textBaseline = 'top';
+          const arrowMap = { north: '↑', south: '↓', east: '→', west: '←' };
+          const arrow = arrowMap[prop.dir] || '→';
+          spCtx.fillText(arrow, 32, 6);
+
+          // Label text (trim emoji for canvas if needed)
+          spCtx.font = 'bold 9px sans-serif';
+          spCtx.fillText(prop.label || '', 32, 19);
+
+          const spTex = new THREE.CanvasTexture(spCanvas);
+          spTex.magFilter = THREE.NearestFilter;
+          spTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(spTex, prop.x - 0.5, prop.y - 1, 2, 1.5, 0.15);
+          break;
+        }
         case 'crystal':
         case 'torch':
         case 'fishing_spot':

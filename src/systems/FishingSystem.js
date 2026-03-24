@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { getAvailableFish, pickRandomFish, FISH_TYPES } from '../data/fish.js';
 import { getItem } from '../data/items.js';
 import { FishingUI } from '../ui/FishingUI.js';
@@ -58,6 +59,62 @@ export class FishingSystem {
 
     /** Optional callback: (fishId) => void — called when a fish is caught */
     this.onCatch = null;
+
+    // Proximity prompt meshes ([F] Angeln shown near fishing spots)
+    this._promptMeshes = [];
+    this._scene = null;
+  }
+
+  // ─── Prompt meshes ──────────────────────────────────────────────────────────
+
+  /**
+   * Build a [F] Angeln prompt mesh for each fishing spot in the scene.
+   * Called after setSpots() when the scene is loaded.
+   */
+  _createPrompts(scene) {
+    this._disposePrompts();
+    this._scene = scene;
+    for (const spot of this.fishingSpots) {
+      const mesh = this._makePromptMesh(spot.x, spot.y);
+      mesh.visible = false;
+      scene.add(mesh);
+      this._promptMeshes.push({ spot, mesh });
+    }
+  }
+
+  _makePromptMesh(x, y) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 96;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(0, 0, 96, 32);
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('[F] Angeln', 48, 16);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.magFilter = THREE.LinearFilter;
+    const geo = new THREE.PlaneGeometry(1.5, 0.5);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x + 0.5, -(y - 0.8), 0.5);
+    return mesh;
+  }
+
+  _disposePrompts() {
+    if (this._scene) {
+      for (const { mesh } of this._promptMeshes) {
+        mesh.visible = false;
+        this._scene.remove(mesh);
+        mesh.geometry.dispose();
+        if (mesh.material.map) mesh.material.map.dispose();
+        mesh.material.dispose();
+      }
+    }
+    this._promptMeshes = [];
   }
 
   /**
@@ -65,6 +122,7 @@ export class FishingSystem {
    * @param {Array<{x:number, y:number, location?:string}>} spots
    */
   setSpots(spots) {
+    this._disposePrompts();
     this.fishingSpots = spots || [];
   }
 
@@ -121,7 +179,17 @@ export class FishingSystem {
       }
     }
 
+    // Show/hide [F] Angeln prompts based on proximity
+    for (const { spot, mesh } of this._promptMeshes) {
+      const dx = player.x - spot.x;
+      const dy = player.y - spot.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      mesh.visible = d < INTERACT_RANGE;
+    }
+
     if (nearSpot && inputManager.justPressed('KeyF')) {
+      // Hide all prompts once fishing starts
+      for (const { mesh } of this._promptMeshes) mesh.visible = false;
       this._activeSpot = nearSpot;
       this._activeTimeOfDay = dayNight?.timeOfDay || 'day';
       this._toState('casting');
@@ -302,6 +370,7 @@ export class FishingSystem {
 
   dispose() {
     this.ui.dispose();
+    this._disposePrompts();
     this.fishingSpots = [];
     this.state = 'idle';
     this.isActive = false;

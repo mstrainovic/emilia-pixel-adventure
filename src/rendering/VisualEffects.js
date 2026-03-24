@@ -90,6 +90,8 @@ export class VisualEffects {
         mesh.scale.set(s, s, 1);
         // Fade out in the last 40%
         mat.opacity = t > 0.6 ? 0.95 * (1 - (t - 0.6) / 0.4) : 0.95;
+        // Hide mesh entirely when fully faded to prevent stray translucent rectangles
+        if (mat.opacity <= 0.01) mesh.visible = false;
       }
     });
 
@@ -355,8 +357,12 @@ export class VisualEffects {
       const e = this.effects[i];
       e.update(dt, e);
       if (e.age >= e.maxAge) {
+        // Ensure the mesh is hidden immediately before disposal
+        e.mesh.visible = false;
         this.scene.remove(e.mesh);
         e.mesh.geometry.dispose();
+        // Dispose texture map if present (e.g. CanvasTexture from swordSlash)
+        if (e.mesh.material.map) e.mesh.material.map.dispose();
         e.mesh.material.dispose();
         this.effects.splice(i, 1);
       }
@@ -365,8 +371,10 @@ export class VisualEffects {
 
   clear() {
     for (const e of this.effects) {
+      e.mesh.visible = false;
       this.scene.remove(e.mesh);
       e.mesh.geometry.dispose();
+      if (e.mesh.material.map) e.mesh.material.map.dispose();
       e.mesh.material.dispose();
     }
     this.effects = [];

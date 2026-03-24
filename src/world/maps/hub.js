@@ -317,7 +317,11 @@ export function generateHubMap() {
     { type: 'rock', x: 19, y: 14 },
 
     // ── Signposts near exits ──
-    { type: 'wilted_plant', x: 17, y: 3 },  // near north exit (forest hint)
+    { type: 'signpost', x: 16, y: 3,  label: '🌲 Wald',   dir: 'north' },
+    { type: 'signpost', x: 22, y: 3,  label: '🌲 Wald',   dir: 'north' },
+    { type: 'signpost', x: 16, y: 28, label: '🏖 See',    dir: 'south' },
+    { type: 'signpost', x: 22, y: 28, label: '🏖 See',    dir: 'south' },
+    { type: 'signpost', x: 37, y: 14, label: '⚔ Dungeon', dir: 'east'  },
   ];
 
   // Station collision
