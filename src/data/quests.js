@@ -187,4 +187,34 @@ export const QUESTS = {
     xpReward: 90,
     itemReward: [{ itemId: 'ghost_pearl', count: 3 }],
   },
+
+  // ── M6 Quests ──
+  cloud_jumper: {
+    id: 'cloud_jumper', name: 'Wolkenspringerin', description: 'Erreiche das Wolkenschloss',
+    type: 'visit', target: 'cloud_castle', count: 1, xpReward: 100,
+    itemReward: [{ itemId: 'cloud_crystal', count: 3 }],
+  },
+  crystal_puzzle: {
+    id: 'crystal_puzzle', name: 'Kristall-Raetsel', description: 'Loese das Spiegel-Puzzle in den Kristallhallen',
+    type: 'puzzle', target: 'crystal_puzzle', count: 1, xpReward: 80,
+    itemReward: [{ itemId: 'rainbow_shard', count: 2 }],
+  },
+  shadow_slayer: {
+    id: 'shadow_slayer', name: 'Bezwingerin des Schatten-Ritters', description: 'Besiege den finalen Boss',
+    type: 'boss', target: 'shadow_knight', count: 1, xpReward: 200, itemReward: [],
+  },
+  star_collector: {
+    id: 'star_collector', name: 'Sternensammlerin', description: 'Erreiche 15 Achievements',
+    type: 'achieve', target: 'achievements', count: 15, xpReward: 120,
+    itemReward: [{ itemId: 'star_fragment', count: 5 }],
+  },
+  emilia_legend: {
+    id: 'emilia_legend', name: 'Emilias Legende', description: 'Erreiche Level 30',
+    type: 'reach_level', target: 30, count: 1, xpReward: 0,
+    itemReward: [{ itemId: 'star_amulet', count: 1 }],
+  },
+  secret_heroine: {
+    id: 'secret_heroine', name: 'Geheime Heldin', description: 'Finde den Sternenhimmel-Raum',
+    type: 'visit', target: 'starsky', count: 1, xpReward: 150, itemReward: [],
+  },
 };

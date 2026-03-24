@@ -9,6 +9,8 @@ const QUEST_ORDER = [
   'shell_collector', 'master_angler', 'crab_problem', 'shooting_star',
   // M5
   'coral_healer', 'deep_explorer', 'best_friend', 'collector_page1', 'sunken_treasure',
+  // M6
+  'cloud_jumper', 'crystal_puzzle', 'shadow_slayer', 'star_collector', 'emilia_legend', 'secret_heroine',
 ];
 
 /**
@@ -45,6 +47,9 @@ export class Progression {
       petChosen: false,
       bookEntries: 0,
     };
+    this.stats.bossesKilled = {};
+    this.stats.puzzlesSolved = {};
+    this.stats.achievementCount = 0;
 
     // Callbacks (set by Game.js)
     this.onLevelUp = null;      // (level, levelData) => show celebration
@@ -201,6 +206,35 @@ export class Progression {
     this._setQuestProgress('collector_page1', totalEntries);
   }
 
+  reportBossKill(bossId) {
+    if (!this.stats.bossesKilled[bossId]) {
+      this.stats.bossesKilled[bossId] = true;
+      this._incrementQuest('shadow_slayer', 1);
+    }
+  }
+
+  reportPuzzleSolved(puzzleId) {
+    if (!this.stats.puzzlesSolved[puzzleId]) {
+      this.stats.puzzlesSolved[puzzleId] = true;
+      this._incrementQuest('crystal_puzzle', 1);
+    }
+  }
+
+  reportAchievementUnlock(totalCount) {
+    this.stats.achievementCount = totalCount;
+    this._setQuestProgress('star_collector', totalCount);
+  }
+
+  /**
+   * Reset all quest progress for New Game+.
+   */
+  resetQuests() {
+    this.completedQuests = {};
+    this.activeQuest = null;
+    this.questProgress = {};
+    this._assignNextQuest();
+  }
+
   _incrementQuest(questId, amount) {
     const q = this.activeQuests[questId];
     if (!q || q.completed) return;
@@ -292,6 +326,9 @@ export class Progression {
       activeQuests: this.activeQuests,
       completedQuests: this.completedQuests,
       stats: this.stats,
+      bossesKilled: this.stats.bossesKilled,
+      puzzlesSolved: this.stats.puzzlesSolved,
+      achievementCount: this.stats.achievementCount,
     };
   }
 
@@ -306,6 +343,9 @@ export class Progression {
     this.activeQuests = data.activeQuests || {};
     this.completedQuests = data.completedQuests || {};
     this.stats = data.stats || this.stats;
+    if (data.bossesKilled) this.stats.bossesKilled = data.bossesKilled;
+    if (data.puzzlesSolved) this.stats.puzzlesSolved = data.puzzlesSolved;
+    if (typeof data.achievementCount === 'number') this.stats.achievementCount = data.achievementCount;
     this.xpToNext = getXpToNextLevel(this.level);
     this._ensureActiveQuest();
   }
