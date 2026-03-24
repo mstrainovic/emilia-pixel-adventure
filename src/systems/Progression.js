@@ -7,6 +7,8 @@ const QUEST_ORDER = [
   'dungeon_explorer', 'skeleton_slayer', 'unicorn_friend', 'master_crafter', 'meadow_hero',
   // M4
   'shell_collector', 'master_angler', 'crab_problem', 'shooting_star',
+  // M5
+  'coral_healer', 'deep_explorer', 'best_friend', 'collector_page1', 'sunken_treasure',
 ];
 
 /**
@@ -38,6 +40,10 @@ export class Progression {
       itemsCrafted: 0,
       scenesVisited: {},  // sceneName → true
       npcsSpoken: {},     // npcId → true
+      coralHealed: 0,
+      grottoZones: new Set(),
+      petChosen: false,
+      bookEntries: 0,
     };
 
     // Callbacks (set by Game.js)
@@ -106,10 +112,13 @@ export class Progression {
    */
   reportKill(mobType) {
     // Track per-type kills
-    const baseType = mobType.startsWith('slime') ? 'slime'
+    let baseType = mobType.startsWith('slime') ? 'slime'
       : mobType.startsWith('skeleton') ? 'skeleton'
       : mobType.startsWith('crab') ? 'crab'
       : mobType;
+    if (mobType.startsWith('jellyfish')) baseType = 'jellyfish_glow';
+    if (mobType.startsWith('octopus')) baseType = 'octopus';
+    if (mobType === 'ghost_crab') baseType = 'ghost_crab';
     this.stats.mobsKilled[mobType] = (this.stats.mobsKilled[mobType] || 0) + 1;
     this._checkQuestType('kill', baseType, 1);
   }
@@ -167,6 +176,58 @@ export class Progression {
     if (isNew) {
       this._checkQuestType('collect_unique', category, 1);
     }
+  }
+
+  reportHealCoral() {
+    this.stats.coralHealed++;
+    this._incrementQuest('coral_healer', 1);
+  }
+
+  reportVisitZone(zoneId) {
+    if (this.stats.grottoZones.has(zoneId)) return;
+    this.stats.grottoZones.add(zoneId);
+    this._incrementQuest('deep_explorer', 1);
+  }
+
+  reportPetChosen() {
+    if (!this.stats.petChosen) {
+      this.stats.petChosen = true;
+      this._incrementQuest('best_friend', 1);
+    }
+  }
+
+  reportDiscover(totalEntries) {
+    this.stats.bookEntries = totalEntries;
+    this._setQuestProgress('collector_page1', totalEntries);
+  }
+
+  _incrementQuest(questId, amount) {
+    const q = this.activeQuests[questId];
+    if (!q || q.completed) return;
+    const def = QUESTS[questId];
+    if (!def) return;
+    q.progress = (q.progress || 0) + amount;
+    if (q.progress >= def.count) this._completeQuest(questId);
+  }
+
+  _setQuestProgress(questId, value) {
+    const q = this.activeQuests[questId];
+    if (!q || q.completed) return;
+    const def = QUESTS[questId];
+    if (!def) return;
+    q.progress = Math.min(value, def.count);
+    if (q.progress >= def.count) this._completeQuest(questId);
+  }
+
+  _completeQuest(questId) {
+    const q = this.activeQuests[questId];
+    const def = QUESTS[questId];
+    if (!q || q.completed || !def) return;
+    q.completed = true;
+    this.completedQuests[questId] = true;
+    this._unlockNextQuest(questId);
+    this.addXp(def.xpReward);
+    if (this.onQuestComplete) this.onQuestComplete(def);
   }
 
   _checkQuestType(type, target, increment) {
