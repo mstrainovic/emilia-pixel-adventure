@@ -216,6 +216,39 @@ export class HUD {
     }
   }
 
+  updateAchievements(count, total) {
+    let el = document.getElementById('hud-achievements');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'hud-achievements';
+      el.style.cssText = `
+        position: fixed; top: 8px; right: 8px;
+        color: #FFD700; font-family: 'Press Start 2P', monospace;
+        font-size: 8px; z-index: 1000;
+        text-shadow: 1px 1px 0 #000;
+      `;
+      document.body.appendChild(el);
+    }
+    el.textContent = `\u2605 ${count}/${total}`;
+  }
+
+  showNgPlus(cycleCount) {
+    let el = document.getElementById('hud-ngplus');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'hud-ngplus';
+      el.style.cssText = `
+        position: fixed; top: 20px; right: 8px;
+        color: #FF69B4; font-family: 'Press Start 2P', monospace;
+        font-size: 7px; z-index: 1000;
+        text-shadow: 1px 1px 0 #000;
+      `;
+      document.body.appendChild(el);
+    }
+    el.textContent = `NG+${cycleCount}`;
+    el.style.display = 'block';
+  }
+
   _addStyles() {
     if (document.getElementById('hud-styles')) return;
     const style = document.createElement('style');

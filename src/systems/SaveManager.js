@@ -11,7 +11,7 @@ export class SaveManager {
 
   save(gameState) {
     const data = {
-      version: 2,
+      version: 3,
       timestamp: Date.now(),
       player: {
         hp: gameState.playerHp,
@@ -30,6 +30,11 @@ export class SaveManager {
     data.weather = gameState.weather || null;
     data.pet = gameState.pet || null;
     data.explorerBook = gameState.explorerBook || { discovered: [], rewardsClaimed: [] };
+    data.achievements = gameState.achievements || [];
+    data.bossStates = gameState.bossStates || {};
+    data.newGamePlus = gameState.newGamePlus || null;
+    data.distanceWalked = gameState.distanceWalked || 0;
+    data.bossNoHitKill = gameState.bossNoHitKill || false;
 
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -45,7 +50,7 @@ export class SaveManager {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return null;
       const data = JSON.parse(raw);
-      if (data.version !== 1 && data.version !== 2) return null;
+      if (data.version !== 1 && data.version !== 2 && data.version !== 3) return null;
       return data;
     } catch (e) {
       console.warn('Load failed:', e);

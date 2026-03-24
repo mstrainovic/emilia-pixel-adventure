@@ -58,6 +58,9 @@ import { ShadowKnight } from '../entities/ShadowKnight.js';
 import { BossHealthBar } from '../ui/BossHealthBar.js';
 import { createBirdsForScene } from '../entities/Bird.js';
 import { AmbientLife } from '../rendering/AmbientLife.js';
+import { AchievementSystem } from '../systems/Achievements.js';
+import { AchievementUI } from '../ui/AchievementUI.js';
+import { NewGamePlus } from '../systems/NewGamePlus.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -225,6 +228,21 @@ export class Game {
     this.bossHealthBar = new BossHealthBar();
     this.birds = [];
     this.ambientLife = null;
+    this.achievements = new AchievementSystem();
+    this.achievementUI = new AchievementUI();
+    this.newGamePlus = new NewGamePlus();
+    this._bossNoHitKill = false;
+    this._distanceWalked = 0;
+    this._lastPlayerPos = null;
+
+    // Achievement unlock callback
+    this.achievements.onUnlock = (def) => {
+      this.achievementUI.showPopup(def);
+      this.audio.playChestOpen();
+      this.progression.reportAchievementUnlock(this.achievements.getCount());
+      this.hud.updateAchievements(this.achievements.getCount(), this.achievements.getTotal());
+    };
+
     // Hook fishing catches into explorer book discovery
     this.fishing.onCatch = (fishId) => this._discoverItem(fishId);
     this._animatedSprites = [];
@@ -291,6 +309,10 @@ export class Game {
       // G key = drop selected item
       if (e.code === 'KeyG') {
         this._dropSelectedItem(e.shiftKey);
+      }
+      // P key for achievement overlay (only when explorer book is not open)
+      if (e.code === 'KeyP' && !this.explorerBookUI.isOpen) {
+        this.achievementUI.toggle(this.achievements);
       }
     });
 
@@ -447,6 +469,12 @@ export class Game {
         if (save.explorerBook && this.explorerBook) {
           this.explorerBook.loadState(save.explorerBook);
         }
+        // Restore achievements, boss states, NG+
+        if (save.achievements) this.achievements.loadState(save.achievements);
+        if (save.bossStates) this._bossStates = save.bossStates;
+        if (save.newGamePlus) this.newGamePlus.loadState(save.newGamePlus);
+        if (typeof save.distanceWalked === 'number') this._distanceWalked = save.distanceWalked;
+        if (save.bossNoHitKill) this._bossNoHitKill = save.bossNoHitKill;
         const scene = save.player?.scene || 'hub';
         const x = save.player?.x || 20;
         const y = save.player?.y || 15;
@@ -1258,8 +1286,12 @@ export class Game {
   async _createMobs(props) {
     const mobSpawns = props.filter(p => p.type === 'mob_spawn');
     for (const spawn of mobSpawns) {
-      const mobDef = MOB_TYPES[spawn.mobType];
+      // Apply NG+ scaling if active
+      let mobDef = MOB_TYPES[spawn.mobType];
       if (!mobDef) continue;
+      if (this.newGamePlus.active) {
+        mobDef = this.newGamePlus.applyToMob(mobDef);
+      }
       let mob;
       switch (mobDef.spriteType) {
         case 'crab':
@@ -1403,6 +1435,41 @@ export class Game {
         }
 
         this._activeBoss = null;
+
+        // ── Endgame: Shadow Knight defeated → cutscene + NG+ offer ──
+        if (boss.bossType === 'shadow_knight') {
+          setTimeout(() => {
+            this.dialog.showChoiceDialog('Emilia', 'Der Schatten-Ritter ist besiegt! Das Wolkenschloss ist befreit! Alle Freunde und Familie warten auf dich... Du bist eine wahre Heldin, Emilia!', [
+              {
+                text: 'Weiter...',
+                action: () => {
+                  if (this.newGamePlus.canActivate(this._bossStates)) {
+                    this.dialog.showChoiceDialog('Sternenwaechterin', 'Moechtest du ein neues Abenteuer beginnen? (Deine Items und Achievements bleiben erhalten!)', [
+                      {
+                        text: 'Ja, neues Abenteuer! (NG+)',
+                        action: () => {
+                          const ngData = this.newGamePlus.activate();
+                          this.progression.resetQuests();
+                          this._bossStates = {};
+                          this._ngMobMultipliers = ngData;
+                          this.hud.showNgPlus(this.newGamePlus.cycleCount);
+                          this.hud.showInfo('Neues Abenteuer+ gestartet!');
+                          this.sceneManager.transition('hub', 10, 10);
+                        },
+                      },
+                      {
+                        text: 'Nein, ich erkunde weiter',
+                        action: () => {
+                          this.hud.showInfo('Du kannst jederzeit bei Mama Tanja NG+ starten!');
+                        },
+                      },
+                    ]);
+                  }
+                },
+              },
+            ]);
+          }, 1500);
+        }
       }
 
       // Persist boss HP for respawn
@@ -1448,6 +1515,46 @@ export class Game {
     if (this.hud && this.weather) {
       this.hud.updateWeather(this.weather.current);
     }
+
+    // Distance tracking for achievement
+    if (this._lastPlayerPos) {
+      const dx = this.player.x - this._lastPlayerPos.x;
+      const dy = this.player.y - this._lastPlayerPos.y;
+      this._distanceWalked += Math.sqrt(dx * dx + dy * dy);
+    }
+    this._lastPlayerPos = { x: this.player.x, y: this.player.y };
+
+    // Achievement checks (throttled — every 2 seconds)
+    this._achievementCheckTimer = (this._achievementCheckTimer || 0) + dt;
+    if (this._achievementCheckTimer >= 2.0) {
+      this._achievementCheckTimer = 0;
+      const bookProg = this.explorerBook.getTotalProgress();
+      this.achievements.check({
+        scenesVisited: this.progression.stats.scenesVisited,
+        mobsKilled: this.progression.stats.mobsKilled,
+        totalMobsKilled: Object.values(this.progression.stats.mobsKilled).reduce((a, b) => a + b, 0),
+        bossesKilled: this.progression.stats.bossesKilled || {},
+        bossNoHitKill: this._bossNoHitKill,
+        fishCaught: Object.keys(this.progression.stats.fishCaught || {}).length,
+        shellsFound: Object.keys(this.progression.stats.uniqueCollected || {}).filter(k => k.startsWith('shell') || k === 'sand_dollar' || k === 'pearl' || k === 'rainbow_shell').length,
+        insectsCaught: [...this.explorerBook.discovered].filter(e => ['butterfly', 'ladybug', 'firefly', 'dragonfly', 'bee', 'cricket'].includes(e)).length,
+        gemsFound: [...this.explorerBook.discovered].filter(e => ['crystal', 'sapphire', 'ruby', 'emerald', 'cloud_crystal', 'ghost_pearl'].includes(e)).length,
+        bookEntries: bookProg.found,
+        bookTotal: bookProg.total,
+        plantsCollected: this.progression.stats.plantsHealed || 0,
+        chestsFound: 0,
+        secretsFound: 0,
+        distanceWalked: this._distanceWalked,
+        npcsSpoken: this.progression.stats.npcsSpoken || {},
+        unicornsPetted: this.progression.stats.unicornsPetted || 0,
+        petFriendship: this.pet?.friendship || 0,
+        completedQuests: this.progression.completedQuests || {},
+        level: this.progression.level,
+      });
+    }
+
+    // Achievement popup timer
+    this.achievementUI.updatePopup(dt);
 
     // Pet update
     if (this.pet) {
@@ -1573,6 +1680,11 @@ export class Game {
       weather: this.weather ? this.weather.getState() : null,
       pet: this.pet ? this.pet.getState() : null,
       explorerBook: this.explorerBook ? this.explorerBook.getState() : null,
+      achievements: this.achievements.getState(),
+      bossStates: this._bossStates,
+      newGamePlus: this.newGamePlus.getState(),
+      distanceWalked: this._distanceWalked,
+      bossNoHitKill: this._bossNoHitKill,
     }));
 
     // Input cleanup
