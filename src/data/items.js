@@ -58,6 +58,59 @@ export const ITEMS = {
   cooked_meat:  { id: 'cooked_meat',  name: 'Bratfleisch',      category: 'food_cooked', stackSize: 10, color: '#DD6644', healAmount: 40 },
   veggie_soup:  { id: 'veggie_soup',  name: 'Gemuesesuppe',     category: 'food_cooked', stackSize: 10, color: '#77BB44', healAmount: 50 },
   heal_potion:  { id: 'heal_potion',  name: 'Heiltrank',        category: 'potion',      stackSize: 5,  color: '#FF4488', healAmount: 100 },
+
+  // ── Corals (M5 Grotto) ──
+  fire_coral:    { id: 'fire_coral',    name: 'Feuerkoralle',     category: 'coral',    stackSize: 99, color: '#FF4500' },
+  brain_coral:   { id: 'brain_coral',   name: 'Hirnkoralle',      category: 'coral',    stackSize: 99, color: '#DDA0DD' },
+  fan_coral:     { id: 'fan_coral',     name: 'Faecherkoralle',   category: 'coral',    stackSize: 99, color: '#FF69B4' },
+  glow_coral:    { id: 'glow_coral',    name: 'Leuchtkoralle',    category: 'coral',    stackSize: 99, color: '#00FFFF' },
+
+  // ── Gems (M5 Grotto/Dungeon) ──
+  sapphire:      { id: 'sapphire',      name: 'Saphir',           category: 'gem',      stackSize: 99, color: '#0066CC' },
+  ruby:          { id: 'ruby',          name: 'Rubin',            category: 'gem',      stackSize: 99, color: '#CC0033' },
+  emerald:       { id: 'emerald',       name: 'Smaragd',          category: 'gem',      stackSize: 99, color: '#00CC66' },
+
+  // ── Underwater drops (M5 Grotto) ──
+  ink_sac:          { id: 'ink_sac',          name: 'Tintenbeutel',       category: 'resource', stackSize: 99, color: '#2A0A2A' },
+  jelly_essence:    { id: 'jelly_essence',    name: 'Quallen-Essenz',     category: 'resource', stackSize: 99, color: '#80FFFF' },
+  glow_orb:         { id: 'glow_orb',         name: 'Leuchtkugel',        category: 'resource', stackSize: 99, color: '#AAFFEE' },
+  tentacle:         { id: 'tentacle',         name: 'Tentakel',           category: 'resource', stackSize: 99, color: '#8B668B' },
+  underwater_plant: { id: 'underwater_plant', name: 'Unterwasserpflanze', category: 'resource', stackSize: 99, color: '#228B22' },
+  ghost_pearl:      { id: 'ghost_pearl',      name: 'Geisterperle',       category: 'resource', stackSize: 10, color: '#E0E0FF' },
+
+  // ── Shells M5 (Grotte-exklusiv) ──
+  spiral_snail:  { id: 'spiral_snail',  name: 'Spiralschnecke',     category: 'resource', stackSize: 99, color: '#DEB887' },
+  deep_crown:    { id: 'deep_crown',    name: 'Tiefseekrone',       category: 'resource', stackSize: 99, color: '#4169E1' },
+
+  // ── Pet ──
+  pet_treat:     { id: 'pet_treat',     name: 'Haustier-Leckerli', category: 'food',     stackSize: 20, color: '#FFB6C1' },
+
+  // ── Weapons M5 ──
+  sword_gem:     { id: 'sword_gem',     name: 'Edelstein-Schwert', category: 'weapon',   stackSize: 1,  color: '#9966FF', damage: 40 },
+
+  // ── Potions M5 ──
+  glow_potion:   { id: 'glow_potion',   name: 'Leuchttrank',       category: 'potion',   stackSize: 5,  color: '#80FFCC' },
+
+  // ── Food M5 ──
+  sea_soup:      { id: 'sea_soup',      name: 'Meeres-Suppe',      category: 'food_cooked', stackSize: 10, color: '#4682B4', healAmount: 60 },
+
+  // ── Deko M5 ──
+  diving_helm:   { id: 'diving_helm',   name: 'Tauchhelm',         category: 'equipment', stackSize: 1,  color: '#B0C4DE' },
+
+  // ── Rare Finds (Explorer Book) ──
+  old_coin:       { id: 'old_coin',       name: 'Alte Muenze',        category: 'rare',     stackSize: 99, color: '#DAA520' },
+  fairy_dust:     { id: 'fairy_dust',     name: 'Feenstaub',          category: 'rare',     stackSize: 99, color: '#FFD1DC' },
+  fossil:         { id: 'fossil',         name: 'Fossil',             category: 'rare',     stackSize: 99, color: '#8B7D6B' },
+  message_bottle: { id: 'message_bottle', name: 'Flaschenpost',       category: 'rare',     stackSize: 99, color: '#87CEEB' },
+  lost_diary:     { id: 'lost_diary',     name: 'Verlorenes Tagebuch',category: 'rare',     stackSize: 1,  color: '#8B4513' },
+  golden_feather: { id: 'golden_feather', name: 'Goldene Feder',      category: 'rare',     stackSize: 99, color: '#FFD700' },
+
+  // ── Category Completion Rewards ──
+  golden_rod:     { id: 'golden_rod',     name: 'Goldene Angel',      category: 'equipment', stackSize: 1, color: '#FFD700' },
+  butterfly_net:  { id: 'butterfly_net',  name: 'Schmetterlings-Netz',category: 'equipment', stackSize: 1, color: '#98FB98' },
+  gem_ring:       { id: 'gem_ring',       name: 'Edelstein-Ring',     category: 'equipment', stackSize: 1, color: '#9966FF' },
+  treasure_map:   { id: 'treasure_map',   name: 'Schatzkarte',        category: 'equipment', stackSize: 1, color: '#DEB887' },
+  collectors_badge:{ id: 'collectors_badge',name: 'Sammler-Abzeichen', category: 'equipment', stackSize: 1, color: '#C0C0C0' },
 };
 
 export function getItem(id) {
