@@ -260,10 +260,16 @@ export function generateDungeonMap() {
     }
   }
 
+  // ── East exit to grotto (right side, rows 13-16) ──
+  fillRect(ground, W - 2, 13, 2, 4, 9);
+  fillRect(collision, W - 2, 13, 2, 4, 0);
+
   // ── Exits ──
   const exits = [
     // West exit back to hub
     { id: 'west', x: 0, y: 13, w: 2, h: 4, target: 'hub', spawnX: 37, spawnY: 15 },
+    // East exit to grotto
+    { id: 'east', x: W - 2, y: 13, w: 2, h: 4, target: 'grotto', spawnX: 2, spawnY: 5 },
   ];
 
   return {

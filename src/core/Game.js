@@ -34,6 +34,10 @@ import { generateDungeonMap } from '../world/maps/dungeon.js';
 import { generateLakeMap } from '../world/maps/lake.js';
 import { generateUnicornMeadowMap } from '../world/maps/unicorn_meadow.js';
 import { generateBeachMap } from '../world/maps/beach.js';
+import { generateGrottoMap } from '../world/maps/grotto.js';
+import { Jellyfish } from '../entities/Jellyfish.js';
+import { Octopus } from '../entities/Octopus.js';
+import { GhostCrab } from '../entities/GhostCrab.js';
 import { generateTileset, generateTilesetAsync, GENERATED_TILE_DEFS } from '../rendering/TilesetGenerator.js';
 import { GroundDecorationRenderer } from '../rendering/GroundDecorationRenderer.js';
 import { DayNightSystem } from '../systems/DayNight.js';
@@ -211,6 +215,7 @@ export class Game {
       lake: generateLakeMap,
       unicorn_meadow: generateUnicornMeadowMap,
       beach: generateBeachMap,
+      grotto: generateGrottoMap,
     };
 
     // Scene backgrounds
@@ -221,6 +226,7 @@ export class Game {
       lake: 0x1a3a4a,
       unicorn_meadow: 0x3a4a2a,
       beach: 0x4a8aaa,
+      grotto: 0x0a1a2a,
     };
 
     window.addEventListener('resize', () => {
@@ -427,6 +433,9 @@ export class Game {
     this.groundDeco = new GroundDecorationRenderer(this.scene);
     this.groundDeco.build(mapData.ground, mapData.collision, sceneName, this._decorTexture);
 
+    // Extract zone markers for quest tracking
+    this._zoneMarkers = mapData.props.filter(p => p.type === 'zone_marker');
+
     // Load props
     await this._loadProps(mapData.props);
 
@@ -462,6 +471,7 @@ export class Game {
       lake: 'pollen',
       unicorn_meadow: 'magic',
       beach: 'pollen',
+      grotto: 'bubbles',
     };
     this.vfx.startAmbientParticles(
       finalSpawn.x, finalSpawn.y,
@@ -478,6 +488,12 @@ export class Game {
     this.plantHealing.createFromProps(mapData.props);
     this.plantHealing.onUnlock = () => {
       this.hud.showInfo('Die Magische Wiese ist jetzt erreichbar!');
+    };
+    // When a plant is healed, check if we're on grotto scene for coral quest
+    this.plantHealing.onHeal = () => {
+      if (this.sceneManager.currentScene === 'grotto') {
+        this.progression.reportHealCoral();
+      }
     };
 
     // Unicorns (only in unicorn_meadow)
@@ -506,6 +522,7 @@ export class Game {
       lake:            { ambient: 0xccddff, ambientI: 2.0, sun: 0xffffff, sunI: 1.5, fog: null },
       unicorn_meadow:  { ambient: 0xffeecc, ambientI: 2.2, sun: 0xffddaa, sunI: 1.8, fog: null },
       beach:           { ambient: 0xeee8cc, ambientI: 1.5, sun: 0xffeedd, sunI: 1.2, fog: null },
+      grotto:          { ambient: 0x4488aa, ambientI: 1.2, sun: 0x3366aa, sunI: 0.6, fog: [0x0a1a2a, 0.01] },
     };
     const lc = lightConfigs[sceneName] || lightConfigs.hub;
 
@@ -539,6 +556,7 @@ export class Game {
       lake: 'Der Blaue See',
       unicorn_meadow: 'Die Magische Wiese',
       beach: 'Der Sonnenstrand',
+      grotto: 'Die Unterwasser-Grotte',
     };
     if (sceneNames[sceneName]) {
       this.hud.showInfo(sceneNames[sceneName]);
@@ -1071,10 +1089,24 @@ export class Game {
     for (const spawn of mobSpawns) {
       const mobDef = MOB_TYPES[spawn.mobType];
       if (!mobDef) continue;
-      // Use Crab entity for crab spriteType, Mob for everything else
-      const mob = mobDef.spriteType === 'crab'
-        ? new Crab(spawn.mobType, mobDef, spawn.x, spawn.y)
-        : new Mob(spawn.mobType, mobDef, spawn.x, spawn.y);
+      let mob;
+      switch (mobDef.spriteType) {
+        case 'crab':
+          mob = new Crab(spawn.mobType, mobDef, spawn.x, spawn.y);
+          break;
+        case 'jellyfish':
+          mob = new Jellyfish(spawn.x, spawn.y, this.scene);
+          break;
+        case 'octopus':
+          mob = new Octopus(spawn.x, spawn.y, this.scene);
+          break;
+        case 'ghost_crab':
+          mob = new GhostCrab(spawn.x, spawn.y, this.scene);
+          break;
+        default:
+          mob = new Mob(spawn.mobType, mobDef, spawn.x, spawn.y);
+          break;
+      }
       try {
         await mob.loadAnimations(this.assetLoader);
         mob.addToScene(this.scene);
@@ -1204,6 +1236,17 @@ export class Game {
     for (const mob of this.mobs) {
       updateKnockback(mob, dt);
       mob.update(dt, this.player, this.tileMap);
+    }
+
+    // Zone marker proximity checking (grotto exploration quests)
+    if (this.sceneManager.currentScene === 'grotto' && this._zoneMarkers) {
+      for (const marker of this._zoneMarkers) {
+        const dx = this.player.x - marker.x;
+        const dy = this.player.y - marker.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 3) {
+          this.progression.reportVisitZone(marker.zoneId);
+        }
+      }
     }
 
     // Item drops — only auto-pickup when no UI blocking

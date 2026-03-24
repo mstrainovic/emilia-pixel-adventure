@@ -278,6 +278,7 @@ export class PlantHealingSystem {
           window.__game.progression.addXp(10);
           window.__game.progression.reportHeal();
         }
+        if (this.onHeal) this.onHeal();
         if (hud) hud.showInfo(`Pflanze geheilt! +10 XP (${this.totalHealed}/10)`);
 
         if (this.totalHealed >= 10 && !this.unicornUnlocked) {

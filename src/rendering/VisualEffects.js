@@ -270,8 +270,10 @@ export class VisualEffects {
       firefly: { count: 15, color: [200, 255, 100], size: 0.15, speed: 0.5, alpha: 0.6 },
       dust: { count: 20, color: [200, 180, 150], size: 0.1, speed: 0.15, alpha: 0.25 },
       magic: { count: 30, color: [255, 220, 255], size: 0.14, speed: 0.4, alpha: 0.5 },
+      bubbles: { count: 30, color: [128, 255, 255], size: 0.15, speed: 0.4, alpha: 0.5 },
     };
     const cfg = configs[type] || configs.pollen;
+    const isBubbles = (type === 'bubbles');
 
     for (let i = 0; i < cfg.count; i++) {
       const geo = new THREE.PlaneGeometry(cfg.size, cfg.size);
@@ -297,11 +299,22 @@ export class VisualEffects {
         _baseY: mesh.position.y,
         _speed: cfg.speed,
         _baseOp: baseOp,
+        _isBubbles: isBubbles,
         update: (dt, e) => {
           e.age += dt;
-          // Gentle floating motion
-          mesh.position.x = e._baseX + Math.sin(e.age * e._speed + e._phase) * 1.5;
-          mesh.position.y = e._baseY + Math.cos(e.age * e._speed * 0.7 + e._phase) * 1.0;
+          if (e._isBubbles) {
+            // Bubbles rise upward (+Y in Three.js) with gentle horizontal wobble
+            mesh.position.y += e._speed * dt;
+            mesh.position.x = e._baseX + Math.sin(e.age * 1.5 + e._phase) * 0.8;
+            // Reset when risen too far (loop back down)
+            if (mesh.position.y > e._baseY + 10) {
+              mesh.position.y = e._baseY - 5;
+            }
+          } else {
+            // Gentle floating motion
+            mesh.position.x = e._baseX + Math.sin(e.age * e._speed + e._phase) * 1.5;
+            mesh.position.y = e._baseY + Math.cos(e.age * e._speed * 0.7 + e._phase) * 1.0;
+          }
           // Opacity pulse (firefly twinkle)
           mat.opacity = e._baseOp * (0.5 + 0.5 * Math.sin(e.age * 2 + e._phase));
         }

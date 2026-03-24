@@ -178,6 +178,14 @@ export class PostProcessingPipeline {
         saturation: 1.1,
         bloomStrength: 0.3,
       },
+      grotto: {
+        tint: [0.7, 0.85, 1.1],
+        tintStrength: 0.2,
+        brightness: 0.9,
+        contrast: 1.05,
+        saturation: 0.9,
+        bloomStrength: 0.5,
+      },
     };
 
     const mood = moods[sceneName] || moods.hub;
