@@ -744,7 +744,7 @@ export class Game {
       unicorn_meadow:  { ambient: 0xffeecc, ambientI: 2.2, sun: 0xffddaa, sunI: 1.8, fog: null },
       beach:           { ambient: 0xeee8cc, ambientI: 1.5, sun: 0xffeedd, sunI: 1.2, fog: null },
       grotto:          { ambient: 0x55aacc, ambientI: 1.8, sun: 0x44aacc, sunI: 1.0, fog: [0x0a1a2a, 0.01] },
-      cloud_castle:    { ambient: 0xeeeeff, ambientI: 2.2, sun: 0xffeedd, sunI: 1.8, fog: null },
+      cloud_castle:    { ambient: 0xccccee, ambientI: 1.4, sun: 0xffeedd, sunI: 1.0, fog: null },
       starsky:         { ambient: 0x6666aa, ambientI: 1.5, sun: 0x8888cc, sunI: 0.8, fog: [0x0a0a1a, 0.02] },
     };
     const lc = lightConfigs[sceneName] || lightConfigs.hub;
@@ -1217,6 +1217,22 @@ export class Game {
           const toTex = new THREE.CanvasTexture(toCanvas);
           toTex.magFilter = THREE.NearestFilter; toTex.minFilter = THREE.NearestFilter;
           this.tileMapRenderer.addProp(toTex, prop.x, prop.y - 0.3, 0.8, 1.0, 0.13);
+          break;
+        }
+        case 'crystal_pillar': {
+          // Tall crystal column for Cloud Castle
+          const cpCanvas = document.createElement('canvas');
+          cpCanvas.width = 16; cpCanvas.height = 32;
+          const cpCtx = cpCanvas.getContext('2d');
+          cpCtx.fillStyle = '#aabbee'; cpCtx.fillRect(5, 2, 6, 28);
+          cpCtx.fillStyle = '#bbccff'; cpCtx.fillRect(6, 0, 4, 4);
+          cpCtx.fillStyle = '#99aadd'; cpCtx.fillRect(5, 12, 6, 2);
+          cpCtx.fillStyle = '#99aadd'; cpCtx.fillRect(5, 22, 6, 2);
+          cpCtx.fillStyle = '#ddeeff'; cpCtx.fillRect(7, 3, 1, 6); // highlight
+          cpCtx.fillStyle = '#ddeeff'; cpCtx.fillRect(7, 16, 1, 4);
+          const cpTex = new THREE.CanvasTexture(cpCanvas);
+          cpTex.magFilter = THREE.NearestFilter; cpTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(cpTex, prop.x, prop.y - 1.5, 1, 2.5, 0.14);
           break;
         }
         case 'fishing_spot':

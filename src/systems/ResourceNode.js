@@ -18,7 +18,10 @@ export class ResourceNode {
       ore:      { hitsNeeded: 2, loot: 'iron_ore', lootMin: 1, lootMax: 2, respawn: 30, color: 0x8a5533 },
       mushroom: { hitsNeeded: 1, loot: 'mushroom',  lootMin: 1, lootMax: 3, respawn: 15, color: 0xaa7744 },
       earth:    { hitsNeeded: 1, loot: 'earth',     lootMin: 1, lootMax: 2, respawn: 15, color: 0x5a3a1a },
-      shell:    { hitsNeeded: 1, loot: 'shell_common', lootMin: 1, lootMax: 1, respawn: 480, color: 0xe8d5a3 },
+      shell:          { hitsNeeded: 1, loot: 'shell_common',   lootMin: 1, lootMax: 1, respawn: 480, color: 0xe8d5a3 },
+      cloud_crystal:  { hitsNeeded: 2, loot: 'cloud_crystal',  lootMin: 1, lootMax: 2, respawn: 45,  color: 0xaaddff },
+      rainbow_shard:  { hitsNeeded: 2, loot: 'rainbow_shard',  lootMin: 1, lootMax: 1, respawn: 60,  color: 0xff99cc },
+      star_fragment:  { hitsNeeded: 1, loot: 'star_fragment',  lootMin: 1, lootMax: 2, respawn: 30,  color: 0xffffaa },
     };
 
     const def = defs[this.type] || defs.rock;
@@ -228,6 +231,31 @@ export class ResourceNode {
         fill(5, 6, 6, 4, '#55bbdd');
         fill(7, 4, 2, 2, '#66ccee');
         px(6, 6, '#88eeff'); px(8, 7, '#88eeff'); // sparkle
+        break;
+      case 'cloud_crystal':
+        // Pale blue cloud crystal
+        fill(6, 3, 4, 10, '#aaddff');
+        fill(5, 5, 6, 6, '#bbddff');
+        fill(7, 2, 2, 3, '#cceeFF');
+        px(6, 4, '#ddeeff'); px(9, 6, '#ffffff'); // shimmer
+        px(5, 8, '#88bbdd');
+        break;
+      case 'rainbow_shard':
+        // Multi-colored crystal shard
+        fill(7, 3, 2, 10, '#ff6688');
+        fill(6, 5, 1, 6, '#ffaa44');
+        fill(9, 5, 1, 6, '#44aaff');
+        fill(5, 7, 1, 3, '#ffee44');
+        fill(10, 7, 1, 3, '#aa66ff');
+        px(7, 3, '#ffffff'); px(8, 4, '#ffccdd'); // sparkle
+        break;
+      case 'star_fragment':
+        // Glowing yellow star fragment
+        fill(7, 4, 2, 8, '#ffee66');
+        fill(5, 6, 6, 4, '#ffdd44');
+        px(8, 4, '#ffffaa'); px(6, 5, '#ffffbb'); // glow points
+        px(5, 7, '#ffcc33'); px(10, 7, '#ffcc33'); // star tips
+        px(7, 3, '#ffffff'); px(8, 11, '#ffffff');
         break;
       default:
         // Generic colored square with border

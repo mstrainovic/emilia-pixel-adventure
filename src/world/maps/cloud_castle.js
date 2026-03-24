@@ -112,18 +112,18 @@ export function generateCloudCastleMap() {
     const rx = 26 + Math.floor(rng() * 12);
     const ry = 16 + Math.floor(rng() * 17);
     if (ground[ry] && ground[ry][rx] === 21) {
-      props.push({ type: 'resource', resource: 'cloud_crystal', x: rx, y: ry });
+      props.push({ type: 'resource', resourceType: 'cloud_crystal', x: rx, y: ry, id: `ccrystal_${i}` });
     }
   }
 
   // Rainbow shards on Star Terrace
   for (let i = 0; i < 3; i++) {
-    props.push({ type: 'resource', resource: 'rainbow_shard', x: 32 + i * 3, y: 3 + Math.floor(rng() * 5) });
+    props.push({ type: 'resource', resourceType: 'rainbow_shard', x: 32 + i * 3, y: 3 + Math.floor(rng() * 5), id: `rshard_${i}` });
   }
 
   // Star fragments in Cloud Garden
   for (let i = 0; i < 4; i++) {
-    props.push({ type: 'resource', resource: 'star_fragment', x: 7 + Math.floor(rng() * 16), y: 26 + Math.floor(rng() * 12) });
+    props.push({ type: 'resource', resourceType: 'star_fragment', x: 7 + Math.floor(rng() * 16), y: 26 + Math.floor(rng() * 12), id: `sfrag_${i}` });
   }
 
   // Decorative crystal pillars in Crystal Halls (collision props)
