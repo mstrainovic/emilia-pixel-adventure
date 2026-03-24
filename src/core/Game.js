@@ -40,6 +40,99 @@ import { DayNightSystem } from '../systems/DayNight.js';
 import { DayNightRenderer } from '../rendering/DayNightRenderer.js';
 import { FishingSystem } from '../systems/FishingSystem.js';
 
+function _createPalmSprite() {
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 48;
+  const ctx = c.getContext('2d');
+
+  // Trunk — brown, slightly curved
+  ctx.fillStyle = '#8B6914';
+  // Main trunk segments from bottom to top
+  ctx.fillRect(14, 44, 4, 4);   // base
+  ctx.fillRect(13, 38, 4, 6);   // lower
+  ctx.fillRect(12, 30, 4, 8);   // middle
+  ctx.fillRect(13, 22, 3, 8);   // upper
+  ctx.fillRect(14, 16, 3, 6);   // top
+
+  // Trunk highlight
+  ctx.fillStyle = '#A07D1A';
+  ctx.fillRect(15, 38, 1, 6);
+  ctx.fillRect(14, 28, 1, 8);
+
+  // Fronds — dark green
+  ctx.fillStyle = '#2D8B2D';
+  // Left fronds
+  ctx.fillRect(2, 10, 12, 3);
+  ctx.fillRect(0, 8, 8, 2);
+  ctx.fillRect(4, 12, 6, 2);
+  // Right fronds
+  ctx.fillRect(18, 10, 12, 3);
+  ctx.fillRect(24, 8, 8, 2);
+  ctx.fillRect(22, 12, 6, 2);
+  // Top fronds
+  ctx.fillRect(10, 4, 12, 3);
+  ctx.fillRect(8, 6, 16, 3);
+
+  // Lighter green highlights on fronds
+  ctx.fillStyle = '#3DA83D';
+  ctx.fillRect(4, 9, 6, 2);
+  ctx.fillRect(22, 9, 6, 2);
+  ctx.fillRect(12, 5, 8, 2);
+
+  // Coconuts
+  ctx.fillStyle = '#6B4E1A';
+  ctx.fillRect(12, 14, 3, 3);
+  ctx.fillRect(17, 15, 3, 3);
+  ctx.fillRect(14, 16, 3, 2);
+
+  return c;
+}
+
+function _createLighthouseSprite() {
+  const c = document.createElement('canvas');
+  c.width = 48; c.height = 64;
+  const ctx = c.getContext('2d');
+
+  // Stone base
+  ctx.fillStyle = '#8B8B8B';
+  ctx.fillRect(12, 54, 24, 10);
+  ctx.fillStyle = '#707070';
+  ctx.fillRect(12, 58, 24, 2);
+  ctx.fillRect(12, 62, 24, 2);
+
+  // White tower (slightly tapered)
+  ctx.fillStyle = '#F0F0F0';
+  ctx.fillRect(16, 14, 16, 40);
+  // Taper sides
+  ctx.fillRect(15, 34, 1, 20);
+  ctx.fillRect(32, 34, 1, 20);
+
+  // Red stripes
+  ctx.fillStyle = '#CC3333';
+  ctx.fillRect(16, 18, 16, 4);
+  ctx.fillRect(15, 30, 18, 4);
+  ctx.fillRect(15, 42, 18, 4);
+
+  // Red roof/dome
+  ctx.fillStyle = '#CC3333';
+  ctx.fillRect(14, 8, 20, 6);
+  ctx.fillRect(16, 4, 16, 4);
+  ctx.fillRect(18, 2, 12, 2);
+  ctx.fillRect(20, 0, 8, 2);
+
+  // Light window (yellow glow)
+  ctx.fillStyle = '#FFE44D';
+  ctx.fillRect(20, 10, 8, 4);
+  ctx.fillStyle = '#FFF8B0';
+  ctx.fillRect(22, 11, 4, 2);
+
+  // Door at base
+  ctx.fillStyle = '#6B4E1A';
+  ctx.fillRect(21, 50, 6, 8);
+
+  return c;
+}
+
 export class Game {
   constructor() {
     this.scene = new THREE.Scene();
@@ -632,8 +725,15 @@ export class Game {
     for (const prop of props) {
       switch (prop.type) {
         case 'tree':
-          // Prefer Cute_Fantasy oak trees
-          if (cfOakTex) {
+          if (prop.variant === 'palm') {
+            // Canvas-drawn palm tree for beach
+            const palmCanvas = _createPalmSprite();
+            const palmTex = new THREE.CanvasTexture(palmCanvas);
+            palmTex.magFilter = THREE.NearestFilter;
+            palmTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(palmTex, prop.x - 0.5, prop.y - 2, 2, 3, 0.1);
+          } else if (cfOakTex) {
+            // Prefer Cute_Fantasy oak trees
             // Oak_Tree.png is 64x80 = 4x5 tiles
             this.tileMapRenderer.addProp(cfOakTex, prop.x - 1, prop.y - 3.5, 4, 5, 0.1);
           } else if (cfOakSmallTex) {
@@ -759,6 +859,15 @@ export class Game {
             chick.setPosition(prop.x + 0.5, prop.y + 0.5, 0.12 + prop.y * 0.001);
             this.scene.add(chick.mesh);
             this._animatedSprites.push(chick);
+          }
+          break;
+        case 'decoration':
+          if (prop.variant === 'lighthouse') {
+            const lhCanvas = _createLighthouseSprite();
+            const lhTex = new THREE.CanvasTexture(lhCanvas);
+            lhTex.magFilter = THREE.NearestFilter;
+            lhTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(lhTex, prop.x, prop.y - 3, 3, 4, 0.1);
           }
           break;
         case 'crystal':
