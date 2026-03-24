@@ -33,8 +33,12 @@ import { generateForestMap } from '../world/maps/forest.js';
 import { generateDungeonMap } from '../world/maps/dungeon.js';
 import { generateLakeMap } from '../world/maps/lake.js';
 import { generateUnicornMeadowMap } from '../world/maps/unicorn_meadow.js';
+import { generateBeachMap } from '../world/maps/beach.js';
 import { generateTileset, generateTilesetAsync, GENERATED_TILE_DEFS } from '../rendering/TilesetGenerator.js';
 import { GroundDecorationRenderer } from '../rendering/GroundDecorationRenderer.js';
+import { DayNightSystem } from '../systems/DayNight.js';
+import { DayNightRenderer } from '../rendering/DayNightRenderer.js';
+import { FishingSystem } from '../systems/FishingSystem.js';
 
 export class Game {
   constructor() {
@@ -81,6 +85,9 @@ export class Game {
     this.tileMap = null;
     this.resources = null;
     this.plantHealing = new PlantHealingSystem(null); // scene set per map
+    this.dayNight = new DayNightSystem();
+    this.dayNightRenderer = null; // created per scene
+    this.fishing = new FishingSystem();
     this._animatedSprites = [];
 
     // Inventory (persists across scenes)
@@ -109,6 +116,7 @@ export class Game {
       dungeon: generateDungeonMap,
       lake: generateLakeMap,
       unicorn_meadow: generateUnicornMeadowMap,
+      beach: generateBeachMap,
     };
 
     // Scene backgrounds
@@ -118,6 +126,7 @@ export class Game {
       dungeon: 0x1a1a2a,
       lake: 0x1a3a4a,
       unicorn_meadow: 0x3a4a2a,
+      beach: 0x87CEEB,
     };
 
     window.addEventListener('resize', () => {
@@ -346,6 +355,7 @@ export class Game {
       dungeon: 'dust',
       lake: 'pollen',
       unicorn_meadow: 'magic',
+      beach: 'pollen',
     };
     this.vfx.startAmbientParticles(
       finalSpawn.x, finalSpawn.y,
@@ -372,6 +382,16 @@ export class Game {
       this.unicorns.push(unicorn);
     }
 
+    // Fishing spots
+    const fishingSpots = mapData.props
+      .filter(p => p.type === 'fishing_spot')
+      .map(p => ({ x: p.x, y: p.y, location: sceneName }));
+    this.fishing.setSpots(fishingSpots);
+
+    // Day/Night renderer (per scene)
+    if (this.dayNightRenderer) this.dayNightRenderer.dispose();
+    this.dayNightRenderer = new DayNightRenderer(this.scene);
+
     // ── LIGHTING ──
     const lightConfigs = {
       hub:             { ambient: 0xfff8ee, ambientI: 2.0, sun: 0xffeecc, sunI: 1.5, fog: null },
@@ -379,6 +399,7 @@ export class Game {
       dungeon:         { ambient: 0x9988bb, ambientI: 1.8, sun: 0xaabbcc, sunI: 1.0, fog: [0x222233, 0.006] },
       lake:            { ambient: 0xccddff, ambientI: 2.0, sun: 0xffffff, sunI: 1.5, fog: null },
       unicorn_meadow:  { ambient: 0xffeecc, ambientI: 2.2, sun: 0xffddaa, sunI: 1.8, fog: null },
+      beach:           { ambient: 0xfff8ee, ambientI: 2.2, sun: 0xffeedd, sunI: 1.6, fog: null },
     };
     const lc = lightConfigs[sceneName] || lightConfigs.hub;
 
@@ -411,6 +432,7 @@ export class Game {
       dungeon: 'Die Kristallhoehle',
       lake: 'Der Blaue See',
       unicorn_meadow: 'Die Magische Wiese',
+      beach: 'Der Sonnenstrand',
     };
     if (sceneNames[sceneName]) {
       this.hud.showInfo(sceneNames[sceneName]);
@@ -444,6 +466,15 @@ export class Game {
 
     // Clear plants (but keep total count)
     this.plantHealing.clearPlants();
+
+    // Dispose day/night renderer
+    if (this.dayNightRenderer) {
+      this.dayNightRenderer.dispose();
+      this.dayNightRenderer = null;
+    }
+
+    // Clear fishing spots
+    this.fishing.setSpots([]);
 
     // Remove lights
     if (this.ambientLight) { this.scene.remove(this.ambientLight); this.ambientLight = null; }
@@ -956,8 +987,8 @@ export class Game {
       return;
     }
 
-    // Skip gameplay updates if dialog or crafting is open
-    const uiBlocking = this.dialog.isActive || this.crafting.isActive;
+    // Skip gameplay updates if dialog, crafting, or fishing UI is open
+    const uiBlocking = this.dialog.isActive || this.crafting.isActive || this.fishing.isActive;
 
     // Dialog system
     this.dialog.update(dt, this.player, this.npcs, this.input);
@@ -1005,7 +1036,18 @@ export class Game {
       }
     }
 
-    // Plant healing FIRST (F key) — must consume before water spray
+    // Day/Night cycle
+    this.dayNight.update(dt);
+    if (this.dayNightRenderer) {
+      this.dayNightRenderer.update(dt, this.dayNight, this.tileMap.width, this.tileMap.height, this.sceneManager.currentScene);
+    }
+
+    // Fishing (F key) — MUST be BEFORE plantHealing to get first crack at KeyF
+    if (!uiBlocking) {
+      this.fishing.update(dt, this.player, this.input, this.dayNight, this.inventory, this.progression, this.hud);
+    }
+
+    // Plant healing (F key) — after fishing so fishing gets priority
     // (justPressed is single-consumer, so order matters)
     this.plantHealing.update(dt, this.player, this.input, this.hud);
 

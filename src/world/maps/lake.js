@@ -265,8 +265,13 @@ export function generateLakeMap() {
   // Station/bonfire collision
   collision[14][15] = 1; // bonfire
 
+  // Open south border for exit to beach
+  fillRect(collision, 20, H - 2, 4, 2, 0);
+  fillRect(ground, 20, H - 2, 4, 2, 5); // sand path to beach
+
   const exits = [
     { id: 'north', x: 20, y: 0, w: 4, h: 2, target: 'hub', spawnX: 20, spawnY: 28 },
+    { id: 'south', x: 20, y: H - 1, w: 4, h: 2, target: 'beach', spawnX: 26, spawnY: 10 },
   ];
 
   return {
