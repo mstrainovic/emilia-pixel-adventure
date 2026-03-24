@@ -1055,6 +1055,19 @@ export class Game {
       this.dayNightRenderer.update(dt, this.dayNight, this.tileMap.width, this.tileMap.height, this.sceneManager.currentScene);
     }
 
+    // Shooting star quest detection
+    if (this.dayNight && this.dayNight.isNight() && this.dayNightRenderer?.hasShootingStarInView(this.camera.three)) {
+      if (!this._shootingStarReported) {
+        this._shootingStarReported = true;
+        if (this.progression) this.progression.reportObserve('shooting_star');
+        if (this.hud) this.hud.showInfo('Eine Sternschnuppe!');
+      }
+    }
+    // Reset flag when not night
+    if (this.dayNight && !this.dayNight.isNight()) {
+      this._shootingStarReported = false;
+    }
+
     // Fishing (F key) — MUST be BEFORE plantHealing to get first crack at KeyF
     if (!uiBlocking) {
       this.fishing.update(dt, this.player, this.input, this.dayNight, this.inventory, this.progression, this.hud);
