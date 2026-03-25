@@ -1458,6 +1458,7 @@ export class Game {
           mob = new Mob(spawn.mobType, mobDef, spawn.x, spawn.y);
           break;
       }
+      if (spawn.respawnTime != null) mob.respawnTime = spawn.respawnTime;
       try {
         await mob.loadAnimations(this.assetLoader);
         mob.addToScene(this.scene);
@@ -1492,8 +1493,13 @@ export class Game {
       return;
     }
 
-    // Skip gameplay updates if dialog, crafting, fishing, or explorer book UI is open
-    const uiBlocking = this.dialog.isActive || this.crafting.isActive || this.fishing.isActive || this.explorerBookUI.isOpen;
+    // I key — toggle inventory panel
+    if (this.input.justPressed('KeyI')) {
+      this.hud.toggleInventory(this.inventory);
+    }
+
+    // Skip gameplay updates if dialog, crafting, fishing, explorer book UI, or inventory is open
+    const uiBlocking = this.dialog.isActive || this.crafting.isActive || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen();
 
     // Dialog system
     this.dialog.update(dt, this.player, this.npcs, this.input);

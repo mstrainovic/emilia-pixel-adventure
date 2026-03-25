@@ -13,6 +13,8 @@ export class InputManager {
     this._clickConsumed = false;
 
     window.addEventListener('keydown', (e) => {
+      // Prevent Tab from shifting browser focus
+      if (e.code === 'Tab') e.preventDefault();
       if (!this.keys[e.code]) {
         this._justPressed[e.code] = true;  // first frame of press
       }

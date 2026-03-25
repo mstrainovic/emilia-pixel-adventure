@@ -61,9 +61,15 @@ export class TouchControls {
     this.btnRun.id = 'touch-btn-run';
     this.btnRun.textContent = '🏃';
 
+    // Inventory button (left side, above run button)
+    this.btnInventory = document.createElement('div');
+    this.btnInventory.id = 'touch-btn-inventory';
+    this.btnInventory.textContent = '🎒';
+
     this.container.appendChild(this.joyZone);
     this.container.appendChild(this.btnGroup);
     this.container.appendChild(this.btnRun);
+    this.container.appendChild(this.btnInventory);
     document.body.appendChild(this.container);
     this._injectStyles();
   }
@@ -109,6 +115,17 @@ export class TouchControls {
       this._runMode = !this._runMode;
       this.input.keys['ShiftLeft'] = this._runMode;
       this.btnRun.classList.toggle('active', this._runMode);
+    }, joyOpts);
+
+    // --- Inventory toggle ---
+    this.btnInventory.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      this.input.simulateKeyDown('KeyI');
+      this.btnInventory.classList.add('active');
+      setTimeout(() => {
+        this.input.simulateKeyUp('KeyI');
+        this.btnInventory.classList.remove('active');
+      }, 80);
     }, joyOpts);
   }
 
@@ -291,6 +308,29 @@ export class TouchControls {
       #touch-btn-run.active {
         background: rgba(40,130,255,0.4);
         border-color: rgba(80,180,255,0.65);
+      }
+
+      /* ── Inventory toggle ── */
+      #touch-btn-inventory {
+        position: fixed;
+        left: 16px; bottom: 130px;
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: rgba(20,15,10,0.5);
+        border: 2px solid rgba(139,105,20,0.6);
+        color: #fff;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        touch-action: none;
+        transition: background 0.1s, transform 0.1s;
+      }
+      #touch-btn-inventory.active {
+        background: rgba(139,105,20,0.5);
+        border-color: rgba(255,215,0,0.7);
+        transform: scale(0.92);
       }
     `;
     document.head.appendChild(style);

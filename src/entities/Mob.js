@@ -155,7 +155,7 @@ export class Mob extends Entity {
       if (this.deathTimer <= 0) {
         this.hide();
         this.aiState = 'respawning';
-        this.respawnTimer = 5; // very quick respawn — child-friendly, no waiting
+        this.respawnTimer = this.respawnTime || 45; // per-spawn or default 45s
       }
       return;
     }

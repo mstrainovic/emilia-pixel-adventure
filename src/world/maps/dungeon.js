@@ -241,6 +241,9 @@ export function generateDungeonMap() {
     // Treasure room loot indicator
     { type: 'rock', x: 7, y: 2 },
     { type: 'rock', x: 10, y: 2 },
+
+    // ── Signpost to grotto (near east exit) ──
+    { type: 'signpost', x: 30, y: 14, dir: 'east', label: 'Grotte' },
   ];
 
   // Add collision only for crystal formations (large obstacles), not rocks (small debris)

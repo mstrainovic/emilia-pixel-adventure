@@ -3,6 +3,8 @@ import { getItemIconDataURL } from '../utils/ItemIcons.js';
 
 export class HUD {
   constructor() {
+    this._inventoryOpen = false;
+
     this.container = document.createElement('div');
     this.container.id = 'hud';
     this.container.innerHTML = `
@@ -26,6 +28,14 @@ export class HUD {
       <div id="hud-mute" title="Sound An/Aus">🔊</div>
       <div id="hud-levelup" style="display:none">
         <div id="hud-levelup-text"></div>
+      </div>
+      <div id="hud-inventory" style="display:none">
+        <div id="hud-inventory-header">
+          <span id="hud-inventory-title">Inventar</span>
+          <div id="hud-inventory-close">X</div>
+        </div>
+        <div id="hud-inventory-hint">[I] schliessen · Klick = verschieben</div>
+        <div id="hud-inventory-grid"></div>
       </div>
       <div id="hud-hotbar"></div>
       <div id="hud-tooltip"></div>
@@ -53,6 +63,16 @@ export class HUD {
           const muted = audio.toggleMute();
           muteBtn.textContent = muted ? '🔇' : '🔊';
         }
+      });
+    }
+
+    // Inventory close button
+    const invClose = document.getElementById('hud-inventory-close');
+    if (invClose) {
+      invClose.addEventListener('click', () => {
+        this._inventoryOpen = false;
+        const panel = document.getElementById('hud-inventory');
+        if (panel) panel.style.display = 'none';
       });
     }
   }
@@ -169,6 +189,110 @@ export class HUD {
         }
       });
     });
+
+    // Keep inventory panel in sync if open
+    if (this._inventoryOpen) {
+      this.updateInventory(inventory);
+    }
+  }
+
+  isInventoryOpen() {
+    return this._inventoryOpen;
+  }
+
+  toggleInventory(inventory) {
+    this._inventoryOpen = !this._inventoryOpen;
+    const panel = document.getElementById('hud-inventory');
+    if (!panel) return;
+    if (this._inventoryOpen) {
+      panel.style.display = 'flex';
+      this.updateInventory(inventory);
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+
+  updateInventory(inventory) {
+    if (!this._inventoryOpen) return;
+    const grid = document.getElementById('hud-inventory-grid');
+    if (!grid) return;
+
+    const allSlots = inventory.slots; // 32 slots total
+    let html = '';
+
+    for (let i = 0; i < allSlots.length; i++) {
+      const slot = allSlots[i];
+      const isHotbar = i < 8;
+      const isSelected = isHotbar && i === inventory.selectedHotbar;
+      const itemDef = slot.itemId ? getItem(slot.itemId) : null;
+
+      let cls = 'hud-inv-slot';
+      if (isHotbar) cls += ' hud-inv-slot-hotbar';
+      if (isSelected) cls += ' hud-slot-selected';
+
+      html += `<div class="${cls}" data-inv-slot="${i}" data-item="${slot.itemId || ''}">`;
+      if (isHotbar) {
+        html += `<div class="hud-inv-slot-num">${i + 1}</div>`;
+      }
+      if (itemDef) {
+        const iconURL = getItemIconDataURL(slot.itemId);
+        html += `<img class="hud-slot-icon" src="${iconURL}" alt="${itemDef.name}" draggable="false">`;
+        if (slot.count > 1) {
+          html += `<div class="hud-slot-count">${slot.count}</div>`;
+        }
+      }
+      html += `</div>`;
+    }
+
+    grid.innerHTML = html;
+
+    // Tooltips and click-to-move for inventory slots
+    grid.querySelectorAll('.hud-inv-slot').forEach(el => {
+      el.addEventListener('mouseenter', (e) => {
+        const itemId = el.getAttribute('data-item');
+        if (itemId) {
+          const item = getItem(itemId);
+          if (item) this._showTooltip(item, e);
+        }
+      });
+      el.addEventListener('mouseleave', () => this._hideTooltip());
+      el.addEventListener('mousemove', (e) => {
+        const tooltip = document.getElementById('hud-tooltip');
+        if (tooltip && tooltip.style.display !== 'none') {
+          tooltip.style.left = (e.clientX + 12) + 'px';
+          tooltip.style.top = (e.clientY - 40) + 'px';
+        }
+      });
+      el.addEventListener('click', () => {
+        const slotIdx = parseInt(el.getAttribute('data-inv-slot'), 10);
+        this._handleInventorySlotClick(inventory, slotIdx);
+      });
+    });
+  }
+
+  _handleInventorySlotClick(inventory, slotIdx) {
+    const clickedSlot = inventory.slots[slotIdx];
+    if (!clickedSlot.itemId) return;
+
+    const isHotbar = slotIdx < 8;
+
+    if (isHotbar) {
+      // Move from hotbar to first free main slot
+      const targetIdx = inventory.slots.findIndex((s, i) => i >= 8 && !s.itemId);
+      if (targetIdx === -1) return; // no free main slot
+      inventory.slots[targetIdx] = { ...clickedSlot };
+      inventory.slots[slotIdx] = { itemId: null, count: 0 };
+    } else {
+      // Move from main to first free hotbar slot
+      const targetIdx = inventory.slots.findIndex((s, i) => i < 8 && !s.itemId);
+      if (targetIdx === -1) return; // no free hotbar slot
+      inventory.slots[targetIdx] = { ...clickedSlot };
+      inventory.slots[slotIdx] = { itemId: null, count: 0 };
+    }
+
+    this.updateInventory(inventory);
+    // Also refresh hotbar display
+    this.updateHotbar(inventory);
   }
 
   _showTooltip(item, event) {
@@ -410,6 +534,92 @@ export class HUD {
       }
       .tooltip-desc {
         color: #b8a880; font-size: 7px; margin-top: 4px;
+      }
+
+      /* ── Inventory panel ── */
+      #hud-inventory {
+        position: absolute;
+        bottom: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        background: rgba(20, 15, 10, 0.92);
+        border: 2px solid #8B6914;
+        border-radius: 3px;
+        padding: 8px 10px 10px 10px;
+        z-index: 150;
+        pointer-events: auto;
+        box-shadow: 0 4px 0 #4a3608, 0 0 20px rgba(0,0,0,0.6);
+        min-width: 400px;
+      }
+      #hud-inventory-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 2px;
+      }
+      #hud-inventory-title {
+        color: #FFD700;
+        font-size: 11px;
+        text-shadow: 1px 1px 0 #4a3608;
+        letter-spacing: 1px;
+      }
+      #hud-inventory-close {
+        color: #cc6644;
+        font-size: 10px;
+        cursor: pointer;
+        padding: 2px 6px;
+        border: 1px solid #cc6644;
+        border-radius: 2px;
+        background: rgba(60,20,10,0.6);
+        transition: background 0.1s;
+        user-select: none;
+      }
+      #hud-inventory-close:hover {
+        background: rgba(180,50,20,0.5);
+        color: #ff8866;
+      }
+      #hud-inventory-hint {
+        color: rgba(180,160,120,0.6);
+        font-size: 7px;
+        text-align: center;
+        width: 100%;
+        margin-bottom: 2px;
+      }
+      #hud-inventory-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 44px);
+        grid-template-rows: repeat(4, 44px);
+        gap: 3px;
+      }
+      .hud-inv-slot {
+        width: 44px; height: 44px;
+        background: rgba(40, 30, 15, 0.7);
+        border: 2px solid #5a4520;
+        border-radius: 1px;
+        position: relative;
+        cursor: pointer;
+        transition: border-color 0.1s, background 0.1s;
+      }
+      .hud-inv-slot:hover {
+        border-color: #a0801a;
+        background: rgba(80, 60, 20, 0.7);
+      }
+      .hud-inv-slot-hotbar {
+        border-color: #8B6914;
+        background: rgba(50, 38, 12, 0.8);
+      }
+      .hud-inv-slot-hotbar:hover {
+        border-color: #FFD700;
+        background: rgba(80, 60, 15, 0.8);
+      }
+      .hud-inv-slot-num {
+        position: absolute; top: 1px; right: 3px;
+        color: rgba(255,215,0,0.5); font-size: 7px;
       }
     `;
     document.head.appendChild(style);
