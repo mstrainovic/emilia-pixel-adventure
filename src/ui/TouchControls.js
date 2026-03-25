@@ -20,7 +20,11 @@ export class TouchControls {
   }
 
   static isTouchDevice() {
-    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    // matchMedia is the most reliable way — only true on devices
+    // with NO hover and a coarse (finger) pointer (phones/tablets).
+    // navigator.maxTouchPoints alone is unreliable (Windows 11 desktop
+    // reports >0 even without a touchscreen).
+    return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   }
 
   // ─── UI Creation ──────────────────────────────────────────────────────
@@ -44,11 +48,11 @@ export class TouchControls {
     this.btnGroup = document.createElement('div');
     this.btnGroup.id = 'touch-btn-group';
 
-    this.btnMagic = this._makeBtn('💧', 'touch-btn-sm', 'KeyF');
+    this.btnHeal = this._makeBtn('🌸', 'touch-btn-md', 'KeyF');
     this.btnInteract = this._makeBtn('E', 'touch-btn-md', 'KeyE');
     this.btnAttack = this._makeBtn('⚔️', 'touch-btn-lg', 'Space');
 
-    this.btnGroup.appendChild(this.btnMagic);
+    this.btnGroup.appendChild(this.btnHeal);
     this.btnGroup.appendChild(this.btnInteract);
     this.btnGroup.appendChild(this.btnAttack);
 
@@ -83,7 +87,7 @@ export class TouchControls {
     this.joyZone.addEventListener('touchcancel', (e) => this._joyEnd(e), joyOpts);
 
     // --- Action buttons ---
-    for (const btn of [this.btnAttack, this.btnInteract, this.btnMagic]) {
+    for (const btn of [this.btnAttack, this.btnInteract, this.btnHeal]) {
       btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         this.input.simulateKeyDown(btn.dataset.key);
@@ -173,18 +177,18 @@ export class TouchControls {
   _injectStyles() {
     const style = document.createElement('style');
     style.textContent = `
-      /* Only show on coarse-pointer (touch) devices */
-      @media (pointer: fine) {
-        #touch-controls { display: none !important; }
-      }
-
+      /* Hidden by default — only shown on touch-only devices */
       #touch-controls {
+        display: none !important;
         position: fixed;
         inset: 0;
         z-index: 90;
         pointer-events: none;
         user-select: none;
         -webkit-user-select: none;
+      }
+      @media (hover: none) and (pointer: coarse) {
+        #touch-controls { display: block !important; }
       }
 
       /* ── Joystick zone ── */
@@ -264,7 +268,7 @@ export class TouchControls {
 
       .touch-btn-sm {
         width: 48px; height: 48px;
-        font-size: 22px;
+        font-size: 20px;
       }
 
       /* ── Run toggle ── */
