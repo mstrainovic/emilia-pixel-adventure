@@ -1,4 +1,5 @@
 import { FAMILY_NPCS } from '../../data/npcs.js';
+import { resolveAutoTiles, PATH_EDGES } from '../../utils/AutoTiler.js';
 
 /**
  * Tile definitions: ID → position in Floors_Tiles.png (400×416, 16px tiles)
@@ -337,11 +338,18 @@ export function generateHubMap() {
     { id: 'east',  x: W-2, y: 13, w: 2, h: 4, target: 'dungeon', spawnX: 4, spawnY: 14 },
   ];
 
+  // ── Auto-tile path edges (smooth grass-to-path transitions) ──
+  // Pass 1: paths (tile 4) — treat other surfaces as "same terrain"
+  resolveAutoTiles(ground, 4, PATH_EDGES, [5, 6, 7, 8, 9]);
+  // Pass 2: village square / dirt (tile 5) — include path edge tiles from pass 1
+  const pathEdgeIds = Object.values(PATH_EDGES);
+  resolveAutoTiles(ground, 5, PATH_EDGES, [4, 6, 7, 8, 9, ...pathEdgeIds]);
+
   return {
     width: W, height: H,
     ground, collision, props, exits,
     npcs: FAMILY_NPCS,
-    tileDefs: TILE_DEFS,
+    tileDefs: null, // use GENERATED_TILE_DEFS (includes auto-tile IDs)
     playerSpawn: { x: 19, y: 12 }
   };
 }

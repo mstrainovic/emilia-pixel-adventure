@@ -15,10 +15,17 @@ import * as THREE from 'three';
  *   7 = wood floor light (Farm RPG — lighter variant)
  *   8 = flower grass     (Grass + flowers from Cute_Fantasy Outdoor_Decor)
  *   9 = stone floor      (Cute_Fantasy Cliff edge tile, grey stone)
+ *  10 = water            (Cute_Fantasy Water_Middle.png)
+ *  11-13 = sand variants (Beach_Tile.png center + procedural)
+ *  14 = pier wood
+ *  15-18 = underwater variants
+ *  19-22 = cloud/crystal variants
+ *  23-34 = water auto-tile edges (from Water_Tile.png)
+ *  35-46 = path auto-tile edges (from Path_Tile.png)
  */
 
 const T = 16;
-const TILE_COUNT = 23;
+const TILE_COUNT = 47;
 
 /**
  * Loads an image and returns a promise.
@@ -215,11 +222,13 @@ export async function generateTilesetAsync() {
   try {
     // Load source images
     const base = import.meta.env.BASE_URL || '/';
-    const [grassImg, pathImg, waterImg, pathTileImg] = await Promise.all([
+    const [grassImg, pathImg, waterImg, pathTileImg, waterTileImg, beachTileImg] = await Promise.all([
       loadImg(`${base}Cute_Fantasy_Free/Tiles/Grass_Middle.png`),
       loadImg(`${base}Cute_Fantasy_Free/Tiles/Path_Middle.png`),
       loadImg(`${base}Cute_Fantasy_Free/Tiles/Water_Middle.png`),
       loadImg(`${base}Cute_Fantasy_Free/Tiles/Path_Tile.png`),
+      loadImg(`${base}Cute_Fantasy_Free/Tiles/Water_Tile.png`),
+      loadImg(`${base}Cute_Fantasy_Free/Tiles/Beach_Tile.png`),
     ]);
 
     // Tile 1: grass medium (source image as-is)
@@ -266,10 +275,8 @@ export async function generateTilesetAsync() {
     // Tile 10: water (from Cute_Fantasy Water_Middle.png)
     ctx.drawImage(waterImg, 0, 0, T, T, 10 * T, 0, T, T);
 
-    // 11 = sand_light — warm beige sand
-    ctx.fillStyle = '#F5DEB3';
-    ctx.fillRect(11 * T, 0, T, T);
-    _addSandGrain(ctx, 11 * T, '#E8D5A0', 8);
+    // 11 = sand_light — real sand from Beach_Tile.png center (1,1)
+    ctx.drawImage(beachTileImg, T, T, T, T, 11 * T, 0, T, T);
 
     // 12 = sand_dark — wet/dark sand near water
     ctx.fillStyle = '#C4A97D';
@@ -375,6 +382,41 @@ export async function generateTilesetAsync() {
     ctx.fillRect(22 * T + 7, 0, 1, T);
     ctx.fillRect(22 * T, 7, T, 1);
 
+    // ══════════════════════════════════════════════════════
+    //  AUTO-TILE EDGES — extracted from Cute Fantasy auto-tile sets
+    //  Layout: 48×96 (3col × 6row), each cell 16×16
+    //  Row 0: outerTL, edgeN, outerTR
+    //  Row 1: edgeW, center, edgeE
+    //  Row 2: outerBL, edgeS, outerBR
+    //  Row 3: innerTL, ?, innerTR
+    //  Row 5: innerBL, ?, innerBR
+    // ══════════════════════════════════════════════════════
+
+    // Auto-tile extraction positions (same for both water and path)
+    const autoPositions = [
+      // Edges: N(0), S(1), W(2), E(3)
+      { sx: T, sy: 0 },       { sx: T, sy: 2 * T },
+      { sx: 0, sy: T },       { sx: 2 * T, sy: T },
+      // Outer corners: TL(4), TR(5), BL(6), BR(7)
+      { sx: 0, sy: 0 },       { sx: 2 * T, sy: 0 },
+      { sx: 0, sy: 2 * T },   { sx: 2 * T, sy: 2 * T },
+      // Inner corners: TL(8), TR(9), BL(10), BR(11)
+      { sx: 0, sy: 3 * T },   { sx: 2 * T, sy: 3 * T },
+      { sx: 0, sy: 5 * T },   { sx: 2 * T, sy: 5 * T },
+    ];
+
+    // Tiles 23-34: Water auto-tile edges (from Water_Tile.png)
+    for (let i = 0; i < 12; i++) {
+      const p = autoPositions[i];
+      ctx.drawImage(waterTileImg, p.sx, p.sy, T, T, (23 + i) * T, 0, T, T);
+    }
+
+    // Tiles 35-46: Path auto-tile edges (from Path_Tile.png)
+    for (let i = 0; i < 12; i++) {
+      const p = autoPositions[i];
+      ctx.drawImage(pathTileImg, p.sx, p.sy, T, T, (35 + i) * T, 0, T, T);
+    }
+
   } catch (e) {
     console.warn('Asset tiles failed to load, using fallback colors:', e);
     // Fallback: solid color tiles
@@ -385,6 +427,14 @@ export async function generateTilesetAsync() {
       '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
       '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
       '#D8D8F0', '#FFE8F0', '#FFE8AA', '#C8D8F0',
+      // Water auto-tiles fallback (12 tiles: edges as mid-blue)
+      '#4a8ab0', '#4a8ab0', '#4a8ab0', '#4a8ab0',
+      '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',
+      '#3a7ab0', '#3a7ab0', '#3a7ab0', '#3a7ab0',
+      // Path auto-tiles fallback (12 tiles: edges as mid-brown)
+      '#b09070', '#b09070', '#b09070', '#b09070',
+      '#c0a080', '#c0a080', '#c0a080', '#c0a080',
+      '#be9e76', '#be9e76', '#be9e76', '#be9e76',
     ];
     for (let i = 0; i < TILE_COUNT; i++) {
       ctx.fillStyle = fallbackColors[i];
@@ -417,6 +467,14 @@ export function generateTileset() {
     '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
     '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
     '#F0F0FF', '#FFE8F0', '#FFE8AA', '#C8D8F0',
+    // Water auto-tiles
+    '#4a8ab0', '#4a8ab0', '#4a8ab0', '#4a8ab0',
+    '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',
+    '#3a7ab0', '#3a7ab0', '#3a7ab0', '#3a7ab0',
+    // Path auto-tiles
+    '#b09070', '#b09070', '#b09070', '#b09070',
+    '#c0a080', '#c0a080', '#c0a080', '#c0a080',
+    '#be9e76', '#be9e76', '#be9e76', '#be9e76',
   ];
   for (let i = 0; i < TILE_COUNT; i++) {
     ctx.fillStyle = colors[i];

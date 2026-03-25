@@ -1,4 +1,5 @@
 import { TREE_VARIANTS } from './hub.js';
+import { resolveAutoTiles, WATER_EDGES } from '../../utils/AutoTiler.js';
 
 const W = 45;
 const H = 35;
@@ -98,7 +99,7 @@ export function generateLakeMap() {
           if (r + dr >= 0 && r + dr < H && c + dc >= 0 && c + dc < W)
             if (ground[r + dr][c + dc] === 10) nearWater = true;
       if (nearWater) {
-        ground[r][c] = 5; // sand/dirt
+        ground[r][c] = 11; // sand (Beach_Tile.png texture)
       } else {
         // Second ring: sometimes sand, sometimes flower grass
         let nearSand = false;
@@ -267,12 +268,15 @@ export function generateLakeMap() {
 
   // Open south border for exit to beach
   fillRect(collision, 20, H - 2, 4, 2, 0);
-  fillRect(ground, 20, H - 2, 4, 2, 5); // sand path to beach
+  fillRect(ground, 20, H - 2, 4, 2, 11); // sand path to beach
 
   const exits = [
     { id: 'north', x: 20, y: 0, w: 4, h: 2, target: 'hub', spawnX: 20, spawnY: 28 },
     { id: 'south', x: 20, y: H - 1, w: 4, h: 2, target: 'beach', spawnX: 26, spawnY: 14 },
   ];
+
+  // ── Auto-tile water edges (smooth shoreline transitions) ──
+  resolveAutoTiles(ground, 10, WATER_EDGES);
 
   return {
     width: W,

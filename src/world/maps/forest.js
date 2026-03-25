@@ -1,4 +1,5 @@
 import { TREE_VARIANTS } from './hub.js';
+import { resolveAutoTiles, PATH_EDGES } from '../../utils/AutoTiler.js';
 
 const W = 50;
 const H = 40;
@@ -276,6 +277,9 @@ export function generateForestMap() {
     // Secret north exit to unicorn meadow (unlocked after healing 10 plants)
     { id: 'north_secret', x: 24, y: 0, w: 2, h: 2, target: 'unicorn_meadow', spawnX: 12, spawnY: 17, hidden: true, requirement: 'heal_10_plants' },
   ];
+
+  // ── Auto-tile path edges ──
+  resolveAutoTiles(ground, 4, PATH_EDGES, [5, 9]);
 
   return {
     width: W,
