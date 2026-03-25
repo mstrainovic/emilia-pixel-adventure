@@ -301,12 +301,18 @@ export class HUD {
 
     const iconURL = getItemIconDataURL(item.id);
     let desc = '';
-    if (item.damage) desc = `Schaden: ${item.damage}`;
-    else if (item.healAmount) desc = `Heilt: ${item.healAmount} HP`;
-    else desc = item.category === 'resource' ? 'Rohstoff' :
-                item.category === 'food' ? 'Nahrung' :
-                item.category === 'seed' ? 'Samen' :
-                item.category === 'magical' ? 'Magisch' : '';
+    if (item.damage) desc = `\u2694 Schaden: ${item.damage}`;
+    else if (item.healAmount) desc = `\u2764 Heilt: ${item.healAmount} HP`;
+    else if (item.value) desc = `\u2B50 Wert: ${item.value}`;
+    else if (item.category === 'equipment') desc = '\uD83D\uDEE1 Ausruestung';
+    else if (item.category === 'resource') desc = 'Rohstoff';
+    else if (item.category === 'food') desc = 'Nahrung';
+    else if (item.category === 'seed') desc = 'Samen';
+    else if (item.category === 'magical') desc = '\u2728 Magisch';
+    else if (item.category === 'gem') desc = '\uD83D\uDC8E Edelstein';
+    else if (item.category === 'coral') desc = '\uD83E\uDEB8 Koralle';
+    else if (item.category === 'rare') desc = '\u2B50 Selten';
+    else if (item.category === 'fish') desc = '\uD83D\uDC1F Fisch';
 
     tooltip.innerHTML = `
       <div class="tooltip-header">

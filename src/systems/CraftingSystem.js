@@ -89,7 +89,7 @@ export class CraftingSystem {
     if (window.__game?.audio) window.__game.audio.playCraftSuccess();
     if (window.__game?.progression) {
       window.__game.progression.addXp(5);
-      window.__game.progression.reportCraft();
+      window.__game.progression.reportCraft(this.ui.currentStation);
     }
   }
 

@@ -52,31 +52,31 @@ export function generateUnicornMeadowMap() {
 
   // ── Magical trees — golden/autumn colors, sparse ──
   const trees = [
-    // Border trees — top (thin, spaced)
-    { x: 0,  y: 0, v: 'oak_yellow' },
-    { x: 6,  y: 0, v: 'round_autumn' },
-    { x: 12, y: 0, v: 'oak_yellow' },
-    { x: 18, y: 0, v: 'round_autumn' },
-    { x: 24, y: 0, v: 'oak_yellow' },
+    // Border trees — top (pushed 2 tiles inward to avoid canopy clipping)
+    { x: 2,  y: 2, v: 'oak_yellow' },
+    { x: 6,  y: 2, v: 'round_autumn' },
+    { x: 12, y: 2, v: 'oak_yellow' },
+    { x: 18, y: 2, v: 'round_autumn' },
+    { x: 22, y: 2, v: 'oak_yellow' },
 
     // Border trees — bottom (skip exit 10-13)
-    { x: 0,  y: 19, v: 'round_autumn' },
-    { x: 4,  y: 19, v: 'oak_yellow' },
-    { x: 8,  y: 19, v: 'round_autumn' },
+    { x: 2,  y: 18, v: 'round_autumn' },
+    { x: 5,  y: 18, v: 'oak_yellow' },
+    { x: 8,  y: 18, v: 'round_autumn' },
     // (exit gap 10-13)
-    { x: 15, y: 19, v: 'oak_yellow' },
-    { x: 19, y: 19, v: 'round_autumn' },
-    { x: 24, y: 19, v: 'oak_yellow' },
+    { x: 15, y: 18, v: 'oak_yellow' },
+    { x: 19, y: 18, v: 'round_autumn' },
+    { x: 22, y: 18, v: 'oak_yellow' },
 
-    // Border trees — left
-    { x: 0, y: 5, v: 'oak_yellow' },
-    { x: 0, y: 10, v: 'round_autumn' },
-    { x: 0, y: 15, v: 'oak_yellow' },
+    // Border trees — left (pushed 2 tiles inward)
+    { x: 2, y: 5, v: 'oak_yellow' },
+    { x: 2, y: 10, v: 'round_autumn' },
+    { x: 2, y: 15, v: 'oak_yellow' },
 
-    // Border trees — right
-    { x: 24, y: 5, v: 'round_autumn' },
-    { x: 24, y: 10, v: 'oak_yellow' },
-    { x: 24, y: 15, v: 'round_autumn' },
+    // Border trees — right (pushed 2 tiles inward)
+    { x: 22, y: 5, v: 'round_autumn' },
+    { x: 22, y: 10, v: 'oak_yellow' },
+    { x: 22, y: 15, v: 'round_autumn' },
 
     // Interior magical trees — just a few, for atmosphere
     { x: 5,  y: 4, v: 'oak_yellow' },

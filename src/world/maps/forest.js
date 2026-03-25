@@ -130,27 +130,27 @@ export function generateForestMap() {
 
   const trees = [];
 
-  // Border trees — top row
-  for (let c = 2; c < W - 2; c += 3) {
+  // Border trees — top row (y>=3 to avoid canopy clipping at top edge)
+  for (let c = 3; c < W - 3; c += 3) {
     if (c >= 23 && c <= 26) continue; // skip secret exit area
     const v = northTreeVariants[Math.floor(rng() * northTreeVariants.length)];
-    trees.push({ x: c, y: 2 + Math.floor(rng() * 2), v });
+    trees.push({ x: c, y: 3 + Math.floor(rng() * 2), v });
   }
   // Border trees — bottom row
-  for (let c = 2; c < W - 2; c += 3) {
+  for (let c = 3; c < W - 3; c += 3) {
     if (c >= 22 && c <= 27) continue; // skip south exit
     const v = forestTreeVariants[Math.floor(rng() * forestTreeVariants.length)];
-    trees.push({ x: c, y: H - 2 + Math.floor(rng() * 2), v });
+    trees.push({ x: c, y: H - 3 + Math.floor(rng() * 1), v });
   }
-  // Border trees — left
-  for (let r = 3; r < H - 2; r += 3) {
+  // Border trees — left (x>=3 to avoid canopy clipping at left edge)
+  for (let r = 4; r < H - 3; r += 3) {
     const v = forestTreeVariants[Math.floor(rng() * forestTreeVariants.length)];
-    trees.push({ x: 2 + Math.floor(rng() * 1), y: r, v });
+    trees.push({ x: 3, y: r, v });
   }
-  // Border trees — right
-  for (let r = 3; r < H - 2; r += 3) {
+  // Border trees — right (x<=W-5 to avoid canopy clipping at right edge)
+  for (let r = 4; r < H - 3; r += 3) {
     const v = forestTreeVariants[Math.floor(rng() * forestTreeVariants.length)];
-    trees.push({ x: W - 4 + Math.floor(rng() * 2), y: r, v });
+    trees.push({ x: W - 5 + Math.floor(rng() * 1), y: r, v });
   }
 
   // Dense north forest (rows 2-16) — more trees

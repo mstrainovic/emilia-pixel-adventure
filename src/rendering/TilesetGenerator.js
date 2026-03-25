@@ -9,8 +9,8 @@ import * as THREE from 'three';
  *   1 = grass medium     (Cute_Fantasy Grass_Middle)
  *   2 = grass light      (Cute_Fantasy Grass_Middle brightened)
  *   3 = grass variant    (Cute_Fantasy Grass_Middle hue-shifted)
- *   4 = dirt path        (Cute_Fantasy Path_Middle)
- *   5 = dirt dark        (Cute_Fantasy Path_Middle darkened)
+ *   4 = dirt path        (Cute_Fantasy Path_Tile center — cobblestone texture)
+ *   5 = dirt dark        (Cute_Fantasy Path_Tile center, darkened)
  *   6 = wood floor       (Farm RPG — extracted from House.png floor plank)
  *   7 = wood floor light (Farm RPG — lighter variant)
  *   8 = flower grass     (Grass + flowers from Cute_Fantasy Outdoor_Decor)
@@ -47,24 +47,35 @@ function tintRegion(ctx, ox, oy, rMul, gMul, bMul) {
 }
 
 /**
- * Draw small flowers on top of a grass tile (for tile 8).
+ * Draw detailed flowers on top of a grass tile (for tile 8).
+ * Uses cross-shaped petals with stems and bright centers.
  */
 function addFlowers(ctx, ox, oy) {
-  const colors = [
-    '#ff7896', '#ffc83c', '#ff64ff', '#ffff64',
-    '#96c8ff', '#ffa0d2', '#ff9650', '#c882ff',
+  const flowers = [
+    { x: 3,  y: 3,  c: '#ff6080' },  // pink
+    { x: 10, y: 2,  c: '#ffc040' },  // yellow
+    { x: 6,  y: 7,  c: '#ff60ff' },  // magenta
+    { x: 13, y: 5,  c: '#80a0ff' },  // blue
+    { x: 2,  y: 11, c: '#ff9050' },  // orange
+    { x: 8,  y: 12, c: '#c080ff' },  // purple
+    { x: 12, y: 10, c: '#ffff60' },  // bright yellow
   ];
-  // Seeded positions for consistency
-  const positions = [
-    [3, 2], [9, 4], [5, 8], [12, 3], [7, 12], [2, 10], [11, 9], [14, 6],
-  ];
-  for (let i = 0; i < 6; i++) {
-    const [fx, fy] = positions[i];
-    ctx.fillStyle = colors[i % colors.length];
-    ctx.fillRect(ox + fx, oy + fy, 2, 2);
-    // Darker center
-    ctx.fillStyle = '#552200';
-    ctx.fillRect(ox + fx, oy + fy, 1, 1);
+
+  for (const f of flowers) {
+    // Stem
+    ctx.fillStyle = '#2a6620';
+    ctx.fillRect(ox + f.x, oy + f.y + 1, 1, 2);
+
+    // Flower petals (cross shape)
+    ctx.fillStyle = f.c;
+    ctx.fillRect(ox + f.x,     oy + f.y,     1, 1); // center
+    ctx.fillRect(ox + f.x - 1, oy + f.y,     1, 1); // left
+    ctx.fillRect(ox + f.x + 1, oy + f.y,     1, 1); // right
+    ctx.fillRect(ox + f.x,     oy + f.y - 1, 1, 1); // top
+
+    // Bright center dot
+    ctx.fillStyle = '#ffe080';
+    ctx.fillRect(ox + f.x, oy + f.y, 1, 1);
   }
 }
 
@@ -88,24 +99,81 @@ function drawWoodTile(ctx, ox, oy, light) {
 }
 
 /**
- * Draw a stone floor tile (for tile 9 — dungeon).
+ * Draw a detailed stone floor tile (for tile 9 — dungeon).
+ * Individual stone blocks with deep mortar lines and 3D highlights.
  */
 function drawStoneTile(ctx, ox, oy) {
-  ctx.fillStyle = '#7a7d8a';
+  // Base stone color
+  ctx.fillStyle = '#787B88';
   ctx.fillRect(ox, oy, T, T);
-  // Mortar lines
-  ctx.fillStyle = '#5a5d6a';
-  ctx.fillRect(ox, oy + 7, T, 1);
-  ctx.fillRect(ox + 7, oy, 1, T);
-  ctx.fillRect(ox + 3, oy + 8, 1, 8);
-  ctx.fillRect(ox + 11, oy, 1, 7);
-  // Surface highlights
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  ctx.fillRect(ox + 2, oy + 2, 3, 3);
-  ctx.fillRect(ox + 9, oy + 10, 3, 3);
-  ctx.fillStyle = 'rgba(0,0,0,0.06)';
-  ctx.fillRect(ox + 10, oy + 2, 2, 2);
-  ctx.fillRect(ox + 1, oy + 10, 2, 2);
+
+  // Individual stone blocks with different shades
+  ctx.fillStyle = '#7E8190';
+  ctx.fillRect(ox + 1, oy + 1, 6, 6);   // top-left stone
+  ctx.fillStyle = '#747786';
+  ctx.fillRect(ox + 9, oy + 1, 5, 6);   // top-right stone
+  ctx.fillStyle = '#7A7D8C';
+  ctx.fillRect(ox + 1, oy + 9, 7, 5);   // bottom-left stone
+  ctx.fillStyle = '#808394';
+  ctx.fillRect(ox + 10, oy + 9, 4, 5);  // bottom-right stone
+
+  // Deep mortar lines (dark shadows)
+  ctx.fillStyle = '#4A4D5A';
+  ctx.fillRect(ox,      oy + 7, T, 1);  // horizontal mortar
+  ctx.fillRect(ox + 7,  oy,     1, 8);  // vertical mortar top
+  ctx.fillRect(ox + 9,  oy + 8, 1, 8);  // vertical mortar bottom
+
+  // Light edge highlights on stones (top-left of each stone for 3D look)
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(ox + 1,  oy + 1, 6, 1);  // top-left stone top edge
+  ctx.fillRect(ox + 9,  oy + 1, 5, 1);  // top-right stone top edge
+  ctx.fillRect(ox + 1,  oy + 9, 7, 1);  // bottom-left stone top edge
+  ctx.fillRect(ox + 10, oy + 9, 4, 1);  // bottom-right stone top edge
+
+  // Dark bottom edge of each stone (depth)
+  ctx.fillStyle = 'rgba(0,0,0,0.10)';
+  ctx.fillRect(ox + 1,  oy + 6,  6, 1);
+  ctx.fillRect(ox + 9,  oy + 6,  5, 1);
+  ctx.fillRect(ox + 1,  oy + 13, 7, 1);
+  ctx.fillRect(ox + 10, oy + 13, 4, 1);
+
+  // Tiny moss spots for life
+  ctx.fillStyle = 'rgba(60,100,50,0.15)';
+  ctx.fillRect(ox + 2,  oy + 5,  2, 1);
+  ctx.fillRect(ox + 12, oy + 12, 1, 1);
+}
+
+/**
+ * Add subtle pixel-art detail to a grass tile region.
+ * Uses a seeded RNG so the pattern is always consistent.
+ */
+function addGrassDetail(ctx, ox, oy, seed) {
+  let s = seed;
+  const rng = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+
+  // Small grass tufts (darker green streaks)
+  ctx.fillStyle = 'rgba(0,50,0,0.12)';
+  for (let i = 0; i < 3; i++) {
+    const gx = Math.floor(rng() * 14);
+    const gy = Math.floor(rng() * 14);
+    ctx.fillRect(ox + gx, oy + gy, 2, 1);
+  }
+
+  // Tiny light highlights
+  ctx.fillStyle = 'rgba(255,255,200,0.08)';
+  for (let i = 0; i < 2; i++) {
+    const lx = Math.floor(rng() * 14) + 1;
+    const ly = Math.floor(rng() * 14) + 1;
+    ctx.fillRect(ox + lx, oy + ly, 1, 1);
+  }
+
+  // Small pebble (very subtle, ~50% chance per tile)
+  if (rng() > 0.5) {
+    ctx.fillStyle = 'rgba(120,110,90,0.15)';
+    const px = Math.floor(rng() * 12) + 2;
+    const py = Math.floor(rng() * 12) + 2;
+    ctx.fillRect(ox + px, oy + py, 2, 1);
+  }
 }
 
 function _addSandGrain(ctx, offsetX, color, count) {
@@ -147,32 +215,38 @@ export async function generateTilesetAsync() {
   try {
     // Load source images
     const base = import.meta.env.BASE_URL || '/';
-    const [grassImg, pathImg, waterImg] = await Promise.all([
+    const [grassImg, pathImg, waterImg, pathTileImg] = await Promise.all([
       loadImg(`${base}Cute_Fantasy_Free/Tiles/Grass_Middle.png`),
       loadImg(`${base}Cute_Fantasy_Free/Tiles/Path_Middle.png`),
       loadImg(`${base}Cute_Fantasy_Free/Tiles/Water_Middle.png`),
+      loadImg(`${base}Cute_Fantasy_Free/Tiles/Path_Tile.png`),
     ]);
 
     // Tile 1: grass medium (source image as-is)
     ctx.drawImage(grassImg, 0, 0, T, T, 1 * T, 0, T, T);
+    addGrassDetail(ctx, 1 * T, 0, 200);
 
     // Tile 0: grass dark (subtly darker — less blocky)
     ctx.drawImage(grassImg, 0, 0, T, T, 0 * T, 0, T, T);
     tintRegion(ctx, 0, 0, 0.90, 0.92, 0.88);
+    addGrassDetail(ctx, 0 * T, 0, 100);
 
     // Tile 2: grass light (subtly brighter)
     ctx.drawImage(grassImg, 0, 0, T, T, 2 * T, 0, T, T);
     tintRegion(ctx, 2 * T, 0, 1.06, 1.05, 1.02);
+    addGrassDetail(ctx, 2 * T, 0, 300);
 
     // Tile 3: grass variant (very subtle hue shift)
     ctx.drawImage(grassImg, 0, 0, T, T, 3 * T, 0, T, T);
     tintRegion(ctx, 3 * T, 0, 0.98, 1.04, 0.94);
+    addGrassDetail(ctx, 3 * T, 0, 400);
 
-    // Tile 4: dirt path
-    ctx.drawImage(pathImg, 0, 0, T, T, 4 * T, 0, T, T);
+    // Tile 4: dirt path — center tile from Path_Tile.png auto-tile set (16,16)
+    // provides cobblestone texture with real depth vs. the flat Path_Middle.png
+    ctx.drawImage(pathTileImg, T, T, T, T, 4 * T, 0, T, T);
 
-    // Tile 5: dirt dark
-    ctx.drawImage(pathImg, 0, 0, T, T, 5 * T, 0, T, T);
+    // Tile 5: dirt dark — same center tile, darkened
+    ctx.drawImage(pathTileImg, T, T, T, T, 5 * T, 0, T, T);
     tintRegion(ctx, 5 * T, 0, 0.8, 0.78, 0.75);
 
     // Tile 6: wood floor (canvas-drawn to match style)

@@ -4,7 +4,8 @@ import { QUESTS } from '../data/quests.js';
 // Quest chain order — each quest unlocks the next
 const QUEST_ORDER = [
   'first_steps', 'wood_collector', 'nature_healer', 'slime_hunter',
-  'dungeon_explorer', 'skeleton_slayer', 'unicorn_friend', 'master_crafter', 'meadow_hero',
+  'lake_visitor', 'dungeon_explorer', 'master_cook', 'skeleton_slayer',
+  'unicorn_friend', 'master_crafter', 'meadow_hero',
   // M4
   'shell_collector', 'master_angler', 'crab_problem', 'shooting_star',
   // M5
@@ -143,9 +144,12 @@ export class Progression {
     this._checkQuestType('pet', 'unicorn', 1);
   }
 
-  reportCraft() {
+  reportCraft(stationId) {
     this.stats.itemsCrafted++;
     this._checkQuestType('craft', 'any', 1);
+    if (stationId) {
+      this._checkQuestType('craft', stationId, 1);
+    }
   }
 
   reportVisit(sceneName) {

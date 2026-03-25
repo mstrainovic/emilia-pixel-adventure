@@ -17,35 +17,35 @@ export const LEVEL_TABLE = [
   // Level 5
   { level: 5,  xpRequired: 100,  statBonus: { damagePct: 5 }, rewards: [{ itemId: 'heal_potion', count: 2 }], unlockQuest: 'slime_hunter' },
   // Level 6
-  { level: 6,  xpRequired: 200,  statBonus: { maxHp: 10 }, rewards: [{ itemId: 'cooked_meat', count: 3 }], unlockQuest: null },
+  { level: 6,  xpRequired: 130,  statBonus: { maxHp: 10 }, rewards: [{ itemId: 'cooked_meat', count: 3 }], unlockQuest: 'lake_visitor' },
   // Level 7
-  { level: 7,  xpRequired: 280,  statBonus: {}, rewards: [{ itemId: 'sword_stone', count: 1 }], unlockQuest: 'dungeon_explorer' },
+  { level: 7,  xpRequired: 160,  statBonus: {}, rewards: [{ itemId: 'sword_stone', count: 1 }], unlockQuest: 'dungeon_explorer' },
   // Level 8
-  { level: 8,  xpRequired: 370,  statBonus: { maxHp: 10, speedPct: 5 }, rewards: [], unlockQuest: null },
+  { level: 8,  xpRequired: 200,  statBonus: { maxHp: 10, speedPct: 5 }, rewards: [], unlockQuest: 'master_cook' },
   // Level 9
-  { level: 9,  xpRequired: 480,  statBonus: { damagePct: 10 }, rewards: [{ itemId: 'heal_potion', count: 3 }], unlockQuest: 'skeleton_slayer' },
+  { level: 9,  xpRequired: 250,  statBonus: { damagePct: 10 }, rewards: [{ itemId: 'heal_potion', count: 3 }], unlockQuest: 'skeleton_slayer' },
   // Level 10
-  { level: 10, xpRequired: 600,  statBonus: { maxHp: 20 }, rewards: [{ itemId: 'veggie_soup', count: 3 }], unlockQuest: null },
+  { level: 10, xpRequired: 300,  statBonus: { maxHp: 20 }, rewards: [{ itemId: 'veggie_soup', count: 3 }], unlockQuest: 'unicorn_friend' },
   // Level 11
-  { level: 11, xpRequired: 750,  statBonus: { speedPct: 5 }, rewards: [], unlockQuest: 'unicorn_friend' },
+  { level: 11, xpRequired: 400,  statBonus: { speedPct: 5 }, rewards: [], unlockQuest: 'master_crafter' },
   // Level 12
-  { level: 12, xpRequired: 900,  statBonus: { maxHp: 10 }, rewards: [{ itemId: 'crystal', count: 5 }], unlockQuest: null },
+  { level: 12, xpRequired: 500,  statBonus: { maxHp: 10 }, rewards: [{ itemId: 'crystal', count: 5 }], unlockQuest: 'meadow_hero' },
   // Level 13
-  { level: 13, xpRequired: 1100, statBonus: { damagePct: 10 }, rewards: [], unlockQuest: 'master_crafter' },
+  { level: 13, xpRequired: 650,  statBonus: { damagePct: 10 }, rewards: [], unlockQuest: null },
   // Level 14
-  { level: 14, xpRequired: 1400, statBonus: { maxHp: 20 }, rewards: [{ itemId: 'heal_potion', count: 5 }], unlockQuest: null },
+  { level: 14, xpRequired: 800,  statBonus: { maxHp: 20 }, rewards: [{ itemId: 'heal_potion', count: 5 }], unlockQuest: null },
   // Level 15
-  { level: 15, xpRequired: 1800, statBonus: { maxHp: 10 }, rewards: [{ itemId: 'unicorn_tear', count: 3 }], unlockQuest: 'meadow_hero' },
+  { level: 15, xpRequired: 1000, statBonus: { maxHp: 10 }, rewards: [{ itemId: 'unicorn_tear', count: 3 }], unlockQuest: 'shell_collector' },
   // Level 16
-  { level: 16, xpRequired: 2200, statBonus: { maxHp: 10 }, rewards: [], unlockQuest: 'shell_collector' },
+  { level: 16, xpRequired: 1300, statBonus: { maxHp: 10 }, rewards: [], unlockQuest: 'master_angler' },
   // Level 17
-  { level: 17, xpRequired: 2700, statBonus: { damagePct: 5 }, rewards: [], unlockQuest: 'master_angler' },
+  { level: 17, xpRequired: 1600, statBonus: { damagePct: 5 }, rewards: [], unlockQuest: 'crab_problem' },
   // Level 18
-  { level: 18, xpRequired: 3300, statBonus: { maxHp: 10, speedPct: 5 }, rewards: [], unlockQuest: 'crab_problem' },
+  { level: 18, xpRequired: 2000, statBonus: { maxHp: 10, speedPct: 5 }, rewards: [], unlockQuest: 'shooting_star' },
   // Level 19
-  { level: 19, xpRequired: 4000, statBonus: { damagePct: 5 }, rewards: [], unlockQuest: 'shooting_star' },
+  { level: 19, xpRequired: 2500, statBonus: { damagePct: 5 }, rewards: [], unlockQuest: null },
   // Level 20
-  { level: 20, xpRequired: 4800, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: null },
+  { level: 20, xpRequired: 3000, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: null },
   // Level 21
   { level: 21, xpRequired: 5800, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: 'coral_healer' },
   // Level 22

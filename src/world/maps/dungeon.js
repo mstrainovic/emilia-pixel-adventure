@@ -104,6 +104,9 @@ export function generateDungeonMap() {
   carveRoom(24, 3, 7, 5);
   carveCorridor(27, 7, 27, 9, 2);
 
+  // 10. Corridor from pool room east to grotto exit
+  carveCorridor(29, 13, 33, 13, 4);
+
   // ── West exit to hub (left side, rows 13-16) ──
   fillRect(ground, 0, 13, 3, 4, 9);
   fillRect(collision, 0, 13, 3, 4, 0);
