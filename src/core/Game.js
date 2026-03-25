@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { AssetLoader } from './AssetLoader.js';
 import { InputManager } from './InputManager.js';
+import { TouchControls } from '../ui/TouchControls.js';
 import { SceneManager } from './SceneManager.js';
 import { AudioManager } from './AudioManager.js';
 import { Progression } from '../systems/Progression.js';
@@ -169,6 +170,7 @@ export class Game {
 
     this.camera = new Camera();
     this.input = new InputManager();
+    this.touchControls = new TouchControls(this.input);
     this.assetLoader = new AssetLoader();
     this.sceneManager = new SceneManager(this);
     this.audio = new AudioManager();

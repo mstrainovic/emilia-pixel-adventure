@@ -42,6 +42,19 @@ export class InputManager {
     });
   }
 
+  /** Simulate a key press from touch controls. */
+  simulateKeyDown(code) {
+    if (!this.keys[code]) {
+      this._justPressed[code] = true;
+    }
+    this.keys[code] = true;
+  }
+
+  /** Simulate a key release from touch controls. */
+  simulateKeyUp(code) {
+    this.keys[code] = false;
+  }
+
   /** Is the key currently held down? */
   isKeyDown(code) {
     return !!this.keys[code];
