@@ -11,48 +11,13 @@ export class VisualEffects {
   }
 
   /**
-   * Silksong-style sword slash — a clean crescent arc that sweeps across.
-   * Canvas-drawn arc texture, animated scale + fade.
+   * Sword slash — visible pixel-art sword that sweeps across
+   * plus a filled crescent blade trail and sparkle particles.
    */
   swordSlash(x, y, direction) {
     const z = 0.4 + y * 0.001;
 
-    // ── Create slash arc texture via Canvas ──
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-
-    // Draw crescent arc
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.shadowColor = '#ffffaa';
-    ctx.shadowBlur = 6;
-    ctx.beginPath();
-    ctx.arc(32, 32, 22, -Math.PI * 0.7, Math.PI * 0.7);
-    ctx.stroke();
-
-    // Inner brighter arc
-    ctx.strokeStyle = 'rgba(255, 255, 220, 0.8)';
-    ctx.lineWidth = 2;
-    ctx.shadowBlur = 3;
-    ctx.beginPath();
-    ctx.arc(32, 32, 20, -Math.PI * 0.6, Math.PI * 0.6);
-    ctx.stroke();
-
-    // Outer glow
-    ctx.strokeStyle = 'rgba(255, 255, 180, 0.3)';
-    ctx.lineWidth = 8;
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.arc(32, 32, 24, -Math.PI * 0.7, Math.PI * 0.7);
-    ctx.stroke();
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.magFilter = THREE.LinearFilter;
-    texture.minFilter = THREE.LinearFilter;
-
-    // ── Direction-based rotation and offset ──
+    // ── Direction config ──
     const dirConfig = {
       down:  { ox: 0,    oy: 1.0,  rot: 0,              startRot: -0.5 },
       up:    { ox: 0,    oy: -1.0, rot: Math.PI,         startRot: 0.5 },
@@ -61,15 +26,96 @@ export class VisualEffects {
     };
     const cfg = dirConfig[direction] || dirConfig.down;
 
-    // ── Main slash arc mesh ──
-    const size = 2.8;
+    // ── 1. Pixel-art sword blade ──
+    const sCanvas = document.createElement('canvas');
+    sCanvas.width = 16; sCanvas.height = 32;
+    const sc = sCanvas.getContext('2d');
+    // Handle (dark wood)
+    sc.fillStyle = '#5C2E0E'; sc.fillRect(6, 25, 4, 7);
+    sc.fillStyle = '#7B4A2B'; sc.fillRect(7, 26, 2, 5);
+    // Pommel
+    sc.fillStyle = '#DAA520'; sc.fillRect(7, 30, 2, 2);
+    // Guard (gold crosspiece)
+    sc.fillStyle = '#FFD700'; sc.fillRect(3, 22, 10, 3);
+    sc.fillStyle = '#B8860B'; sc.fillRect(3, 24, 10, 1);
+    // Blade (silver/steel)
+    sc.fillStyle = '#A8A8B8'; sc.fillRect(6, 4, 4, 18);
+    // Lighter center fuller
+    sc.fillStyle = '#D0D0E0'; sc.fillRect(7, 3, 2, 17);
+    // Bright edge highlight
+    sc.fillStyle = '#FFFFFF'; sc.fillRect(9, 5, 1, 14);
+    // Dark edge
+    sc.fillStyle = '#808090'; sc.fillRect(6, 5, 1, 14);
+    // Blade tip (pointed)
+    sc.fillStyle = '#D0D0E0'; sc.fillRect(7, 1, 2, 3);
+    sc.fillStyle = '#FFFFFF'; sc.fillRect(7, 0, 2, 2);
+    sc.fillStyle = '#E8E8F0'; sc.fillRect(8, 0, 1, 1);
+
+    const swordTex = new THREE.CanvasTexture(sCanvas);
+    swordTex.magFilter = THREE.NearestFilter;
+    swordTex.minFilter = THREE.NearestFilter;
+
+    const sGeo = new THREE.PlaneGeometry(1, 2);
+    const sMat = new THREE.MeshBasicMaterial({
+      map: swordTex, transparent: true, depthWrite: false,
+    });
+    const sword = new THREE.Mesh(sGeo, sMat);
+    // Position sword between player and slash center
+    sword.position.set(x + cfg.ox * 0.6, -(y + cfg.oy * 0.6), z + 0.03);
+    sword.rotation.z = cfg.rot - 0.8;
+    this.scene.add(sword);
+
+    this.effects.push({
+      mesh: sword, age: 0, maxAge: 0.25,
+      update: (dt, e) => {
+        e.age += dt;
+        const t = Math.min(1, e.age / e.maxAge);
+        // Ease-out cubic for snappy sword swing
+        const eased = 1 - Math.pow(1 - t, 3);
+        sword.rotation.z = cfg.rot - 0.8 + 1.6 * eased;
+        // Fade out last 30%
+        sMat.opacity = t > 0.7 ? 1.0 - (t - 0.7) / 0.3 : 1.0;
+        if (sMat.opacity <= 0.01) sword.visible = false;
+      }
+    });
+
+    // ── 2. Slash trail (filled crescent blade shape) ──
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    // Outer crescent — the main visible blade trail
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.beginPath();
+    ctx.arc(32, 32, 26, -Math.PI * 0.65, Math.PI * 0.65);
+    ctx.arc(32, 32, 16, Math.PI * 0.65, -Math.PI * 0.65, true);
+    ctx.closePath();
+    ctx.fill();
+
+    // Inner warm glow
+    ctx.fillStyle = 'rgba(255, 255, 210, 0.6)';
+    ctx.beginPath();
+    ctx.arc(32, 32, 24, -Math.PI * 0.55, Math.PI * 0.55);
+    ctx.arc(32, 32, 18, Math.PI * 0.55, -Math.PI * 0.55, true);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sharp outer edge highlight
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(32, 32, 26, -Math.PI * 0.6, Math.PI * 0.6);
+    ctx.stroke();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearFilter;
+
+    const size = 3.0;
     const geo = new THREE.PlaneGeometry(size, size);
     const mat = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: 0.95,
+      map: texture, transparent: true, opacity: 0.9,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x + cfg.ox, -(y + cfg.oy), z);
@@ -77,52 +123,47 @@ export class VisualEffects {
     this.scene.add(mesh);
 
     this.effects.push({
-      mesh, age: 0, maxAge: 0.18,
+      mesh, age: 0, maxAge: 0.2,
       _targetRot: cfg.rot - cfg.startRot,
       _startRot: cfg.rot + cfg.startRot,
       update: (dt, e) => {
         e.age += dt;
         const t = e.age / e.maxAge;
-        // Sweep rotation
         mesh.rotation.z = e._startRot + (e._targetRot - e._startRot) * t;
-        // Scale up slightly
         const s = 0.6 + t * 0.5;
         mesh.scale.set(s, s, 1);
-        // Fade out in the last 40%
-        mat.opacity = t > 0.6 ? 0.95 * (1 - (t - 0.6) / 0.4) : 0.95;
-        // Hide mesh entirely when fully faded to prevent stray translucent rectangles
+        mat.opacity = t > 0.5 ? 0.9 * (1 - (t - 0.5) / 0.5) : 0.9;
         if (mat.opacity <= 0.01) mesh.visible = false;
       }
     });
 
-    // ── Trail particles (small sparkles along the arc) ──
-    for (let i = 0; i < 6; i++) {
-      const delay = i * 0.02;
-      const angle = cfg.rot + (i / 5 - 0.5) * Math.PI * 0.8;
-      const dist = 1.2 + Math.random() * 0.3;
+    // ── 3. Sparkle trail along the slash arc ──
+    for (let i = 0; i < 8; i++) {
+      const delay = i * 0.015;
+      const angle = cfg.rot + (i / 7 - 0.5) * Math.PI * 0.9;
+      const dist = 1.3 + Math.random() * 0.4;
       const px = x + cfg.ox + Math.cos(angle) * dist * 0.5;
       const py = y + cfg.oy + Math.sin(angle) * dist * 0.5;
 
-      const pGeo = new THREE.PlaneGeometry(0.15, 0.15);
+      const pGeo = new THREE.PlaneGeometry(0.2, 0.2);
+      const isGold = Math.random() > 0.5;
       const pMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.8,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
+        color: isGold ? 0xFFDD44 : 0xFFFFFF,
+        transparent: true, opacity: 0.9, depthWrite: false,
       });
       const pMesh = new THREE.Mesh(pGeo, pMat);
       pMesh.position.set(px, -py, z + 0.01);
+      pMesh.visible = false;
       this.scene.add(pMesh);
 
       this.effects.push({
-        mesh: pMesh, age: -delay, maxAge: 0.2,
+        mesh: pMesh, age: -delay, maxAge: 0.25,
         update: (dt, e) => {
           e.age += dt;
-          if (e.age < 0) { pMesh.visible = false; return; }
+          if (e.age < 0) return;
           pMesh.visible = true;
           const t = e.age / e.maxAge;
-          pMat.opacity = Math.max(0, 0.8 * (1 - t));
+          pMat.opacity = Math.max(0, 0.9 * (1 - t));
           const sc = 0.5 + t * 1.5;
           pMesh.scale.set(sc, sc, 1);
         }

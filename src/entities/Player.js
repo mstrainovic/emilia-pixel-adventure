@@ -32,7 +32,7 @@ export class Player extends Entity {
     // Animation speed mapping
     const speeds = {
       idle: ANIM_SPEED_IDLE, walk: ANIM_SPEED_WALK, run: ANIM_SPEED_RUN,
-      slice: 80, collect: 80, crush: 80, hurt: 120, death: 200,
+      slice: 100, collect: 80, crush: 80, hurt: 120, death: 200,
     };
 
     // Register all loaded animations
@@ -54,7 +54,19 @@ export class Player extends Entity {
       }
     }
 
-    if (this.state === 'attack' || this.state === 'dead') {
+    if (this.state === 'attack') {
+      // Switch to sword swing sprite from Player_Actions.png
+      const dirKey = (this.direction === DIR_LEFT || this.direction === DIR_RIGHT) ? 'side' : this.direction;
+      this.setAnimation(`slice_${dirKey}`);
+      if (this.activeSprite) {
+        this.activeSprite.flipX(this.direction === DIR_LEFT);
+        this.activeSprite.loop = false;
+      }
+      super.update(dt);
+      return;
+    }
+
+    if (this.state === 'dead') {
       super.update(dt);
       return;
     }

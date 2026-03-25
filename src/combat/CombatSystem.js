@@ -7,7 +7,7 @@ import { DIR_DOWN, DIR_UP, DIR_LEFT, DIR_RIGHT } from '../utils/Constants.js';
 export class CombatSystem {
   constructor() {
     this.attackCooldown = 0;
-    this.attackDuration = 0.25;
+    this.attackDuration = 0.3;
     this.attackRange = 1.5;
     this.isAttacking = false;
     this.attackTimer = 0;
@@ -27,9 +27,8 @@ export class CombatSystem {
       this.attackCooldown = 0.3;
       this._hitMobs.clear();
 
-      // Don't switch to action sprite — keep idle/walk animation visible.
-      // The slash is shown purely via VisualEffects.swordSlash().
-      // Brief "attack" state just prevents movement during the swing.
+      // Player.js switches to slice_* animation during attack state.
+      // VisualEffects.swordSlash() adds the sword blade + slash trail.
       player.state = 'attack';
       return true;
     }
