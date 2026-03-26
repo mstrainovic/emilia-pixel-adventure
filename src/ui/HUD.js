@@ -5,6 +5,13 @@ export class HUD {
   constructor() {
     this._inventoryOpen = false;
 
+    // Smooth animation state
+    this.displayedHp = undefined;
+    this.displayedHpTrail = undefined;
+    this.displayedXpProgress = undefined;
+    this._lastMaxHp = 100;
+    this._lowHpPulsing = false;
+
     this.container = document.createElement('div');
     this.container.id = 'hud';
     this.container.innerHTML = `
@@ -13,7 +20,7 @@ export class HUD {
         <div id="hud-bars">
           <div id="hud-hp-container">
             <div id="hud-hp-icon">❤️</div>
-            <div id="hud-hp-bar-bg"><div id="hud-hp-bar-fill"></div></div>
+            <div id="hud-hp-bar-bg"><div id="hud-hp-bar-trail"></div><div id="hud-hp-bar-fill"></div></div>
             <div id="hud-hp-text">100/100</div>
           </div>
           <div id="hud-xp-container">
@@ -77,15 +84,76 @@ export class HUD {
     }
   }
 
-  update(player) {
-    const hpPct = Math.max(0, (player.hp / player.maxHp) * 100);
-    const fill = document.getElementById('hud-hp-bar-fill');
-    const text = document.getElementById('hud-hp-text');
-    if (fill) {
-      fill.style.width = hpPct + '%';
-      fill.style.background = hpPct > 50 ? '#5a9e3a' : hpPct > 25 ? '#cc8a20' : '#cc3333';
+  update(player, dt) {
+    // Initialize displayed values on first call
+    if (this.displayedHp === undefined) this.displayedHp = player.hp;
+    if (this.displayedHpTrail === undefined) this.displayedHpTrail = player.hp;
+    this._lastMaxHp = player.maxHp;
+
+    // If dt not provided (legacy calls), just snap instantly
+    if (dt === undefined || dt === null) {
+      this.displayedHp = player.hp;
+      this.displayedHpTrail = player.hp;
+    } else {
+      const lerpSpeed = 3.0;    // Higher = faster catch-up
+      const trailSpeed = 1.5;   // Trail follows slower for dramatic effect
+
+      // Smooth HP bar — lerp toward actual HP
+      const hpDiff = player.hp - this.displayedHp;
+      this.displayedHp += hpDiff * Math.min(1, lerpSpeed * dt);
+
+      // Snap if very close to avoid perpetual micro-animation
+      if (Math.abs(player.hp - this.displayedHp) < 0.1) {
+        this.displayedHp = player.hp;
+      }
+
+      // Damage trail — follows displayedHp but slower (only on damage, not heal)
+      if (this.displayedHpTrail > this.displayedHp) {
+        // Trail drains down slowly
+        this.displayedHpTrail += (this.displayedHp - this.displayedHpTrail) * Math.min(1, trailSpeed * dt);
+        if (Math.abs(this.displayedHpTrail - this.displayedHp) < 0.1) {
+          this.displayedHpTrail = this.displayedHp;
+        }
+      } else {
+        // Healing: snap trail up immediately
+        this.displayedHpTrail = this.displayedHp;
+      }
     }
+
+    // Render HP bar
+    const displayPct = Math.max(0, (this.displayedHp / player.maxHp) * 100);
+    const trailPct = Math.max(0, (this.displayedHpTrail / player.maxHp) * 100);
+    const fill = document.getElementById('hud-hp-bar-fill');
+    const trail = document.getElementById('hud-hp-bar-trail');
+    const text = document.getElementById('hud-hp-text');
+
+    if (fill) {
+      fill.style.width = displayPct + '%';
+      fill.style.background = displayPct > 50 ? '#5a9e3a' : displayPct > 25 ? '#cc8a20' : '#cc3333';
+    }
+    if (trail) {
+      trail.style.width = trailPct + '%';
+    }
+
+    // Show actual HP as text (not the animated displayed value)
     if (text) text.textContent = `${Math.ceil(player.hp)}/${player.maxHp}`;
+
+    // Low HP pulse warning (< 25%)
+    const hpRatio = player.hp / player.maxHp;
+    const hpBarBg = document.getElementById('hud-hp-bar-bg');
+    if (hpBarBg) {
+      if (hpRatio > 0 && hpRatio < 0.25) {
+        if (!this._lowHpPulsing) {
+          hpBarBg.classList.add('hud-hp-low-pulse');
+          this._lowHpPulsing = true;
+        }
+      } else {
+        if (this._lowHpPulsing) {
+          hpBarBg.classList.remove('hud-hp-low-pulse');
+          this._lowHpPulsing = false;
+        }
+      }
+    }
   }
 
   updateTime(phase) {
@@ -106,13 +174,42 @@ export class HUD {
 
   updateXp(progression) {
     const badge = document.getElementById('hud-level-badge');
-    const fill = document.getElementById('hud-xp-bar-fill');
     const text = document.getElementById('hud-xp-text');
     if (badge) badge.textContent = `Lv.${progression.level}`;
-    if (fill) fill.style.width = (progression.getXpProgress() * 100) + '%';
     if (text) {
       if (progression.level >= 15) text.textContent = 'MAX';
       else text.textContent = `${progression.xp}/${progression.xpToNext}`;
+    }
+
+    // Store target XP progress for smooth animation
+    this._targetXpProgress = progression.getXpProgress();
+    if (this.displayedXpProgress === undefined) {
+      this.displayedXpProgress = this._targetXpProgress;
+    }
+
+    // On level up, reset displayed XP to 0 so it fills up from start
+    if (this._lastXpLevel !== undefined && this._lastXpLevel !== progression.level) {
+      this.displayedXpProgress = 0;
+    }
+    this._lastXpLevel = progression.level;
+  }
+
+  /** Called each frame to animate XP bar smoothly */
+  _updateXpBar(dt) {
+    if (this._targetXpProgress === undefined || this.displayedXpProgress === undefined) return;
+
+    const lerpSpeed = 3.0;
+    const diff = this._targetXpProgress - this.displayedXpProgress;
+    this.displayedXpProgress += diff * Math.min(1, lerpSpeed * dt);
+
+    // Snap when close
+    if (Math.abs(diff) < 0.001) {
+      this.displayedXpProgress = this._targetXpProgress;
+    }
+
+    const fill = document.getElementById('hud-xp-bar-fill');
+    if (fill) {
+      fill.style.width = (this.displayedXpProgress * 100) + '%';
     }
   }
 
@@ -427,16 +524,29 @@ export class HUD {
         background: #2a1a0a; border-radius: 1px;
         overflow: hidden;
         border: 1px solid #5a4020;
+        position: relative;
+      }
+      #hud-hp-bar-trail {
+        position: absolute; top: 0; left: 0;
+        height: 100%; width: 100%;
+        background: #cc6644;
+        opacity: 0.7;
       }
       #hud-hp-bar-fill {
+        position: absolute; top: 0; left: 0;
         height: 100%; width: 100%; background: #5a9e3a;
-        transition: width 0.3s ease;
         box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);
       }
       #hud-xp-bar-fill {
         height: 100%; width: 0%; background: #4a8acc;
-        transition: width 0.4s ease;
         box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+      }
+      @keyframes hud-hp-pulse {
+        0%, 100% { border-color: #5a4020; box-shadow: none; }
+        50% { border-color: #ff3333; box-shadow: 0 0 6px rgba(255, 50, 50, 0.5); }
+      }
+      .hud-hp-low-pulse {
+        animation: hud-hp-pulse 0.8s ease-in-out infinite;
       }
       #hud-hp-text, #hud-xp-text {
         color: #e8d8b0; font-size: 7px;

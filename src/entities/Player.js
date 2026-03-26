@@ -132,10 +132,16 @@ export class Player extends Entity {
     this.hp = Math.max(0, this.hp - amount);
     this.invulnTimer = 1.0;
     this.hitFlashTimer = 0.5;
+
+    // White flash on all sprites for impact feel
+    this._applyHitFlash();
+
     // Game juice callback — set by Game.js
     if (this._onDamage) this._onDamage(amount);
     if (this.hp <= 0) this.die();
   }
+
+  // _applyHitFlash() inherited from Entity
 
   die() {
     this.state = 'dead';

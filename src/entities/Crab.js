@@ -392,6 +392,7 @@ export class Crab extends Entity {
     if (!this.alive) return;
     this.hp -= amount;
     this.hitFlashTimer = 0.4;
+    this._applyHitFlash();
 
     // crab_beach crabs flee when damaged
     if (this.mobType === 'crab_beach' && this.aiState !== 'dead') {

@@ -37,7 +37,7 @@ export class CombatSystem {
 
   /**
    * Update combat state, check hits.
-   * Returns array of mobs that were hit this frame.
+   * Returns array of { mob, damage } objects for mobs hit this frame.
    */
   update(dt, player, mobs) {
     if (this.attackCooldown > 0) this.attackCooldown -= dt;
@@ -60,7 +60,7 @@ export class CombatSystem {
             const dmg = Math.round(baseDmg * dmgMult);
             mob.takeDamage(dmg);
             this._hitMobs.add(mob); // only hit each mob once per swing
-            hits.push(mob);
+            hits.push({ mob, damage: dmg });
           }
         }
       }

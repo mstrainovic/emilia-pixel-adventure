@@ -261,10 +261,15 @@ export class Mob extends Entity {
     this.hp -= amount;
     this.hitFlashTimer = 0.4;
 
+    // White flash: briefly set material color to white for impact feel
+    this._applyHitFlash();
+
     if (this.hp <= 0) {
       this.die();
     }
   }
+
+  // _applyHitFlash() inherited from Entity
 
   die() {
     this.alive = false;

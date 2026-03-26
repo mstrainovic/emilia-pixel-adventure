@@ -531,6 +531,7 @@ export class Octopus extends Entity {
     if (!this.alive) return;
     this.hp -= amount;
     this.hitFlashTimer = 0.4;
+    this._applyHitFlash();
 
     if (this.hp <= 0) {
       this.die();

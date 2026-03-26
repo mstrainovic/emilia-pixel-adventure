@@ -316,10 +316,29 @@ export class Boss {
     this.hp -= amount;
     this.hitFlashTimer = 0.4;
 
+    // White flash for impact feel
+    this._applyHitFlash();
+
     if (this.hp <= 0) {
       this.hp = 0;
       this.die();
     }
+  }
+
+  /**
+   * Flash the boss mesh white for 100ms, then restore original color.
+   */
+  _applyHitFlash() {
+    if (!this.mesh || !this.mesh.material) return;
+    const mat = this.mesh.material;
+    const origColor = mat.color ? mat.color.clone() : null;
+    if (!mat.color) return;
+    mat.color.setHex(0xffffff);
+    if (this._hitFlashTimeout) clearTimeout(this._hitFlashTimeout);
+    this._hitFlashTimeout = setTimeout(() => {
+      if (origColor) mat.color.copy(origColor);
+      this._hitFlashTimeout = null;
+    }, 100);
   }
 
   die() {

@@ -63,6 +63,9 @@ import { AchievementSystem } from '../systems/Achievements.js';
 import { AchievementUI } from '../ui/AchievementUI.js';
 import { NewGamePlus } from '../systems/NewGamePlus.js';
 import { RARE_FIND_PLACEMENTS } from '../data/rare_finds.js';
+import { DamageNumbers } from '../rendering/DamageNumbers.js';
+import { PickupPopup } from '../ui/PickupPopup.js';
+import { MapVignette } from '../rendering/MapVignette.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -179,6 +182,8 @@ export class Game {
     this.groundDeco = null; // ground decoration overlay
     this.combat = new CombatSystem();
     this.hud = new HUD();
+    this.pickupPopup = new PickupPopup();
+    this.damageNumbers = null; // floating damage numbers, created per scene
     this.dialog = new DialogSystem();
     // After NPC dialog ends → open their crafting station automatically
     this.dialog.onDialogEnd = (npcId, stationId) => {
@@ -239,6 +244,9 @@ export class Game {
     this._distanceWalked = 0;
     this._lastPlayerPos = null;
     this._collectedRareFinds = new Set(); // tracks one-time rare find pickups
+
+    // Map edge vignette (persists across scenes)
+    this.mapVignette = new MapVignette();
 
     // Achievement unlock callback
     this.achievements.onUnlock = (def) => {
@@ -404,11 +412,16 @@ export class Game {
       this.hud.updateQuest(this.progression.getActiveQuest());
     };
 
-    // Player damage → screen flash + shake
+    // Player damage → screen flash + shake + damage number + impact particles
     this.player._onDamage = (amount) => {
       this.juice.damageFlash();
-      this.juice.shakeLight();
+      this.juice.shakeMedium();
+      this.juice.hitstop(0.04);
       this.audio.playPlayerHurt();
+      if (this.vfx) this.vfx.playerHitEffect(this.player.x, this.player.y);
+      if (this.damageNumbers) {
+        this.damageNumbers.spawn(this.player.x, this.player.y, amount, true);
+      }
     };
 
     // Player death → respawn at hub
@@ -574,6 +587,9 @@ export class Game {
     // Visual effects
     this.vfx = new VisualEffects(this.scene);
 
+    // Floating damage numbers
+    this.damageNumbers = new DamageNumbers(this.scene);
+
     // Start ambient particles based on scene type
     const particleTypes = {
       hub: 'pollen',
@@ -701,6 +717,9 @@ export class Game {
     // Weather renderer (per scene)
     if (this.weatherRenderer) this.weatherRenderer.dispose();
     this.weatherRenderer = new WeatherRenderer(this.scene, this.camera.three);
+
+    // Map edge vignette — set scene tint
+    this.mapVignette.setScene(sceneName);
 
     // Insects (per scene)
     for (const ins of this.insects) ins.dispose();
@@ -872,6 +891,9 @@ export class Game {
 
     // Dispose item drops
     if (this.itemDrops) { this.itemDrops.dispose(); this.itemDrops = null; }
+
+    // Dispose damage numbers
+    if (this.damageNumbers) { this.damageNumbers.dispose(); this.damageNumbers = null; }
 
     // Dispose visual effects
     if (this.vfx) { this.vfx.dispose(); this.vfx = null; }
@@ -1528,8 +1550,11 @@ export class Game {
     const hits = this.combat.update(dt, this.player, this.mobs);
 
     // Hit effects + knockback + juice + drops
-    for (const mob of hits) {
+    for (const hit of hits) {
+      const mob = hit.mob;
+      const dmg = hit.damage;
       if (this.vfx) this.vfx.hitSparks(mob.x, mob.y);
+      if (this.damageNumbers) this.damageNumbers.spawn(mob.x, mob.y, dmg, false);
       this.juice.shakeMedium();
       this.juice.hitstop(0.05);
       applyKnockback(mob, this.player, 2.0, 0.15);
@@ -1552,6 +1577,7 @@ export class Game {
 
     // Boss combat
     if (this._activeBoss && this._activeBoss.alive && !uiBlocking) {
+      updateKnockback(this._activeBoss, dt);
       this._activeBoss.update(dt, this.player, this.tileMap);
       this.bossHealthBar.update(this._activeBoss.hp, this._activeBoss.maxHp);
 
@@ -1560,7 +1586,10 @@ export class Game {
       const bossHits = this.combat.update(dt, this.player, [bossAsMob]);
       if (bossHits.length > 0) {
         if (this.vfx) this.vfx.hitSparks(this._activeBoss.x, this._activeBoss.y);
+        if (this.damageNumbers) this.damageNumbers.spawn(this._activeBoss.x, this._activeBoss.y, bossHits[0].damage, false);
         this.juice.shakeMedium();
+        this.juice.hitstop(0.05);
+        applyKnockback(this._activeBoss, this.player, 1.0, 0.1);
       }
 
       // Boss defeated
@@ -1770,9 +1799,15 @@ export class Game {
       const picked = this.itemDrops.update(dt, this.player, this.inventory, this.input);
       if (picked.length > 0) {
         this.hud.updateHotbar(this.inventory);
-        if (this.vfx) this.vfx.pickupGlow(this.player.x, this.player.y);
-        // Explorer book discovery for picked-up items
+        // Visual feedback for each picked-up item
         for (const drop of picked) {
+          // Sparkle burst at pickup location
+          if (this.vfx) this.vfx.pickupGlow(drop.x, drop.y);
+          // Floating "+N Name" text popup
+          if (this.pickupPopup) {
+            this.pickupPopup.show(drop.itemId, drop.count, this.camera.three, drop.x, drop.y);
+          }
+          // Explorer book discovery
           this._discoverItem(drop.itemId);
         }
       }
@@ -1808,6 +1843,12 @@ export class Game {
     // Visual effects
     if (this.vfx) this.vfx.update(dt);
 
+    // Floating damage numbers
+    if (this.damageNumbers) this.damageNumbers.update(dt);
+
+    // Map edge vignette
+    this.mapVignette.update(this.camera.three, this.tileMap.width, this.tileMap.height);
+
     // Animated sprites
     for (const s of this._animatedSprites) s.update(dt);
 
@@ -1816,8 +1857,9 @@ export class Game {
       this.sceneManager.checkExits(this.player, this.tileMap);
     }
 
-    // HUD
-    this.hud.update(this.player);
+    // HUD (pass dt for smooth bar animation)
+    this.hud.update(this.player, dt);
+    this.hud._updateXpBar(dt);
 
     // Auto-save
     this.saveManager.update(dt, () => ({
@@ -1966,6 +2008,7 @@ export class Game {
     this.running = false;
     this._clearScene();
     this.hud.dispose();
+    if (this.pickupPopup) this.pickupPopup.dispose();
     if (this.explorerBookUI) this.explorerBookUI.dispose();
     if (this.pet) this.pet.dispose();
     this.sceneManager.dispose();

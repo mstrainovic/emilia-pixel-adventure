@@ -87,6 +87,26 @@ export class Entity {
     this.updatePosition();
   }
 
+  /**
+   * Flash all sprite materials white for 100ms, then restore original colors.
+   * Creates a Pokemon-style hit flash that makes impacts feel punchy.
+   * Can be called from any entity's takeDamage() method.
+   */
+  _applyHitFlash() {
+    for (const sprite of Object.values(this.sprites)) {
+      if (!sprite.mesh || !sprite.mesh.material) continue;
+      const mat = sprite.mesh.material;
+      const origColor = mat.color.clone();
+      mat.color.setHex(0xffffff);
+      // Clear any previous flash timeout to avoid stacking
+      if (sprite._hitFlashTimeout) clearTimeout(sprite._hitFlashTimeout);
+      sprite._hitFlashTimeout = setTimeout(() => {
+        mat.color.copy(origColor);
+        sprite._hitFlashTimeout = null;
+      }, 100);
+    }
+  }
+
   dispose() {
     this.removeFromScene();
     for (const sprite of Object.values(this.sprites)) {

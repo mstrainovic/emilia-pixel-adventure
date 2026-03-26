@@ -215,15 +215,44 @@ export class VisualEffects {
   }
 
   /**
-   * Hit sparks when attacking a mob.
+   * Hit sparks when attacking a mob — Pokemon-style star burst.
+   * Central flash + radiating sparks + lingering star shapes.
    */
   hitSparks(x, y) {
-    for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.3;
-      const speed = 3 + Math.random() * 4;
+    const z = 0.4 + y * 0.001;
 
-      const geo = new THREE.PlaneGeometry(0.2, 0.2);
-      const isWhite = Math.random() > 0.4;
+    // ── 1. Central impact flash (white circle that expands and fades) ──
+    const flashGeo = new THREE.PlaneGeometry(0.8, 0.8);
+    const flashMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    });
+    const flashMesh = new THREE.Mesh(flashGeo, flashMat);
+    flashMesh.position.set(x, -y, z + 0.02);
+    this.scene.add(flashMesh);
+
+    this.effects.push({
+      mesh: flashMesh, age: 0, maxAge: 0.15,
+      update: (dt, e) => {
+        e.age += dt;
+        const t = e.age / e.maxAge;
+        const s = 1 + t * 2.5;
+        flashMesh.scale.set(s, s, 1);
+        flashMat.opacity = Math.max(0, 0.9 * (1 - t));
+      }
+    });
+
+    // ── 2. Radiating spark particles ──
+    const sparkCount = 6;
+    for (let i = 0; i < sparkCount; i++) {
+      const angle = (Math.PI * 2 * i) / sparkCount + (Math.random() - 0.5) * 0.4;
+      const speed = 4 + Math.random() * 3;
+
+      const size = 0.15 + Math.random() * 0.1;
+      const geo = new THREE.PlaneGeometry(size, size);
+      const isWhite = Math.random() > 0.35;
       const mat = new THREE.MeshBasicMaterial({
         color: isWhite ? 0xffffff : 0xffdd44,
         transparent: true,
@@ -231,19 +260,149 @@ export class VisualEffects {
         depthWrite: false,
       });
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(x, -y, 0.4);
+      mesh.position.set(x, -y, z + 0.01);
+      this.scene.add(mesh);
+
+      this.effects.push({
+        mesh, age: 0, maxAge: 0.25,
+        update: (dt, e) => {
+          e.age += dt;
+          const t = e.age / e.maxAge;
+          // Fast start, decelerating outward
+          const eased = 1 - Math.pow(1 - t, 2);
+          mesh.position.x = x + Math.cos(angle) * speed * eased * 0.3;
+          mesh.position.y = -y + Math.sin(angle) * speed * eased * 0.3;
+          // Shrink and fade
+          const s = 1 - t * 0.6;
+          mesh.scale.set(s, s, 1);
+          mat.opacity = Math.max(0, 1 - t * t);
+        }
+      });
+    }
+
+    // ── 3. Star shapes (4-pointed) that linger briefly ──
+    for (let i = 0; i < 3; i++) {
+      const ox = (Math.random() - 0.5) * 1.2;
+      const oy = (Math.random() - 0.5) * 1.2;
+      const starSize = 0.3 + Math.random() * 0.2;
+      const starCanvas = VisualEffects._getStarTexture();
+
+      const geo = new THREE.PlaneGeometry(starSize, starSize);
+      const mat = new THREE.MeshBasicMaterial({
+        map: starCanvas,
+        color: i === 0 ? 0xffffff : 0xffee66,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x + ox, -(y + oy * 0.5), z + 0.03);
+      mesh.rotation.z = Math.random() * Math.PI;
+      this.scene.add(mesh);
+
+      const delay = i * 0.03;
+      this.effects.push({
+        mesh, age: -delay, maxAge: 0.3,
+        update: (dt, e) => {
+          e.age += dt;
+          if (e.age < 0) { mesh.visible = false; return; }
+          mesh.visible = true;
+          const t = e.age / e.maxAge;
+          mesh.rotation.z += dt * 5;
+          const s = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
+          mesh.scale.set(s * 1.5, s * 1.5, 1);
+          mat.opacity = Math.max(0, 0.9 * (1 - t * t));
+        }
+      });
+    }
+  }
+
+  /**
+   * Impact particles when the player takes damage — red/orange burst.
+   */
+  playerHitEffect(x, y) {
+    const z = 0.4 + y * 0.001;
+
+    // Red-tinted central flash
+    const flashGeo = new THREE.PlaneGeometry(0.6, 0.6);
+    const flashMat = new THREE.MeshBasicMaterial({
+      color: 0xff4444,
+      transparent: true,
+      opacity: 0.7,
+      depthWrite: false,
+    });
+    const flashMesh = new THREE.Mesh(flashGeo, flashMat);
+    flashMesh.position.set(x, -y, z + 0.02);
+    this.scene.add(flashMesh);
+
+    this.effects.push({
+      mesh: flashMesh, age: 0, maxAge: 0.2,
+      update: (dt, e) => {
+        e.age += dt;
+        const t = e.age / e.maxAge;
+        const s = 1 + t * 2;
+        flashMesh.scale.set(s, s, 1);
+        flashMat.opacity = Math.max(0, 0.7 * (1 - t));
+      }
+    });
+
+    // Red/orange sparks flying outward
+    for (let i = 0; i < 5; i++) {
+      const angle = (Math.PI * 2 * i) / 5 + Math.random() * 0.5;
+      const speed = 3 + Math.random() * 2;
+      const size = 0.12 + Math.random() * 0.08;
+      const geo = new THREE.PlaneGeometry(size, size);
+      const mat = new THREE.MeshBasicMaterial({
+        color: Math.random() > 0.5 ? 0xff5533 : 0xffaa22,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, -y, z + 0.01);
       this.scene.add(mesh);
 
       this.effects.push({
         mesh, age: 0, maxAge: 0.3,
         update: (dt, e) => {
           e.age += dt;
-          mesh.position.x += Math.cos(angle) * speed * dt;
-          mesh.position.y += Math.sin(angle) * speed * dt;
-          mat.opacity = Math.max(0, 1 - e.age / e.maxAge);
+          const t = e.age / e.maxAge;
+          mesh.position.x = x + Math.cos(angle) * speed * t * 0.25;
+          mesh.position.y = -y + Math.sin(angle) * speed * t * 0.25;
+          mat.opacity = Math.max(0, 0.9 * (1 - t));
+          const s = 1 - t * 0.5;
+          mesh.scale.set(s, s, 1);
         }
       });
     }
+  }
+
+  /**
+   * Get or create a shared 4-pointed star texture for impact effects.
+   */
+  static _getStarTexture() {
+    if (VisualEffects._starTex) return VisualEffects._starTex;
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 16;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    // Draw 4-pointed star
+    ctx.beginPath();
+    ctx.moveTo(8, 0);   // top
+    ctx.lineTo(10, 6);
+    ctx.lineTo(16, 8);  // right
+    ctx.lineTo(10, 10);
+    ctx.lineTo(8, 16);  // bottom
+    ctx.lineTo(6, 10);
+    ctx.lineTo(0, 8);   // left
+    ctx.lineTo(6, 6);
+    ctx.closePath();
+    ctx.fill();
+    const tex = new THREE.CanvasTexture(c);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    VisualEffects._starTex = tex;
+    return tex;
   }
 
   /**
@@ -278,29 +437,104 @@ export class VisualEffects {
   }
 
   /**
-   * Brief golden glow when picking up an item.
+   * Sparkle burst + golden glow when picking up an item.
+   * Replaces the old simple glow with a more rewarding effect.
    */
   pickupGlow(x, y) {
-    const geo = new THREE.PlaneGeometry(1, 1);
-    const mat = new THREE.MeshBasicMaterial({
+    const z = 0.35 + y * 0.001;
+
+    // ── 1. Central expanding glow ring ──
+    const glowGeo = new THREE.PlaneGeometry(1, 1);
+    const glowMat = new THREE.MeshBasicMaterial({
       color: 0xffdd44,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.5,
       depthWrite: false,
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, -y, 0.35);
-    this.scene.add(mesh);
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.set(x, -y, z);
+    this.scene.add(glowMesh);
 
     this.effects.push({
-      mesh, age: 0, maxAge: 0.4,
+      mesh: glowMesh, age: 0, maxAge: 0.5,
       update: (dt, e) => {
         e.age += dt;
         const t = e.age / e.maxAge;
-        mesh.scale.set(1 + t * 2, 1 + t * 2, 1);
-        mat.opacity = Math.max(0, 0.6 * (1 - t));
+        glowMesh.scale.set(1 + t * 2.5, 1 + t * 2.5, 1);
+        glowMat.opacity = Math.max(0, 0.5 * (1 - t));
       }
     });
+
+    // ── 2. Sparkle particles bursting outward ──
+    const sparkleCount = 7;
+    const colors = [0xFFDD44, 0xFFFFAA, 0xFFFF66, 0xFFEE88, 0xFFFFFF];
+    for (let i = 0; i < sparkleCount; i++) {
+      const angle = (Math.PI * 2 * i) / sparkleCount + (Math.random() - 0.5) * 0.4;
+      const speed = 2.0 + Math.random() * 2.5;
+      const size = 0.12 + Math.random() * 0.1;
+
+      const geo = new THREE.PlaneGeometry(size, size);
+      const col = colors[Math.floor(Math.random() * colors.length)];
+      const mat = new THREE.MeshBasicMaterial({
+        color: col,
+        transparent: true,
+        opacity: 1.0,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, -y, z + 0.01);
+      this.scene.add(mesh);
+
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+
+      this.effects.push({
+        mesh, age: 0, maxAge: 0.5 + Math.random() * 0.2,
+        update: (dt, e) => {
+          e.age += dt;
+          const t = e.age / e.maxAge;
+          mesh.position.x += vx * dt * (1 - t * 0.5); // slow down over time
+          mesh.position.y += vy * dt * (1 - t * 0.5);
+          mat.opacity = Math.max(0, 1.0 * (1 - t));
+          const sc = 1.0 + t * 0.5;
+          mesh.scale.set(sc, sc, 1);
+          // Slight twinkle rotation
+          mesh.rotation.z += dt * 8;
+        }
+      });
+    }
+
+    // ── 3. Rising star particles (float upward) ──
+    for (let i = 0; i < 3; i++) {
+      const ox = (Math.random() - 0.5) * 0.8;
+      const delay = i * 0.06;
+      const geo = new THREE.PlaneGeometry(0.18, 0.18);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xFFFFDD,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x + ox, -y, z + 0.02);
+      mesh.visible = false;
+      this.scene.add(mesh);
+
+      this.effects.push({
+        mesh, age: -delay, maxAge: 0.8,
+        update: (dt, e) => {
+          e.age += dt;
+          if (e.age < 0) return;
+          mesh.visible = true;
+          const t = e.age / e.maxAge;
+          mesh.position.y += 2.5 * dt; // float upward
+          mesh.position.x += Math.sin(e.age * 6) * 0.3 * dt; // gentle sway
+          mat.opacity = Math.max(0, 0.9 * (1 - t * t)); // quadratic fade
+          const sc = 0.8 - t * 0.4;
+          mesh.scale.set(Math.max(0.1, sc), Math.max(0.1, sc), 1);
+        }
+      });
+    }
   }
 
   /**
