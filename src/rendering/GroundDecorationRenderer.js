@@ -21,16 +21,17 @@ const SHEET_W = 112;
 const SHEET_H = 192;
 
 // Sprite regions in the decor sheet (each 16×16)
+// Only cols 0-3 in row 11 are filled — cols 4-6 are empty in the sheet!
 const FLOWER_SPRITES = [
   { sx: 0, sy: 176 }, { sx: 16, sy: 176 }, { sx: 32, sy: 176 },
-  { sx: 48, sy: 176 }, { sx: 64, sy: 176 }, { sx: 80, sy: 176 },
-  { sx: 96, sy: 176 },
+  { sx: 48, sy: 176 },
 ];
 const STONE_SPRITES = [
   { sx: 0, sy: 64 }, { sx: 16, sy: 64 },
 ];
+// Row 9 cols 0-1 are sparse; use row 8-9 cols 2-3 which have actual mushroom sprites
 const MUSHROOM_SPRITES = [
-  { sx: 0, sy: 144 }, { sx: 16, sy: 144 },
+  { sx: 32, sy: 128 }, { sx: 48, sy: 128 },
 ];
 
 // Per-scene decoration mix

@@ -1162,7 +1162,7 @@ export class Game {
         case 'flower':
           // Cute_Fantasy flowers from Outdoor_Decor (bottom rows: flower beds)
           if (cfDecorTex) {
-            const flowerCol = Math.floor((prop.x * 7 + prop.y * 3) % 7);
+            const flowerCol = Math.floor((prop.x * 7 + prop.y * 3) % 4); // Only cols 0-3 filled in row 11
             this.tileMapRenderer.addPropFromSheet(cfDecorTex, flowerCol * 16, 176, 16, 16, prop.x, prop.y, 1, 1);
           }
           break;
@@ -1233,11 +1233,10 @@ export class Game {
           if (cfDecorTex) {
             // Outdoor_Decor has veggies at various positions:
             // Row y=64: crates/boxes, y=80: veggies (carrots, cabbages), y=96: more items
+            // Only use FILLED cells from Outdoor_Decor (cols 4-6 past row 4 are empty!)
             const vegOffsets = [
-              [64, 64], [80, 64], [96, 64],   // crates/veggies row 1
-              [64, 80], [80, 80], [96, 80],   // veggies row 2
-              [0, 80], [16, 80], [32, 80],    // more plants
-              [48, 80],
+              [0, 80], [16, 80], [32, 80], [48, 80],  // row 5 cols 0-3 (filled)
+              [0, 64], [16, 64], [32, 64],             // row 4 cols 0-2 (filled)
             ];
             const idx = (prop.cropType || 0) % vegOffsets.length;
             const [cx, cy] = vegOffsets[idx];
