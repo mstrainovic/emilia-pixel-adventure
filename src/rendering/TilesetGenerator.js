@@ -235,19 +235,19 @@ export async function generateTilesetAsync() {
     ctx.drawImage(grassImg, 0, 0, T, T, 1 * T, 0, T, T);
     addGrassDetail(ctx, 1 * T, 0, 200);
 
-    // Tile 0: grass dark (subtly darker — less blocky)
+    // Tile 0: grass dark (very subtly darker for gentle variation)
     ctx.drawImage(grassImg, 0, 0, T, T, 0 * T, 0, T, T);
-    tintRegion(ctx, 0, 0, 0.90, 0.92, 0.88);
+    tintRegion(ctx, 0, 0, 0.95, 0.96, 0.94);
     addGrassDetail(ctx, 0 * T, 0, 100);
 
-    // Tile 2: grass light (subtly brighter)
+    // Tile 2: grass light (very subtly brighter for gentle variation)
     ctx.drawImage(grassImg, 0, 0, T, T, 2 * T, 0, T, T);
-    tintRegion(ctx, 2 * T, 0, 1.06, 1.05, 1.02);
+    tintRegion(ctx, 2 * T, 0, 1.03, 1.03, 1.01);
     addGrassDetail(ctx, 2 * T, 0, 300);
 
-    // Tile 3: grass variant (very subtle hue shift)
+    // Tile 3: grass variant (very subtle hue shift for gentle variation)
     ctx.drawImage(grassImg, 0, 0, T, T, 3 * T, 0, T, T);
-    tintRegion(ctx, 3 * T, 0, 0.98, 1.04, 0.94);
+    tintRegion(ctx, 3 * T, 0, 0.99, 1.02, 0.97);
     addGrassDetail(ctx, 3 * T, 0, 400);
 
     // Tile 4: dirt path — center tile from Path_Tile.png auto-tile set (16,16)
@@ -386,10 +386,11 @@ export async function generateTilesetAsync() {
     //  AUTO-TILE EDGES — extracted from Cute Fantasy auto-tile sets
     //  Layout: 48×96 (3col × 6row), each cell 16×16
     //  Row 0: outerTL, edgeN, outerTR
-    //  Row 1: edgeW, center, edgeE
+    //  Row 1: edgeW,   center, edgeE
     //  Row 2: outerBL, edgeS, outerBR
-    //  Row 3: innerTL, ?, innerTR
-    //  Row 5: innerBL, ?, innerBR
+    //  Row 3: innerTL, innerTR, [empty]
+    //  Row 4: innerBL, innerBR, [empty]
+    //  Row 5: (unused fill variants)
     // ══════════════════════════════════════════════════════
 
     // Auto-tile extraction positions (same for both water and path)
@@ -400,9 +401,9 @@ export async function generateTilesetAsync() {
       // Outer corners: TL(4), TR(5), BL(6), BR(7)
       { sx: 0, sy: 0 },       { sx: 2 * T, sy: 0 },
       { sx: 0, sy: 2 * T },   { sx: 2 * T, sy: 2 * T },
-      // Inner corners: TL(8), TR(9), BL(10), BR(11)
-      { sx: 0, sy: 3 * T },   { sx: 2 * T, sy: 3 * T },
-      { sx: 0, sy: 5 * T },   { sx: 2 * T, sy: 5 * T },
+      // Inner corners: TL(8), TR(9), BL(10), BR(11) — 2×2 block at rows 3-4
+      { sx: 0, sy: 3 * T },   { sx: T, sy: 3 * T },
+      { sx: 0, sy: 4 * T },   { sx: T, sy: 4 * T },
     ];
 
     // Tiles 23-34: Water auto-tile edges (from Water_Tile.png)

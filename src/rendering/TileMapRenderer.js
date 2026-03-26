@@ -46,12 +46,10 @@ export class TileMapRenderer {
       const def = tileDefs[tileId];
       if (!def) continue;
 
-      const mat = new THREE.MeshStandardMaterial({
+      const mat = new THREE.MeshBasicMaterial({
         map: tilesetTexture.clone(),
         transparent: true,
         alphaTest: 0.01,
-        roughness: 0.95,
-        metalness: 0.0,
       });
 
       // Set UV to show just this tile from the tileset
