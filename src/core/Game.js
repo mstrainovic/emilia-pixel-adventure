@@ -2628,11 +2628,16 @@ export class Game {
     ];
 
     const beds = bedPositions[this._gardenExpansions - 1];
-    if (beds && this.tileMapRenderer) {
+    if (beds && this.tileMapRenderer && this._decorTexture) {
+      const vegOffsets = [
+        [0, 80], [16, 80], [32, 80], [48, 80],
+        [0, 64], [16, 64], [32, 64],
+      ];
       for (const bed of beds) {
+        const [cx, cy] = vegOffsets[(bed.t || 0) % vegOffsets.length];
         this.tileMapRenderer.addPropFromSheet(
-          this.scene, bed.x, bed.y, 1.0, 1.0,
-          null, 0x44aa22, 0.15 + bed.y * 0.001
+          this._decorTexture, cx, cy, 16, 16,
+          bed.x, bed.y, 1, 1
         );
       }
     }

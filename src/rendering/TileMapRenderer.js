@@ -98,7 +98,7 @@ export class TileMapRenderer {
       shadowMesh.position.set(
         x + widthTiles / 2,
         -(y + heightTiles - 0.2),
-        0.05 + y * 0.001
+        0.05 + (y + heightTiles) * 0.001
       );
       this.propGroup.add(shadowMesh);
     }
@@ -118,11 +118,11 @@ export class TileMapRenderer {
     mat.map.wrapT = THREE.ClampToEdgeWrapping;
 
     const mesh = new THREE.Mesh(geo, mat);
-    // Position: center of prop, Y flipped, z for depth sorting
+    // Position: center of prop, Y flipped, z sorted by BASE (foot) for correct top-down depth
     mesh.position.set(
       x + widthTiles / 2,
       -(y + heightTiles / 2),
-      zOffset + y * 0.001
+      zOffset + (y + heightTiles) * 0.001
     );
     this.propGroup.add(mesh);
     return mesh;
@@ -157,7 +157,7 @@ export class TileMapRenderer {
     mesh.position.set(
       worldX + widthTiles / 2,
       -(worldY + heightTiles / 2),
-      0.1 + worldY * 0.001
+      0.1 + (worldY + heightTiles) * 0.001
     );
     this.propGroup.add(mesh);
     return mesh;
