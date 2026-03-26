@@ -63,22 +63,25 @@ export class CraftingSystem {
     this.openStation(stationId);
   }
 
+  /**
+   * Execute crafting logic. Returns true on success, false on failure.
+   */
   _doCraft(recipe) {
     // PRE-CHECK: enough space for result?
     if (!this.inventory.canFitItem(recipe.result.itemId, recipe.result.count)) {
       this.hud.showInfo('Inventar voll! Mach zuerst Platz.');
-      return;
+      return false;
     }
 
     // Remove ingredients (safe — space was checked)
     for (const ing of recipe.ingredients) {
       if (ing.itemId) {
-        if (!this.inventory.removeItem(ing.itemId, ing.count)) return;
+        if (!this.inventory.removeItem(ing.itemId, ing.count)) return false;
       } else if (ing.category) {
         const matchId = this.inventory.findItemByCategory(ing.category);
         if (!matchId || !this.inventory.removeItem(matchId, ing.count)) {
           this.hud.showInfo('Zutat fehlt!');
-          return;
+          return false;
         }
       }
     }
@@ -91,6 +94,7 @@ export class CraftingSystem {
       window.__game.progression.addXp(5);
       window.__game.progression.reportCraft(this.ui.currentStation);
     }
+    return true;
   }
 
   get isActive() {

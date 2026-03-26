@@ -12,6 +12,11 @@ export class HUD {
     this._lastMaxHp = 100;
     this._lowHpPulsing = false;
 
+    // Quest tracker state
+    this._currentQuestId = null;
+    this._questAnimating = false;
+    this._questCompleteTimer = null;
+
     this.container = document.createElement('div');
     this.container.id = 'hud';
     this.container.innerHTML = `
@@ -216,12 +221,52 @@ export class HUD {
   updateQuest(quest) {
     const tracker = document.getElementById('hud-quest-tracker');
     if (!tracker) return;
-    if (!quest) { tracker.style.display = 'none'; return; }
-    tracker.style.display = 'block';
+    if (!quest) {
+      tracker.classList.remove('quest-slide-in');
+      tracker.classList.add('quest-slide-out');
+      setTimeout(() => { tracker.style.display = 'none'; }, 400);
+      this._currentQuestId = null;
+      return;
+    }
+
+    const isNewQuest = quest.id !== this._currentQuestId;
+    const progress = Math.min(quest.progress, quest.count);
+    const progressPct = Math.round((progress / quest.count) * 100);
+    const isNearComplete = progressPct >= 75 && progressPct < 100;
+
+    // Build quest tracker HTML
     tracker.innerHTML = `
+      <div class="quest-header">
+        <span class="quest-star">\u2605</span>
+        <span class="quest-label">${isNewQuest && this._currentQuestId !== null ? 'Neue Aufgabe!' : 'Aufgabe'}</span>
+      </div>
       <div class="quest-title">${quest.name}</div>
-      <div class="quest-desc">${quest.description} (${Math.min(quest.progress, quest.count)}/${quest.count})</div>
+      <div class="quest-description">${quest.description}</div>
+      <div class="quest-progress-row">
+        <div class="quest-progress-bar-bg">
+          <div class="quest-progress-bar-fill${isNearComplete ? ' quest-progress-near-complete' : ''}" style="width:${progressPct}%"></div>
+        </div>
+        <span class="quest-progress-text">${progress}/${quest.count}</span>
+      </div>
     `;
+
+    tracker.style.display = 'block';
+    tracker.classList.remove('quest-slide-out', 'quest-complete-flash', 'quest-pulse');
+
+    if (isNewQuest) {
+      // New quest slide-in animation
+      this._currentQuestId = quest.id;
+      tracker.classList.remove('quest-slide-in');
+      // Force reflow for restart
+      void tracker.offsetWidth;
+      tracker.classList.add('quest-slide-in');
+      // Brief golden border flash for new quest
+      tracker.classList.add('quest-new-flash');
+      setTimeout(() => tracker.classList.remove('quest-new-flash'), 1200);
+    } else if (isNearComplete) {
+      // Subtle pulse when nearly complete
+      tracker.classList.add('quest-pulse');
+    }
   }
 
   showLevelUp(level, rewards) {
@@ -242,6 +287,50 @@ export class HUD {
 
   showQuestComplete(questName) {
     this.showInfo(`Quest abgeschlossen: ${questName}!`);
+
+    const tracker = document.getElementById('hud-quest-tracker');
+    if (!tracker) return;
+
+    // Clear any pending timers
+    if (this._questCompleteTimer) clearTimeout(this._questCompleteTimer);
+
+    // Show completion celebration in the tracker
+    tracker.innerHTML = `
+      <div class="quest-header quest-complete-header">
+        <span class="quest-star quest-star-spin">\u2605</span>
+        <span class="quest-label quest-complete-label">Abgeschlossen!</span>
+        <span class="quest-checkmark">\u2714</span>
+      </div>
+      <div class="quest-title quest-complete-title">${questName}</div>
+      <div class="quest-sparkles">
+        <span class="sparkle sparkle-1">\u2726</span>
+        <span class="sparkle sparkle-2">\u2728</span>
+        <span class="sparkle sparkle-3">\u2726</span>
+        <span class="sparkle sparkle-4">\u2728</span>
+        <span class="sparkle sparkle-5">\u2726</span>
+        <span class="sparkle sparkle-6">\u2728</span>
+        <span class="sparkle sparkle-7">\u2726</span>
+        <span class="sparkle sparkle-8">\u2728</span>
+      </div>
+    `;
+
+    tracker.style.display = 'block';
+    tracker.classList.remove('quest-slide-in', 'quest-slide-out', 'quest-pulse', 'quest-new-flash');
+    // Flash gold
+    void tracker.offsetWidth;
+    tracker.classList.add('quest-complete-flash');
+
+    // After 2.5 seconds, slide out and reset for next quest
+    this._questCompleteTimer = setTimeout(() => {
+      this._questCompleteTimer = null;
+      tracker.classList.remove('quest-complete-flash');
+      tracker.classList.add('quest-slide-out');
+      this._currentQuestId = null;
+      setTimeout(() => {
+        tracker.style.display = 'none';
+        tracker.classList.remove('quest-slide-out');
+      }, 400);
+    }, 2500);
   }
 
   updateHotbar(inventory) {
@@ -552,16 +641,155 @@ export class HUD {
         color: #e8d8b0; font-size: 7px;
         min-width: 45px; letter-spacing: 0.5px;
       }
+      /* ── Quest Tracker ── */
       #hud-quest-tracker {
         position: absolute; top: 10px; right: 50px;
-        background: rgba(20, 15, 10, 0.8);
-        border: 2px solid #8B6914;
-        padding: 8px 14px; border-radius: 2px;
-        display: none; max-width: 280px;
-        box-shadow: 0 2px 0 #4a3608;
+        background: linear-gradient(135deg, rgba(40,30,20,0.88), rgba(60,45,30,0.88));
+        border: 2px solid #8B7355;
+        padding: 8px 12px 6px 12px; border-radius: 4px;
+        display: none; max-width: 260px; min-width: 180px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        overflow: hidden;
+        transform: translateX(0);
+        transition: border-color 0.3s, box-shadow 0.3s;
       }
-      .quest-title { color: #FFD700; font-size: 11px; margin-bottom: 4px; text-shadow: 1px 1px 0 #4a3608; }
-      .quest-desc { color: #d8c8a0; font-size: 9px; line-height: 1.4; }
+      .quest-header {
+        display: flex; align-items: center; gap: 4px;
+        margin-bottom: 3px;
+      }
+      .quest-star {
+        color: #FFD700; font-size: 10px;
+        text-shadow: 0 0 4px rgba(255,215,0,0.5);
+      }
+      .quest-label {
+        color: #b8a070; font-size: 7px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .quest-title {
+        color: #FFD700; font-size: 9px; margin-bottom: 2px;
+        text-shadow: 1px 1px 0 #4a3608;
+        line-height: 1.3;
+      }
+      .quest-description {
+        color: #DDDDDD; font-size: 7px; line-height: 1.4;
+        margin-bottom: 4px;
+      }
+      .quest-progress-row {
+        display: flex; align-items: center; gap: 6px;
+      }
+      .quest-progress-bar-bg {
+        flex: 1; height: 6px;
+        background: #2a1a0a;
+        border-radius: 1px;
+        border: 1px solid #5a4020;
+        overflow: hidden;
+      }
+      .quest-progress-bar-fill {
+        height: 100%;
+        background: #6a9e4a;
+        transition: width 0.4s ease;
+        box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+      }
+      .quest-progress-near-complete {
+        background: #c8a030;
+        box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15), 0 0 4px rgba(200,160,48,0.4);
+      }
+      .quest-progress-text {
+        color: #b8a070; font-size: 7px;
+        min-width: 28px; text-align: right;
+      }
+      /* Slide-in from right */
+      @keyframes quest-slide-in {
+        0% { transform: translateX(120%); opacity: 0; }
+        70% { transform: translateX(-4px); opacity: 1; }
+        100% { transform: translateX(0); opacity: 1; }
+      }
+      .quest-slide-in {
+        animation: quest-slide-in 0.5s ease-out forwards;
+      }
+      /* Slide-out to right */
+      @keyframes quest-slide-out {
+        0% { transform: translateX(0); opacity: 1; }
+        100% { transform: translateX(120%); opacity: 0; }
+      }
+      .quest-slide-out {
+        animation: quest-slide-out 0.4s ease-in forwards;
+      }
+      /* New quest golden border flash */
+      @keyframes quest-new-flash {
+        0% { border-color: #FFD700; box-shadow: 0 0 12px rgba(255,215,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); }
+        50% { border-color: #FFD700; box-shadow: 0 0 18px rgba(255,215,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); }
+        100% { border-color: #8B7355; box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+      }
+      .quest-new-flash {
+        animation: quest-new-flash 1.2s ease-out forwards;
+      }
+      /* Nearly complete pulse */
+      @keyframes quest-pulse {
+        0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+        50% { box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 8px rgba(200,160,48,0.3); }
+      }
+      .quest-pulse {
+        animation: quest-pulse 2s ease-in-out infinite;
+      }
+      /* Quest complete flash */
+      @keyframes quest-complete-flash {
+        0% { border-color: #FFD700; box-shadow: 0 0 20px rgba(255,215,0,0.7), inset 0 0 10px rgba(255,215,0,0.15); background: linear-gradient(135deg, rgba(80,65,20,0.92), rgba(100,80,30,0.92)); }
+        40% { border-color: #FFD700; box-shadow: 0 0 14px rgba(255,215,0,0.5), inset 0 0 6px rgba(255,215,0,0.1); }
+        100% { border-color: #8B7355; box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); background: linear-gradient(135deg, rgba(40,30,20,0.88), rgba(60,45,30,0.88)); }
+      }
+      .quest-complete-flash {
+        animation: quest-complete-flash 2.5s ease-out forwards;
+      }
+      .quest-complete-header { gap: 5px; }
+      .quest-complete-label {
+        color: #FFD700 !important; font-size: 8px !important;
+        text-shadow: 0 0 6px rgba(255,215,0,0.5);
+      }
+      .quest-complete-title {
+        color: #ffe880 !important;
+      }
+      .quest-checkmark {
+        color: #6ae05a; font-size: 10px;
+        text-shadow: 0 0 4px rgba(106,224,90,0.5);
+        margin-left: auto;
+      }
+      /* Star spin on completion */
+      @keyframes quest-star-spin {
+        0% { transform: rotate(0deg) scale(1); }
+        50% { transform: rotate(180deg) scale(1.4); color: #fff; }
+        100% { transform: rotate(360deg) scale(1); }
+      }
+      .quest-star-spin {
+        display: inline-block;
+        animation: quest-star-spin 0.8s ease-in-out;
+      }
+      /* Sparkle confetti */
+      .quest-sparkles {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none; overflow: hidden;
+      }
+      .sparkle {
+        position: absolute;
+        font-size: 10px;
+        opacity: 0;
+        animation: sparkle-float 1.8s ease-out forwards;
+      }
+      .sparkle-1 { left: 10%; top: 50%; animation-delay: 0s; color: #FFD700; }
+      .sparkle-2 { left: 25%; top: 30%; animation-delay: 0.1s; color: #ffe880; }
+      .sparkle-3 { left: 45%; top: 60%; animation-delay: 0.2s; color: #FFD700; }
+      .sparkle-4 { left: 60%; top: 20%; animation-delay: 0.15s; color: #ffd0e0; }
+      .sparkle-5 { left: 75%; top: 50%; animation-delay: 0.25s; color: #FFD700; }
+      .sparkle-6 { left: 90%; top: 35%; animation-delay: 0.05s; color: #80e0ff; }
+      .sparkle-7 { left: 35%; top: 70%; animation-delay: 0.3s; color: #ffe880; }
+      .sparkle-8 { left: 80%; top: 65%; animation-delay: 0.18s; color: #FFD700; }
+      @keyframes sparkle-float {
+        0% { opacity: 0; transform: translateY(0) scale(0.5); }
+        20% { opacity: 1; transform: translateY(-6px) scale(1.2); }
+        60% { opacity: 0.8; transform: translateY(-16px) scale(1); }
+        100% { opacity: 0; transform: translateY(-28px) scale(0.4); }
+      }
       #hud-levelup {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         display: flex; align-items: center; justify-content: center;

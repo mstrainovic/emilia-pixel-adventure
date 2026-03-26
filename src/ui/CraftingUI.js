@@ -3,7 +3,7 @@ import { getItemIconDataURL } from '../utils/ItemIcons.js';
 
 /**
  * Crafting station UI — shows available recipes for a station.
- * HTML overlay with ingredient list and "Herstellen" button.
+ * HTML overlay with ingredient list, "Herstellen" button, and crafting animation.
  */
 export class CraftingUI {
   constructor() {
@@ -26,13 +26,16 @@ export class CraftingUI {
     this.currentStation = null;
     this.inventory = null;
     this.onCraft = null;
+    this._isCrafting = false; // animation lock
 
-    document.getElementById('crafting-close').addEventListener('click', () => this.hide());
+    document.getElementById('crafting-close').addEventListener('click', () => {
+      if (!this._isCrafting) this.hide();
+    });
     this.container.addEventListener('click', (e) => {
-      if (e.target === this.container) this.hide();
+      if (e.target === this.container && !this._isCrafting) this.hide();
     });
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Escape' && this.isOpen) this.hide();
+      if (e.code === 'Escape' && this.isOpen && !this._isCrafting) this.hide();
     });
   }
 
@@ -40,6 +43,7 @@ export class CraftingUI {
     this.isOpen = true;
     this.currentStation = stationId;
     this.inventory = inventory;
+    this._currentRecipes = recipes;
     this.container.style.display = 'flex';
 
     document.getElementById('crafting-title').textContent = stationLabel;
@@ -76,7 +80,7 @@ export class CraftingUI {
           <img class="craft-icon" src="${getItemIconDataURL(recipe.result.itemId)}" draggable="false">
           <div class="craft-result-info">
             <div class="craft-result-name">${recipe.name}</div>
-            <div class="craft-result-count">×${recipe.result.count}</div>
+            <div class="craft-result-count">&times;${recipe.result.count}</div>
           </div>
         </div>
         <div class="craft-ingredients">
@@ -90,19 +94,168 @@ export class CraftingUI {
             </span>`;
           }).join('')}
         </div>
+        <div class="craft-progress-wrap" style="display:none;">
+          <div class="craft-progress-bar"></div>
+        </div>
+        <div class="craft-success-area"></div>
         <button class="craft-btn" ${canCraft ? '' : 'disabled'}>Herstellen</button>
       `;
 
       if (canCraft) {
-        el.querySelector('.craft-btn').addEventListener('click', () => {
-          if (this.onCraft) this.onCraft(recipe);
-          // Re-render after crafting
-          this._renderRecipes(recipes, inventory);
+        const btn = el.querySelector('.craft-btn');
+        btn.addEventListener('click', () => {
+          if (this._isCrafting) return;
+          this._animatedCraft(recipe, el);
         });
       }
 
       list.appendChild(el);
     }
+  }
+
+  /**
+   * Animated crafting sequence:
+   * 1. Disable button, show progress bar
+   * 2. Fade out ingredients + sparkle
+   * 3. Execute actual craft
+   * 4. Pop result + floating success text
+   * 5. Re-enable and re-render
+   */
+  async _animatedCraft(recipe, recipeEl) {
+    this._isCrafting = true;
+    const btn = recipeEl.querySelector('.craft-btn');
+    const ingredientEls = recipeEl.querySelectorAll('.craft-ing');
+    const progressWrap = recipeEl.querySelector('.craft-progress-wrap');
+    const progressBar = recipeEl.querySelector('.craft-progress-bar');
+    const successArea = recipeEl.querySelector('.craft-success-area');
+    const resultIcon = recipeEl.querySelector('.craft-icon');
+
+    // --- Disable all craft buttons during animation ---
+    const allBtns = this.container.querySelectorAll('.craft-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    // Step 1: Button text change
+    btn.textContent = '...';
+    btn.classList.add('craft-btn-active');
+
+    // Step 2: Show progress bar, animate fill over 1.5s
+    progressWrap.style.display = 'block';
+    // Force reflow so transition starts from 0
+    progressBar.style.width = '0%';
+    progressBar.offsetWidth; // force reflow
+    progressBar.style.width = '100%';
+
+    // Step 3: Fade out ingredient elements
+    ingredientEls.forEach((el, i) => {
+      el.style.transition = `opacity 0.8s ease ${i * 0.15}s, transform 0.8s ease ${i * 0.15}s`;
+      el.style.opacity = '0.2';
+      el.style.transform = 'scale(0.7) translateY(-8px)';
+    });
+
+    // Step 4: Spawn sparkles around the recipe during wait
+    this._spawnSparkles(recipeEl, 1500);
+
+    // Wait for progress animation
+    await this._wait(1500);
+
+    // Step 5: Execute actual craft
+    let success = false;
+    if (this.onCraft) {
+      success = this.onCraft(recipe);
+    }
+
+    // Hide progress bar
+    progressWrap.style.display = 'none';
+    progressBar.style.width = '0%';
+
+    if (success) {
+      // Step 6: Golden sparkle burst
+      this._spawnBurst(recipeEl);
+
+      // Step 7: Pop effect on result icon
+      if (resultIcon) {
+        resultIcon.classList.add('craft-icon-pop');
+      }
+
+      // Step 8: Floating success text
+      const resultItem = getItem(recipe.result.itemId);
+      const itemName = resultItem?.name || recipe.name;
+      const successText = document.createElement('div');
+      successText.className = 'craft-success-text';
+      successText.textContent = `+${recipe.result.count} ${itemName}!`;
+      successArea.appendChild(successText);
+
+      // Wait for pop + success text to show
+      await this._wait(1200);
+
+      // Clean up pop class
+      if (resultIcon) resultIcon.classList.remove('craft-icon-pop');
+      successArea.innerHTML = '';
+    } else {
+      // Craft failed — restore ingredient visuals
+      ingredientEls.forEach(el => {
+        el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+      await this._wait(300);
+    }
+
+    // Step 9: Reset and re-render
+    btn.textContent = 'Herstellen';
+    btn.classList.remove('craft-btn-active');
+    this._isCrafting = false;
+
+    // Re-render recipes to update ingredient counts and button states
+    if (this._currentRecipes && this.inventory) {
+      this._renderRecipes(this._currentRecipes, this.inventory);
+    }
+  }
+
+  /**
+   * Spawn small sparkle particles around a recipe element during crafting.
+   */
+  _spawnSparkles(parentEl, duration) {
+    const sparkleChars = ['\u2728', '\u2b50', '\u2734\ufe0f'];
+    const count = 8;
+    const interval = duration / count;
+
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const sparkle = document.createElement('span');
+        sparkle.className = 'craft-sparkle';
+        sparkle.textContent = sparkleChars[i % sparkleChars.length];
+        // Random position within the recipe element
+        sparkle.style.left = (Math.random() * 80 + 10) + '%';
+        sparkle.style.top = (Math.random() * 60 + 10) + '%';
+        parentEl.style.position = 'relative';
+        parentEl.appendChild(sparkle);
+        // Remove after animation
+        setTimeout(() => sparkle.remove(), 800);
+      }, i * interval);
+    }
+  }
+
+  /**
+   * Golden burst effect on successful craft.
+   */
+  _spawnBurst(parentEl) {
+    const burstCount = 12;
+    parentEl.style.position = 'relative';
+    for (let i = 0; i < burstCount; i++) {
+      const particle = document.createElement('span');
+      particle.className = 'craft-burst-particle';
+      const angle = (i / burstCount) * 360;
+      particle.style.setProperty('--burst-angle', angle + 'deg');
+      particle.style.left = '50%';
+      particle.style.top = '30%';
+      parentEl.appendChild(particle);
+      setTimeout(() => particle.remove(), 700);
+    }
+  }
+
+  _wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   _addStyles() {
@@ -142,6 +295,7 @@ export class CraftingUI {
         border-radius: 10px;
         padding: 12px; margin-bottom: 8px;
         display: flex; flex-direction: column; gap: 8px;
+        overflow: hidden;
       }
       .craft-disabled { opacity: 0.5; }
       .craft-result { display: flex; align-items: center; gap: 10px; }
@@ -153,6 +307,7 @@ export class CraftingUI {
         color: #aaa; font-size: 12px;
         display: flex; align-items: center; gap: 4px;
         background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;
+        transition: opacity 0.5s ease, transform 0.5s ease;
       }
       .craft-ing-missing { color: #ff6666; }
       .craft-ing-icon { width: 16px; height: 16px; image-rendering: pixelated; vertical-align: middle; }
@@ -161,10 +316,91 @@ export class CraftingUI {
         background: #2a6a2a; color: #fff; border: none; border-radius: 8px;
         padding: 8px 16px; font-size: 14px; font-weight: bold;
         cursor: pointer; align-self: flex-end;
+        transition: background 0.2s ease, transform 0.1s ease;
       }
       .craft-btn:hover:not(:disabled) { background: #3a8a3a; }
       .craft-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+      .craft-btn-active {
+        background: #445500 !important;
+        color: #FFD700 !important;
+      }
       .craft-empty { color: #888; text-align: center; padding: 20px; }
+
+      /* --- Progress bar --- */
+      .craft-progress-wrap {
+        height: 6px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .craft-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+        border-radius: 3px;
+        transition: width 1.5s ease-in-out;
+      }
+
+      /* --- Sparkle particles --- */
+      .craft-sparkle {
+        position: absolute;
+        font-size: 14px;
+        pointer-events: none;
+        animation: craft-sparkle-anim 0.8s ease-out forwards;
+        z-index: 10;
+      }
+      @keyframes craft-sparkle-anim {
+        0% { opacity: 1; transform: scale(0.5) translateY(0); }
+        50% { opacity: 1; transform: scale(1.2) translateY(-10px); }
+        100% { opacity: 0; transform: scale(0.3) translateY(-20px); }
+      }
+
+      /* --- Golden burst particles --- */
+      .craft-burst-particle {
+        position: absolute;
+        width: 6px; height: 6px;
+        background: #FFD700;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: craft-burst-anim 0.6s ease-out forwards;
+        z-index: 10;
+        box-shadow: 0 0 6px #FFD700;
+      }
+      @keyframes craft-burst-anim {
+        0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--burst-angle)) translateX(0); }
+        100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--burst-angle)) translateX(50px); }
+      }
+
+      /* --- Result icon pop --- */
+      .craft-icon-pop {
+        animation: craft-pop-anim 0.5s ease-out;
+      }
+      @keyframes craft-pop-anim {
+        0% { transform: scale(0.3); opacity: 0.5; }
+        60% { transform: scale(1.3); opacity: 1; }
+        100% { transform: scale(1.0); opacity: 1; }
+      }
+
+      /* --- Floating success text --- */
+      .craft-success-text {
+        color: #44FF44;
+        font-size: 15px;
+        font-weight: bold;
+        text-align: center;
+        text-shadow: 0 0 8px rgba(68, 255, 68, 0.5);
+        animation: craft-success-anim 1.2s ease-out forwards;
+      }
+      @keyframes craft-success-anim {
+        0% { opacity: 0; transform: translateY(8px) scale(0.8); }
+        20% { opacity: 1; transform: translateY(0) scale(1.1); }
+        50% { opacity: 1; transform: translateY(-4px) scale(1.0); }
+        100% { opacity: 0; transform: translateY(-16px) scale(0.9); }
+      }
+
+      .craft-success-area {
+        min-height: 0;
+        text-align: center;
+      }
     `;
     document.head.appendChild(style);
   }

@@ -67,6 +67,13 @@ export class Player extends Entity {
     }
 
     if (this.state === 'dead') {
+      // Rapid flash during death animation
+      if (this._deathFlashTimer > 0) {
+        this._deathFlashTimer -= dt;
+        if (this.activeSprite) {
+          this.activeSprite.mesh.visible = Math.floor(this._deathFlashTimer * 15) % 2 === 0;
+        }
+      }
       super.update(dt);
       return;
     }
@@ -145,12 +152,21 @@ export class Player extends Entity {
 
   die() {
     this.state = 'dead';
-    setTimeout(() => {
-      this.hp = this.maxHp;
-      this.state = 'idle';
-      this.invulnTimer = 2;
-      if (this._onDeath) this._onDeath();
-    }, 2000);
+    this._deathFlashTimer = 0.5; // rapid flash on death
+    // Notify Game.js immediately — it will handle the death screen & respawn
+    if (this._onDeath) this._onDeath();
+  }
+
+  /**
+   * Called by Game.js when the player should respawn after death screen.
+   * Restores HP to 50% and grants brief invulnerability.
+   */
+  respawn() {
+    this.hp = Math.ceil(this.maxHp * 0.5);
+    this.state = 'idle';
+    this.invulnTimer = 2.0;
+    this.hitFlashTimer = 2.0; // flashing during invuln grace period
+    this._deathFlashTimer = 0;
   }
 
   heal(amount) {

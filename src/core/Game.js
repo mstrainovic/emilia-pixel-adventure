@@ -66,6 +66,7 @@ import { RARE_FIND_PLACEMENTS } from '../data/rare_finds.js';
 import { DamageNumbers } from '../rendering/DamageNumbers.js';
 import { PickupPopup } from '../ui/PickupPopup.js';
 import { MapVignette } from '../rendering/MapVignette.js';
+import { GameOverScreen } from '../ui/GameOverScreen.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -231,6 +232,7 @@ export class Game {
     this.combat = new CombatSystem();
     this.hud = new HUD();
     this.pickupPopup = new PickupPopup();
+    this.gameOverScreen = new GameOverScreen();
     this.damageNumbers = null; // floating damage numbers, created per scene
     this.dialog = new DialogSystem();
     // After NPC dialog ends → open their crafting station automatically
@@ -452,12 +454,18 @@ export class Game {
       if (def.itemReward) {
         for (const r of def.itemReward) this.inventory.addItem(r.itemId, r.count);
       }
-      this.hud.updateQuest(this.progression.getActiveQuest());
       this.hud.updateHotbar(this.inventory);
+      // Delay showing next quest until completion celebration finishes (3s)
+      setTimeout(() => {
+        this.hud.updateQuest(this.progression.getActiveQuest());
+      }, 3000);
     };
     this.progression.onXpGain = () => {
       this.hud.updateXp(this.progression);
-      this.hud.updateQuest(this.progression.getActiveQuest());
+      // Don't update quest tracker during completion celebration
+      if (!this.hud._questCompleteTimer) {
+        this.hud.updateQuest(this.progression.getActiveQuest());
+      }
     };
 
     // Player damage → screen flash + shake + damage number + impact particles
@@ -472,11 +480,18 @@ export class Game {
       }
     };
 
-    // Player death → respawn at hub
+    // Player death → show death screen, then respawn at hub
     this.player._onDeath = () => {
       this.audio.playPlayerDeath();
-      this.sceneManager.transition('hub', 20, 15);
-      this.hud.showInfo('Emilia wacht im Dorf auf...');
+      this.juice.shakeHeavy();
+
+      // Show death screen overlay — game pauses while active
+      this.gameOverScreen.show(() => {
+        // On continue: transition to hub, then respawn player
+        this.sceneManager.transition('hub', 20, 15);
+        this.player.respawn();
+        this.hud.showInfo('Emilia wacht im Dorf auf...');
+      });
     };
 
     // Hide loading screen
@@ -654,22 +669,11 @@ export class Game {
     // Floating damage numbers
     this.damageNumbers = new DamageNumbers(this.scene);
 
-    // Start ambient particles based on scene type
-    const particleTypes = {
-      hub: 'pollen',
-      forest: 'firefly',
-      dungeon: 'dust',
-      lake: 'pollen',
-      unicorn_meadow: 'magic',
-      beach: 'pollen',
-      grotto: 'bubbles',
-      cloud_castle: 'snow',
-      starsky: 'magic',
-    };
-    this.vfx.startAmbientParticles(
-      finalSpawn.x, finalSpawn.y,
-      particleTypes[sceneName] || 'pollen'
-    );
+    // Start per-scene ambient particles (pollen, fireflies, sparkles, etc.)
+    this.vfx.startAmbientParticles(sceneName, {
+      width: mapData.width,
+      height: mapData.height,
+    });
 
     // Resource nodes
     this.resources = new ResourceManager(this.scene);
@@ -880,6 +884,9 @@ export class Game {
   }
 
   _clearScene() {
+    // Hide death screen on scene clear (prevents stale overlay)
+    if (this.gameOverScreen) this.gameOverScreen.hide();
+
     // Remove player from old scene
     if (this.player) this.player.removeFromScene();
 
@@ -1988,6 +1995,15 @@ export class Game {
       return;
     }
 
+    // Death screen freeze — skip all gameplay, still render
+    if (this.gameOverScreen && this.gameOverScreen.active) {
+      this.hud.update(this.player, dt);
+      if (this.postProcessing) this.postProcessing.render();
+      else this.renderer.render(this.scene, this.camera.three);
+      this.input.endFrame();
+      return;
+    }
+
     // I key — toggle inventory panel
     if (this.input.justPressed('KeyI')) {
       this.hud.toggleInventory(this.inventory);
@@ -2492,6 +2508,7 @@ export class Game {
     this.hud.dispose();
     if (this.pickupPopup) this.pickupPopup.dispose();
     if (this.explorerBookUI) this.explorerBookUI.dispose();
+    if (this.gameOverScreen) this.gameOverScreen.dispose();
     if (this.pet) this.pet.dispose();
     this.sceneManager.dispose();
     this.renderer.dispose();
