@@ -546,7 +546,7 @@ export class VisualEffects {
       pollen: { count: 25, color: [255, 255, 200], size: 0.12, speed: 0.3, alpha: 0.4 },
       firefly: { count: 15, color: [200, 255, 100], size: 0.15, speed: 0.5, alpha: 0.6 },
       dust: { count: 20, color: [200, 180, 150], size: 0.1, speed: 0.15, alpha: 0.25 },
-      magic: { count: 30, color: [255, 220, 255], size: 0.14, speed: 0.4, alpha: 0.5 },
+      magic: { count: 18, color: [230, 210, 255], size: 0.1, speed: 0.25, alpha: 0.3 },
       bubbles: { count: 30, color: [128, 255, 255], size: 0.15, speed: 0.4, alpha: 0.5 },
     };
     const cfg = configs[type] || configs.pollen;

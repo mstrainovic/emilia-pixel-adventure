@@ -134,6 +134,29 @@ export function generateGrottoMap() {
   fillRect(ground,    27, 31, 2, 2, 10);
   fillRect(collision, 27, 31, 2, 2, 1);
 
+  // ── SMOOTH ZONE TRANSITIONS ──────────────────────────────────────────────
+  // Blend tiles at zone borders for gradual color transitions
+
+  // Reef→Ruins border (around x=14): mix sand(18) and moss(17) tiles
+  for (let r = 1; r <= 10; r++) {
+    if (ground[r][13] === 16 && rng() < 0.5) ground[r][13] = 18;
+    if (ground[r][14] !== 15 && rng() < 0.4) ground[r][14] = 17;
+  }
+
+  // Ruins→Passage border (around x=34): blend with moss(17)
+  for (let r = 5; r <= 14; r++) {
+    if (ground[r][34] === 16 && rng() < 0.4) ground[r][34] = 17;
+  }
+
+  // Ruins→Treasure border (around y=14 & y=24): sand(18) fading in
+  for (let c = 15; c <= 33; c++) {
+    if (ground[13][c] === 16 && rng() < 0.35) ground[13][c] = 18;
+  }
+  for (let c = 15; c <= 29; c++) {
+    if (ground[25][c] === 18 && rng() < 0.3) ground[25][c] = 16;
+    if (ground[26][c] === 18 && rng() < 0.2) ground[26][c] = 16;
+  }
+
   // ── CONNECTING CORRIDORS ─────────────────────────────────────────────────
 
   // Reef ↔ Ruins: horizontal corridor at y=5-6 (rows 5-6, cols 13-15)
@@ -227,6 +250,20 @@ export function generateGrottoMap() {
   props.push({ type: 'chest', x: 26, y: 28, id: 'chest_treasure2', loot: 'equipment' });
   props.push({ type: 'coral_deco', x: 20, y: 26 });
   props.push({ type: 'coral_deco', x: 24, y: 32 });
+
+  // --- Glowing crystal formations (underwater ambiance) ---
+  props.push({ type: 'crystal', x: 16, y: 6  });
+  props.push({ type: 'crystal', x: 28, y: 3  });
+  props.push({ type: 'crystal', x: 33, y: 12 });
+  props.push({ type: 'crystal', x: 38, y: 22 });
+  props.push({ type: 'crystal', x: 18, y: 30 });
+  props.push({ type: 'crystal', x: 25, y: 33 });
+
+  // --- Additional glow plants in reef and treasure chamber ---
+  props.push({ type: 'glow_plant', x: 7,  y: 2  });
+  props.push({ type: 'glow_plant', x: 13, y: 6  });
+  props.push({ type: 'glow_plant', x: 22, y: 29 });
+  props.push({ type: 'glow_plant', x: 28, y: 27 });
 
   // --- Gem resource nodes (3 nodes: 1 sapphire, 1 ruby, 1 emerald) ---
   props.push({ type: 'resource', resourceType: 'gem', itemId: 'sapphire', x: 29, y: 5,  id: 'gem_sapphire', hitsNeeded: 3, respawnTime: 600 });

@@ -27,15 +27,33 @@ export function generateUnicornMeadowMap() {
   const ground = createGrid(W, H, 8); // default: flower grass everywhere
   const collision = createGrid(W, H, 0);
 
-  // ── Flower grass variety — mostly tile 8, with patches of 2 and 3 ──
+  // ── Flower grass variety — balanced mix with flower clusters ──
   for (let r = 0; r < H; r++)
     for (let c = 0; c < W; c++) {
       const v = rng();
-      if (v < 0.65) ground[r][c] = 8;       // flower grass (dominant)
-      else if (v < 0.80) ground[r][c] = 2;   // light grass
-      else if (v < 0.92) ground[r][c] = 3;   // grass variant
-      else ground[r][c] = 1;                  // medium grass accent
+      if (v < 0.30) ground[r][c] = 1;        // regular grass (base)
+      else if (v < 0.55) ground[r][c] = 2;    // light grass
+      else if (v < 0.75) ground[r][c] = 3;    // grass variant
+      else ground[r][c] = 8;                   // flower grass (accent, ~25%)
     }
+
+  // ── Flower grass clusters — concentrated patches for natural look ──
+  const flowerClusters = [
+    { cx: 7, cy: 7, r: 2 },   // near unicorn spawn
+    { cx: 17, cy: 6, r: 2 },  // near unicorn spawn
+    { cx: 12, cy: 13, r: 2 }, // near unicorn spawn
+    { cx: 12, cy: 10, r: 3 }, // meadow center
+  ];
+  for (const cl of flowerClusters) {
+    for (let r = cl.cy - cl.r; r <= cl.cy + cl.r; r++) {
+      for (let c = cl.cx - cl.r; c <= cl.cx + cl.r; c++) {
+        if (r >= 1 && r < H - 1 && c >= 1 && c < W - 1) {
+          const dist = Math.abs(r - cl.cy) + Math.abs(c - cl.cx);
+          if (dist <= cl.r && rng() < 0.7) ground[r][c] = 8;
+        }
+      }
+    }
+  }
 
   // ── Thin tree border — only 1 tile of collision ──
   fillRect(collision, 0, 0, W, 1, 1);   fillRect(ground, 0, 0, W, 1, 2);

@@ -163,12 +163,12 @@ export class PostProcessingPipeline {
         bloomStrength: 0.35,
       },
       unicorn_meadow: {
-        tint: [1.08, 1.03, 0.92],
-        tintStrength: 0.15,
-        brightness: 1.15,
-        contrast: 1.0,
-        saturation: 1.25,
-        bloomStrength: 0.6,
+        tint: [1.04, 1.01, 0.95],
+        tintStrength: 0.08,
+        brightness: 1.05,
+        contrast: 1.02,
+        saturation: 1.12,
+        bloomStrength: 0.3,
       },
       beach: {
         tint: [1.05, 1.02, 0.88],

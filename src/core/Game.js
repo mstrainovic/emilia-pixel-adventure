@@ -72,45 +72,93 @@ function _createPalmSprite() {
   c.width = 32; c.height = 48;
   const ctx = c.getContext('2d');
 
-  // Trunk — brown, slightly curved
-  ctx.fillStyle = '#8B6914';
-  // Main trunk segments from bottom to top
-  ctx.fillRect(14, 44, 4, 4);   // base
-  ctx.fillRect(13, 38, 4, 6);   // lower
-  ctx.fillRect(12, 30, 4, 8);   // middle
-  ctx.fillRect(13, 22, 3, 8);   // upper
-  ctx.fillRect(14, 16, 3, 6);   // top
+  // ── Trunk — curved with bark rings ──
+  // Base roots (wider, darker)
+  ctx.fillStyle = '#5A4010';
+  ctx.fillRect(12, 45, 8, 3);
+  ctx.fillRect(11, 46, 2, 2);
+  ctx.fillRect(20, 46, 2, 2);
 
-  // Trunk highlight
-  ctx.fillStyle = '#A07D1A';
-  ctx.fillRect(15, 38, 1, 6);
-  ctx.fillRect(14, 28, 1, 8);
+  // Main trunk with slight curve (bottom to top)
+  ctx.fillStyle = '#7A5A18';
+  ctx.fillRect(14, 42, 5, 4);   // base
+  ctx.fillRect(13, 36, 5, 6);   // lower
+  ctx.fillRect(12, 28, 5, 8);   // middle (slight left lean)
+  ctx.fillRect(13, 20, 4, 8);   // upper
+  ctx.fillRect(14, 14, 3, 6);   // crown
 
-  // Fronds — dark green
+  // Bark ring texture (horizontal dark lines)
+  ctx.fillStyle = '#5A4010';
+  for (let y = 44; y >= 16; y -= 3) {
+    const xOff = y > 36 ? 14 : y > 28 ? 13 : y > 20 ? 12 : 14;
+    const w = y > 36 ? 5 : y > 28 ? 5 : y > 20 ? 4 : 3;
+    ctx.fillRect(xOff, y, w, 1);
+  }
+
+  // Trunk highlight (right side — sunlit)
+  ctx.fillStyle = '#9A7A28';
+  ctx.fillRect(17, 42, 1, 4);
+  ctx.fillRect(16, 36, 1, 6);
+  ctx.fillRect(15, 28, 1, 8);
+  ctx.fillRect(15, 20, 1, 8);
+
+  // ── Fronds — layered with depth ──
+  // Back fronds (darker, behind trunk)
+  ctx.fillStyle = '#1A6A20';
+  // Back-left drooping frond
+  ctx.fillRect(4, 12, 10, 2);
+  ctx.fillRect(1, 13, 6, 2);
+  ctx.fillRect(0, 14, 3, 1);
+  // Back-right drooping frond
+  ctx.fillRect(18, 12, 10, 2);
+  ctx.fillRect(25, 13, 6, 2);
+  ctx.fillRect(29, 14, 3, 1);
+
+  // Mid fronds (medium green)
   ctx.fillStyle = '#2D8B2D';
-  // Left fronds
-  ctx.fillRect(2, 10, 12, 3);
-  ctx.fillRect(0, 8, 8, 2);
-  ctx.fillRect(4, 12, 6, 2);
-  // Right fronds
-  ctx.fillRect(18, 10, 12, 3);
-  ctx.fillRect(24, 8, 8, 2);
-  ctx.fillRect(22, 12, 6, 2);
-  // Top fronds
-  ctx.fillRect(10, 4, 12, 3);
-  ctx.fillRect(8, 6, 16, 3);
+  // Left frond — graceful arc
+  ctx.fillRect(3, 9, 12, 2);
+  ctx.fillRect(1, 10, 8, 2);
+  ctx.fillRect(0, 11, 4, 2);
+  ctx.fillRect(5, 11, 4, 1);
+  // Right frond — graceful arc
+  ctx.fillRect(17, 9, 12, 2);
+  ctx.fillRect(23, 10, 8, 2);
+  ctx.fillRect(28, 11, 4, 2);
+  ctx.fillRect(23, 11, 4, 1);
+  // Top upward fronds
+  ctx.fillRect(11, 5, 10, 2);
+  ctx.fillRect(9, 7, 14, 2);
+  ctx.fillRect(10, 3, 6, 2);
 
-  // Lighter green highlights on fronds
-  ctx.fillStyle = '#3DA83D';
-  ctx.fillRect(4, 9, 6, 2);
-  ctx.fillRect(22, 9, 6, 2);
-  ctx.fillRect(12, 5, 8, 2);
+  // Front fronds (brightest, in front)
+  ctx.fillStyle = '#3AAE3A';
+  // Left front
+  ctx.fillRect(4, 8, 8, 1);
+  ctx.fillRect(2, 9, 5, 1);
+  // Right front
+  ctx.fillRect(20, 8, 8, 1);
+  ctx.fillRect(25, 9, 5, 1);
+  // Top highlight
+  ctx.fillRect(12, 4, 7, 1);
+  ctx.fillRect(11, 6, 9, 1);
 
-  // Coconuts
+  // Leaf vein details (thin dark lines)
+  ctx.fillStyle = '#1A6A20';
+  ctx.fillRect(6, 10, 6, 1);
+  ctx.fillRect(20, 10, 6, 1);
+  ctx.fillRect(13, 5, 5, 1);
+
+  // ── Coconuts — round with highlights ──
   ctx.fillStyle = '#6B4E1A';
-  ctx.fillRect(12, 14, 3, 3);
-  ctx.fillRect(17, 15, 3, 3);
-  ctx.fillRect(14, 16, 3, 2);
+  ctx.fillRect(12, 13, 3, 3);
+  ctx.fillRect(17, 14, 3, 3);
+  ctx.fillRect(14, 15, 3, 2);
+  // Coconut highlight
+  ctx.fillStyle = '#8B6E2A';
+  ctx.fillRect(12, 13, 1, 1);
+  ctx.fillRect(17, 14, 1, 1);
+  ctx.fillRect(14, 15, 1, 1);
 
   return c;
 }
@@ -300,9 +348,9 @@ export class Game {
       lake: 0x1a3a4a,
       unicorn_meadow: 0x3a4a2a,
       beach: 0x4a8aaa,
-      grotto: 0x0a1a2a,
-      cloud_castle: 0x2a3a6a,
-      starsky: 0x0a0a1a,
+      grotto: 0x1A3050,
+      cloud_castle: 0x87CEEB,
+      starsky: 0x0A0A2E,
     };
 
     window.addEventListener('resize', () => {
@@ -573,6 +621,22 @@ export class Game {
     this.player.y = finalSpawn.y;
     this.player.addToScene(this.scene);
 
+    // Add a dark drop shadow under the player in cloud_castle for visibility
+    if (sceneName === 'cloud_castle') {
+      const shadowGeo = new THREE.CircleGeometry(0.7, 16);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x334466,
+        transparent: true,
+        opacity: 0.35,
+        depthWrite: false,
+      });
+      this._cloudPlayerShadow = new THREE.Mesh(shadowGeo, shadowMat);
+      this._cloudPlayerShadow.scale.set(1, 0.35, 1);
+      this.scene.add(this._cloudPlayerShadow);
+    } else {
+      this._cloudPlayerShadow = null;
+    }
+
     // Create NPCs
     if (mapData.npcs) {
       await this._createNPCs(mapData.npcs);
@@ -762,11 +826,11 @@ export class Game {
       forest:          { ambient: 0xaaccaa, ambientI: 1.5, sun: 0xccddbb, sunI: 1.2, fog: [0x2a4a2a, 0.008] },
       dungeon:         { ambient: 0x9988bb, ambientI: 1.8, sun: 0xaabbcc, sunI: 1.0, fog: [0x222233, 0.006] },
       lake:            { ambient: 0xccddff, ambientI: 2.0, sun: 0xffffff, sunI: 1.5, fog: null },
-      unicorn_meadow:  { ambient: 0xffeecc, ambientI: 2.2, sun: 0xffddaa, sunI: 1.8, fog: null },
+      unicorn_meadow:  { ambient: 0xeee8cc, ambientI: 1.8, sun: 0xffddaa, sunI: 1.3, fog: null },
       beach:           { ambient: 0xeee8cc, ambientI: 1.5, sun: 0xffeedd, sunI: 1.2, fog: null },
-      grotto:          { ambient: 0x55aacc, ambientI: 1.8, sun: 0x44aacc, sunI: 1.0, fog: [0x0a1a2a, 0.01] },
-      cloud_castle:    { ambient: 0xccccee, ambientI: 1.4, sun: 0xffeedd, sunI: 1.0, fog: null },
-      starsky:         { ambient: 0x6666aa, ambientI: 1.5, sun: 0x8888cc, sunI: 0.8, fog: [0x0a0a1a, 0.02] },
+      grotto:          { ambient: 0x66bbdd, ambientI: 2.4, sun: 0x55bbdd, sunI: 1.4, fog: [0x1A3050, 0.005] },
+      cloud_castle:    { ambient: 0xeeeeff, ambientI: 2.0, sun: 0xfff8ee, sunI: 1.5, fog: null },
+      starsky:         { ambient: 0x7777bb, ambientI: 1.6, sun: 0x9999dd, sunI: 0.9, fog: [0x0A0A2E, 0.015] },
     };
     const lc = lightConfigs[sceneName] || lightConfigs.hub;
 
@@ -818,6 +882,14 @@ export class Game {
   _clearScene() {
     // Remove player from old scene
     if (this.player) this.player.removeFromScene();
+
+    // Remove cloud castle player shadow
+    if (this._cloudPlayerShadow) {
+      this.scene.remove(this._cloudPlayerShadow);
+      this._cloudPlayerShadow.geometry.dispose();
+      this._cloudPlayerShadow.material.dispose();
+      this._cloudPlayerShadow = null;
+    }
 
     // Dispose NPCs
     for (const npc of this.npcs) npc.dispose();
@@ -1174,6 +1246,262 @@ export class Game {
             lhTex.magFilter = THREE.NearestFilter;
             lhTex.minFilter = THREE.NearestFilter;
             this.tileMapRenderer.addProp(lhTex, prop.x, prop.y - 3, 3, 4, 0.1);
+          } else if (prop.variant === 'seashell') {
+            const shCanvas = document.createElement('canvas');
+            shCanvas.width = 16; shCanvas.height = 16;
+            const shCtx = shCanvas.getContext('2d');
+            // Varied shell colors based on position
+            const shellColors = ['#FFD4CC', '#FFE0D0', '#FFEEDD', '#E8C8B8', '#F5D5C5'];
+            const shellIdx = (prop.x * 7 + prop.y * 13) % shellColors.length;
+            const shellType = (prop.x * 3 + prop.y * 5) % 3;
+            if (shellType === 0) {
+              // Spiral shell
+              shCtx.fillStyle = shellColors[shellIdx];
+              shCtx.fillRect(6, 6, 5, 4);
+              shCtx.fillRect(7, 5, 4, 6);
+              shCtx.fillRect(5, 7, 2, 2);
+              shCtx.fillStyle = '#D4A090';
+              shCtx.fillRect(8, 7, 2, 2); // inner spiral
+              shCtx.fillStyle = '#FFF0E8';
+              shCtx.fillRect(7, 6, 1, 1); // highlight
+            } else if (shellType === 1) {
+              // Fan shell
+              shCtx.fillStyle = shellColors[shellIdx];
+              shCtx.fillRect(5, 7, 6, 4);
+              shCtx.fillRect(6, 6, 4, 1);
+              shCtx.fillRect(7, 5, 2, 1);
+              shCtx.fillStyle = '#D4A090';
+              shCtx.fillRect(6, 8, 1, 1); shCtx.fillRect(8, 8, 1, 1); shCtx.fillRect(10, 8, 1, 1);
+              shCtx.fillStyle = '#FFF0E8';
+              shCtx.fillRect(7, 6, 1, 1);
+            } else {
+              // Small round shell
+              shCtx.fillStyle = shellColors[shellIdx];
+              shCtx.fillRect(7, 7, 3, 3);
+              shCtx.fillRect(6, 8, 5, 1);
+              shCtx.fillStyle = '#FFF0E8';
+              shCtx.fillRect(7, 7, 1, 1);
+            }
+            const shTex = new THREE.CanvasTexture(shCanvas);
+            shTex.magFilter = THREE.NearestFilter; shTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(shTex, prop.x, prop.y, 0.6, 0.6, 0.05);
+          } else if (prop.variant === 'driftwood') {
+            const dwCanvas = document.createElement('canvas');
+            dwCanvas.width = 32; dwCanvas.height = 16;
+            const dwCtx = dwCanvas.getContext('2d');
+            const dwAngle = (prop.x * 5 + prop.y * 3) % 2;
+            // Weathered wood colors
+            dwCtx.fillStyle = '#A89078';
+            if (dwAngle === 0) {
+              // Horizontal log
+              dwCtx.fillRect(2, 7, 28, 4);
+              dwCtx.fillRect(0, 8, 4, 2);
+              dwCtx.fillRect(28, 8, 4, 2);
+              // Branch stub
+              dwCtx.fillRect(18, 5, 3, 3);
+              // Wood grain
+              dwCtx.fillStyle = '#988068';
+              dwCtx.fillRect(6, 8, 8, 1);
+              dwCtx.fillRect(18, 9, 6, 1);
+              // Highlight
+              dwCtx.fillStyle = '#B8A088';
+              dwCtx.fillRect(4, 7, 10, 1);
+              dwCtx.fillRect(20, 7, 6, 1);
+            } else {
+              // Angled piece
+              dwCtx.fillRect(4, 4, 24, 3);
+              dwCtx.fillRect(2, 6, 8, 3);
+              dwCtx.fillRect(22, 5, 6, 4);
+              dwCtx.fillStyle = '#988068';
+              dwCtx.fillRect(8, 5, 10, 1);
+              dwCtx.fillStyle = '#B8A088';
+              dwCtx.fillRect(6, 4, 8, 1);
+            }
+            const dwTex = new THREE.CanvasTexture(dwCanvas);
+            dwTex.magFilter = THREE.NearestFilter; dwTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(dwTex, prop.x - 0.3, prop.y, 1.8, 0.8, 0.06);
+          } else if (prop.variant === 'beach_rock') {
+            const brCanvas = document.createElement('canvas');
+            brCanvas.width = 16; brCanvas.height = 16;
+            const brCtx = brCanvas.getContext('2d');
+            if (prop.size === 'large') {
+              // Large rounded beach rock
+              brCtx.fillStyle = '#8A8A8A';
+              brCtx.fillRect(3, 5, 10, 8);
+              brCtx.fillRect(4, 4, 8, 10);
+              brCtx.fillRect(5, 3, 6, 1);
+              // Rock highlight (top)
+              brCtx.fillStyle = '#A0A0A0';
+              brCtx.fillRect(5, 4, 5, 3);
+              // Rock shadow (bottom)
+              brCtx.fillStyle = '#6A6A6A';
+              brCtx.fillRect(4, 11, 8, 2);
+              // Surface detail
+              brCtx.fillStyle = '#7A7A7A';
+              brCtx.fillRect(6, 7, 2, 1);
+              brCtx.fillRect(9, 8, 1, 1);
+            } else {
+              // Small pebble cluster
+              brCtx.fillStyle = '#9A9A8A';
+              brCtx.fillRect(5, 8, 3, 3);
+              brCtx.fillRect(9, 9, 3, 2);
+              brCtx.fillStyle = '#8A8A7A';
+              brCtx.fillRect(3, 10, 2, 2);
+              // Highlights
+              brCtx.fillStyle = '#AAAAAA';
+              brCtx.fillRect(5, 8, 1, 1);
+              brCtx.fillRect(9, 9, 1, 1);
+            }
+            const brTex = new THREE.CanvasTexture(brCanvas);
+            brTex.magFilter = THREE.NearestFilter; brTex.minFilter = THREE.NearestFilter;
+            const brSize = prop.size === 'large' ? 0.9 : 0.6;
+            this.tileMapRenderer.addProp(brTex, prop.x, prop.y, brSize, brSize, 0.08);
+          } else if (prop.variant === 'starfish') {
+            const sfCanvas = document.createElement('canvas');
+            sfCanvas.width = 16; sfCanvas.height = 16;
+            const sfCtx = sfCanvas.getContext('2d');
+            const sfColor = (prop.x + prop.y) % 2 === 0 ? '#FF6B4A' : '#FF8C60';
+            // Five-pointed starfish
+            sfCtx.fillStyle = sfColor;
+            sfCtx.fillRect(7, 3, 2, 4);  // top arm
+            sfCtx.fillRect(7, 9, 2, 4);  // bottom arm
+            sfCtx.fillRect(3, 7, 4, 2);  // left arm
+            sfCtx.fillRect(9, 7, 4, 2);  // right arm
+            sfCtx.fillRect(6, 6, 4, 4);  // center
+            // Arm tips
+            sfCtx.fillRect(4, 4, 2, 2);  // top-left
+            sfCtx.fillRect(10, 4, 2, 2); // top-right
+            sfCtx.fillRect(4, 10, 2, 2); // bottom-left
+            sfCtx.fillRect(10, 10, 2, 2);// bottom-right
+            // Center dot
+            sfCtx.fillStyle = '#FFB090';
+            sfCtx.fillRect(7, 7, 2, 2);
+            // Texture dots
+            sfCtx.fillStyle = '#E85A3A';
+            sfCtx.fillRect(7, 4, 1, 1);
+            sfCtx.fillRect(5, 7, 1, 1);
+            sfCtx.fillRect(10, 8, 1, 1);
+            sfCtx.fillRect(8, 11, 1, 1);
+            const sfTex = new THREE.CanvasTexture(sfCanvas);
+            sfTex.magFilter = THREE.NearestFilter; sfTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(sfTex, prop.x, prop.y, 0.7, 0.7, 0.05);
+          } else if (prop.variant === 'beach_grass') {
+            const bgCanvas = document.createElement('canvas');
+            bgCanvas.width = 16; bgCanvas.height = 16;
+            const bgCtx = bgCanvas.getContext('2d');
+            // Tall dune grass blades
+            const grassVariant = (prop.x * 3 + prop.y * 7) % 3;
+            bgCtx.fillStyle = '#5A9A40';
+            // Three blades, slightly spread
+            bgCtx.fillRect(4, 3, 1, 10);
+            bgCtx.fillRect(7, 1, 1, 12);
+            bgCtx.fillRect(10, 4, 1, 9);
+            // Tips lean
+            bgCtx.fillRect(3, 2, 1, 2);
+            bgCtx.fillRect(6, 0, 1, 2);
+            bgCtx.fillRect(11, 3, 1, 2);
+            // Light highlights
+            bgCtx.fillStyle = '#7ABB60';
+            bgCtx.fillRect(4, 5, 1, 3);
+            bgCtx.fillRect(7, 3, 1, 3);
+            bgCtx.fillRect(10, 6, 1, 3);
+            if (grassVariant > 0) {
+              // Extra blade
+              bgCtx.fillStyle = '#4A8A30';
+              bgCtx.fillRect(12, 5, 1, 8);
+              bgCtx.fillRect(13, 4, 1, 2);
+            }
+            const bgTex = new THREE.CanvasTexture(bgCanvas);
+            bgTex.magFilter = THREE.NearestFilter; bgTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(bgTex, prop.x, prop.y - 0.3, 0.8, 1.0, 0.09);
+          } else if (prop.variant === 'tide_foam') {
+            const tfCanvas = document.createElement('canvas');
+            tfCanvas.width = 32; tfCanvas.height = 16;
+            const tfCtx = tfCanvas.getContext('2d');
+            // Foam bubbles and water line
+            tfCtx.fillStyle = 'rgba(255,255,255,0.6)';
+            const foamVar = (prop.x * 5) % 3;
+            tfCtx.fillRect(2, 6, 4, 2);
+            tfCtx.fillRect(8, 7, 6, 2);
+            tfCtx.fillRect(16, 6, 5, 2);
+            tfCtx.fillRect(24, 7, 4, 2);
+            // Smaller bubbles
+            tfCtx.fillStyle = 'rgba(255,255,255,0.4)';
+            tfCtx.fillRect(5, 8, 2, 1);
+            tfCtx.fillRect(13, 5, 3, 1);
+            tfCtx.fillRect(20, 8, 2, 1);
+            tfCtx.fillRect(27, 5, 2, 1);
+            // Wet sand beneath
+            tfCtx.fillStyle = 'rgba(150,120,80,0.2)';
+            tfCtx.fillRect(0, 9, 32, 3);
+            const tfTex = new THREE.CanvasTexture(tfCanvas);
+            tfTex.magFilter = THREE.NearestFilter; tfTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(tfTex, prop.x - 0.3, prop.y, 1.8, 0.7, 0.04);
+          } else if (prop.variant === 'sandcastle') {
+            const scCanvas = document.createElement('canvas');
+            scCanvas.width = 32; scCanvas.height = 32;
+            const scCtx = scCanvas.getContext('2d');
+            // Base mound
+            scCtx.fillStyle = '#E8D098';
+            scCtx.fillRect(4, 20, 24, 8);
+            scCtx.fillRect(6, 18, 20, 4);
+            // Towers
+            scCtx.fillStyle = '#DCC088';
+            scCtx.fillRect(6, 10, 6, 10);   // left tower
+            scCtx.fillRect(20, 10, 6, 10);  // right tower
+            scCtx.fillRect(11, 12, 10, 8);  // center tower
+            // Tower tops (crenellations)
+            scCtx.fillStyle = '#E8D098';
+            scCtx.fillRect(6, 8, 2, 2); scCtx.fillRect(10, 8, 2, 2);
+            scCtx.fillRect(20, 8, 2, 2); scCtx.fillRect(24, 8, 2, 2);
+            scCtx.fillRect(12, 10, 2, 2); scCtx.fillRect(16, 10, 2, 2); scCtx.fillRect(19, 10, 2, 2);
+            // Door
+            scCtx.fillStyle = '#B0986A';
+            scCtx.fillRect(14, 16, 4, 4);
+            // Windows
+            scCtx.fillRect(7, 12, 2, 2);
+            scCtx.fillRect(23, 12, 2, 2);
+            // Sand texture
+            scCtx.fillStyle = '#C8B078';
+            scCtx.fillRect(8, 22, 4, 1);
+            scCtx.fillRect(18, 24, 6, 1);
+            // Little flag on center
+            scCtx.fillStyle = '#FF6060';
+            scCtx.fillRect(16, 6, 1, 5);
+            scCtx.fillRect(17, 6, 3, 2);
+            const scTex = new THREE.CanvasTexture(scCanvas);
+            scTex.magFilter = THREE.NearestFilter; scTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(scTex, prop.x - 0.3, prop.y - 0.8, 1.5, 1.5, 0.1);
+          } else if (prop.variant === 'beach_umbrella') {
+            const buCanvas = document.createElement('canvas');
+            buCanvas.width = 32; buCanvas.height = 32;
+            const buCtx = buCanvas.getContext('2d');
+            // Umbrella colors vary by position
+            const uColors = [['#FF4444', '#FFFFFF'], ['#4488FF', '#FFFFFF'], ['#44BB44', '#FFD700']];
+            const uIdx = (prop.x * 3 + prop.y * 7) % uColors.length;
+            // Pole
+            buCtx.fillStyle = '#8B6914';
+            buCtx.fillRect(15, 10, 2, 20);
+            // Umbrella canopy (curved top)
+            buCtx.fillStyle = uColors[uIdx][0];
+            buCtx.fillRect(2, 4, 28, 4);
+            buCtx.fillRect(4, 2, 24, 3);
+            buCtx.fillRect(6, 1, 20, 2);
+            // Stripes
+            buCtx.fillStyle = uColors[uIdx][1];
+            buCtx.fillRect(8, 2, 4, 5);
+            buCtx.fillRect(18, 2, 4, 5);
+            // Shadow rim
+            buCtx.fillStyle = 'rgba(0,0,0,0.15)';
+            buCtx.fillRect(2, 7, 28, 1);
+            // Beach towel underneath
+            buCtx.fillStyle = '#FFE0A0';
+            buCtx.fillRect(6, 26, 20, 4);
+            buCtx.fillStyle = '#FF9060';
+            buCtx.fillRect(6, 28, 20, 2);
+            const buTex = new THREE.CanvasTexture(buCanvas);
+            buTex.magFilter = THREE.NearestFilter; buTex.minFilter = THREE.NearestFilter;
+            this.tileMapRenderer.addProp(buTex, prop.x - 0.5, prop.y - 1, 2, 2, 0.12);
           }
           break;
         case 'signpost': {
@@ -1212,6 +1540,80 @@ export class Game {
           spTex.magFilter = THREE.NearestFilter;
           spTex.minFilter = THREE.NearestFilter;
           this.tileMapRenderer.addProp(spTex, prop.x - 0.5, prop.y - 1, 2, 1.5, 0.15);
+          break;
+        }
+        case 'coral_deco': {
+          // Canvas-drawn coral formation — colorful branching coral
+          const cdCanvas = document.createElement('canvas');
+          cdCanvas.width = 32; cdCanvas.height = 32;
+          const cdCtx = cdCanvas.getContext('2d');
+          // Pick coral color based on position for variety
+          const coralVariant = (prop.x * 7 + prop.y * 13) % 4;
+          const coralColors = [
+            { base: '#E05080', mid: '#FF6090', tip: '#FFA0C0' }, // pink coral
+            { base: '#D06030', mid: '#F08050', tip: '#FFB090' }, // orange coral
+            { base: '#8050C0', mid: '#A070E0', tip: '#C0A0FF' }, // purple coral
+            { base: '#3090A0', mid: '#40B0C0', tip: '#80D0E0' }, // teal coral
+          ];
+          const cc = coralColors[coralVariant];
+          // Main trunk
+          cdCtx.fillStyle = cc.base;
+          cdCtx.fillRect(14, 12, 4, 18);
+          // Left branch
+          cdCtx.fillStyle = cc.mid;
+          cdCtx.fillRect(8, 8, 3, 14);
+          cdCtx.fillRect(6, 6, 3, 4);
+          // Right branch
+          cdCtx.fillRect(20, 6, 3, 16);
+          cdCtx.fillRect(22, 4, 3, 4);
+          // Tips (lighter)
+          cdCtx.fillStyle = cc.tip;
+          cdCtx.fillRect(14, 10, 4, 3);
+          cdCtx.fillRect(8, 6, 3, 3);
+          cdCtx.fillRect(20, 4, 3, 3);
+          cdCtx.fillRect(6, 5, 2, 2);
+          cdCtx.fillRect(23, 3, 2, 2);
+          // Small bubble decoration
+          cdCtx.fillStyle = 'rgba(150,220,255,0.4)';
+          cdCtx.fillRect(4, 3, 2, 2);
+          cdCtx.fillRect(26, 8, 2, 2);
+          const cdTex = new THREE.CanvasTexture(cdCanvas);
+          cdTex.magFilter = THREE.NearestFilter; cdTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(cdTex, prop.x - 0.5, prop.y - 1, 1.5, 1.5, 0.12);
+          break;
+        }
+        case 'glow_plant': {
+          // Canvas-drawn glowing kelp/algae — bioluminescent underwater plant
+          const gpCanvas = document.createElement('canvas');
+          gpCanvas.width = 16; gpCanvas.height = 32;
+          const gpCtx = gpCanvas.getContext('2d');
+          // Kelp stalk
+          gpCtx.fillStyle = '#207050';
+          gpCtx.fillRect(7, 6, 2, 24);
+          // Leaves/fronds alternating sides
+          gpCtx.fillStyle = '#309060';
+          gpCtx.fillRect(4, 10, 4, 2);
+          gpCtx.fillRect(9, 15, 4, 2);
+          gpCtx.fillRect(3, 20, 5, 2);
+          gpCtx.fillRect(10, 25, 4, 2);
+          // Bioluminescent glow tips
+          gpCtx.fillStyle = '#60FFB0';
+          gpCtx.fillRect(4, 9, 2, 1);
+          gpCtx.fillRect(11, 14, 2, 1);
+          gpCtx.fillRect(3, 19, 2, 1);
+          gpCtx.fillRect(12, 24, 2, 1);
+          // Glow at top
+          gpCtx.fillStyle = '#80FFCC';
+          gpCtx.fillRect(6, 4, 4, 3);
+          gpCtx.fillStyle = '#A0FFE0';
+          gpCtx.fillRect(7, 3, 2, 2);
+          // Aura glow effect
+          gpCtx.fillStyle = 'rgba(80,255,180,0.15)';
+          gpCtx.fillRect(2, 2, 12, 6);
+          gpCtx.fillRect(1, 8, 14, 4);
+          const gpTex = new THREE.CanvasTexture(gpCanvas);
+          gpTex.magFilter = THREE.NearestFilter; gpTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(gpTex, prop.x, prop.y - 1.2, 0.8, 1.6, 0.13);
           break;
         }
         case 'crystal': {
@@ -1257,6 +1659,77 @@ export class Game {
           const cpTex = new THREE.CanvasTexture(cpCanvas);
           cpTex.magFilter = THREE.NearestFilter; cpTex.minFilter = THREE.NearestFilter;
           this.tileMapRenderer.addProp(cpTex, prop.x, prop.y - 1.5, 1, 2.5, 0.14);
+          break;
+        }
+        case 'cloud_puff': {
+          // Canvas-drawn fluffy cloud puff at platform edges
+          const cpfCanvas = document.createElement('canvas');
+          cpfCanvas.width = 32; cpfCanvas.height = 16;
+          const cpfCtx = cpfCanvas.getContext('2d');
+          // Main cloud body
+          cpfCtx.fillStyle = 'rgba(210, 220, 245, 0.7)';
+          cpfCtx.beginPath();
+          cpfCtx.arc(10, 10, 6, 0, Math.PI * 2);
+          cpfCtx.arc(20, 8, 7, 0, Math.PI * 2);
+          cpfCtx.arc(15, 6, 5, 0, Math.PI * 2);
+          cpfCtx.fill();
+          // Lighter highlight puffs
+          cpfCtx.fillStyle = 'rgba(230, 240, 255, 0.6)';
+          cpfCtx.beginPath();
+          cpfCtx.arc(14, 5, 4, 0, Math.PI * 2);
+          cpfCtx.arc(22, 6, 3, 0, Math.PI * 2);
+          cpfCtx.fill();
+          const cpfTex = new THREE.CanvasTexture(cpfCanvas);
+          cpfTex.magFilter = THREE.NearestFilter; cpfTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(cpfTex, prop.x - 0.5, prop.y - 0.25, 2, 1, 0.08);
+          break;
+        }
+        case 'sparkle_deco': {
+          // Canvas-drawn sparkle/star decoration
+          const skCanvas = document.createElement('canvas');
+          skCanvas.width = 16; skCanvas.height = 16;
+          const skCtx = skCanvas.getContext('2d');
+          // 4-pointed star sparkle
+          skCtx.fillStyle = '#FFFFFF';
+          skCtx.fillRect(7, 2, 2, 12);  // vertical line
+          skCtx.fillRect(2, 7, 12, 2);  // horizontal line
+          // Diagonal accent
+          skCtx.fillStyle = 'rgba(255, 255, 200, 0.8)';
+          skCtx.fillRect(4, 4, 2, 2);
+          skCtx.fillRect(10, 4, 2, 2);
+          skCtx.fillRect(4, 10, 2, 2);
+          skCtx.fillRect(10, 10, 2, 2);
+          // Bright center
+          skCtx.fillStyle = '#FFFFEE';
+          skCtx.fillRect(7, 7, 2, 2);
+          const skTex = new THREE.CanvasTexture(skCanvas);
+          skTex.magFilter = THREE.NearestFilter; skTex.minFilter = THREE.NearestFilter;
+          this.tileMapRenderer.addProp(skTex, prop.x + 0.25, prop.y + 0.25, 0.5, 0.5, 0.12);
+          break;
+        }
+        case 'rainbow_arc': {
+          // Canvas-drawn rainbow arc decoration
+          const isLarge = prop.size === 'large';
+          const raW = isLarge ? 64 : 48;
+          const raH = isLarge ? 40 : 32;
+          const raCanvas = document.createElement('canvas');
+          raCanvas.width = raW; raCanvas.height = raH;
+          const raCtx = raCanvas.getContext('2d');
+          const colors = ['#FF4040', '#FF8800', '#FFD700', '#40CC40', '#4488FF', '#8844DD'];
+          const cx = raW / 2;
+          const baseR = isLarge ? 28 : 20;
+          for (let i = 0; i < colors.length; i++) {
+            raCtx.strokeStyle = colors[i];
+            raCtx.lineWidth = 2;
+            raCtx.beginPath();
+            raCtx.arc(cx, raH, baseR - i * 3, Math.PI, 0);
+            raCtx.stroke();
+          }
+          const raTex = new THREE.CanvasTexture(raCanvas);
+          raTex.magFilter = THREE.NearestFilter; raTex.minFilter = THREE.NearestFilter;
+          const raPropW = isLarge ? 4 : 3;
+          const raPropH = isLarge ? 2.5 : 2;
+          this.tileMapRenderer.addProp(raTex, prop.x - raPropW / 2, prop.y - raPropH, raPropW, raPropH, 0.09);
           break;
         }
         case 'fishing_spot':
@@ -1537,6 +2010,15 @@ export class Game {
     // Player
     if (!uiBlocking) {
       this.player.update(dt, this.input, this.tileMap);
+    }
+
+    // Update cloud castle player shadow position
+    if (this._cloudPlayerShadow) {
+      this._cloudPlayerShadow.position.set(
+        this.player.x + 0.5,
+        -(this.player.y + 0.85),
+        0.05
+      );
     }
 
     // Combat

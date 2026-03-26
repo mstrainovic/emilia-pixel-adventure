@@ -294,93 +294,158 @@ export async function generateTilesetAsync() {
     ctx.fillRect(14 * T, 0, T, T);
     _addWoodGrain(ctx, 14 * T);
 
-    // 15 = underwater_dark — dark blue stone
-    ctx.fillStyle = '#2A3A5A';
+    // 15 = underwater_dark — dark blue stone (cave walls)
+    ctx.fillStyle = '#3A5A7A';
     ctx.fillRect(15 * T, 0, T, T);
-    // Add stone cracks
-    ctx.fillStyle = '#1E2E4A';
+    // Stone cracks
+    ctx.fillStyle = '#2E4E6A';
     for (let i = 0; i < 6; i++) {
       ctx.fillRect(15 * T + (i * 5 % 14), (i * 7 % 14), 3, 1);
     }
+    // Subtle highlight for depth
+    ctx.fillStyle = 'rgba(100,180,220,0.08)';
+    ctx.fillRect(15 * T + 2, 2, 4, 3);
+    ctx.fillRect(15 * T + 9, 8, 5, 3);
 
-    // 16 = underwater_blue — blue-grey stone
-    ctx.fillStyle = '#3A5A7A';
+    // 16 = underwater_blue — blue-grey stone (walkable floor)
+    ctx.fillStyle = '#4A7A9A';
     ctx.fillRect(16 * T, 0, T, T);
-    ctx.fillStyle = '#2E4E6A';
+    ctx.fillStyle = '#3E6E8A';
     for (let i = 0; i < 5; i++) {
       ctx.fillRect(16 * T + (i * 5 % 14), (i * 7 % 14), 3, 1);
     }
+    // Water shimmer highlights
+    ctx.fillStyle = 'rgba(120,200,240,0.10)';
+    ctx.fillRect(16 * T + 3, 4, 3, 1);
+    ctx.fillRect(16 * T + 10, 9, 4, 1);
 
     // 17 = underwater_moss — moss-covered stone
-    ctx.fillStyle = '#2A5A3A';
+    ctx.fillStyle = '#3A7A5A';
     ctx.fillRect(17 * T, 0, T, T);
-    ctx.fillStyle = '#1E4A2E';
+    ctx.fillStyle = '#2E6A4E';
     for (let i = 0; i < 4; i++) {
       ctx.fillRect(17 * T + (i * 5 % 14), (i * 7 % 14), 3, 1);
     }
-    // Moss dots
-    ctx.fillStyle = '#3A7A4A';
+    // Moss dots (brighter)
+    ctx.fillStyle = '#4A9A6A';
     for (let i = 0; i < 6; i++) {
       ctx.fillRect(17 * T + (i * 3 % 14), (i * 5 % 14), 2, 2);
     }
+    // Bioluminescent glow spots
+    ctx.fillStyle = 'rgba(100,255,180,0.12)';
+    ctx.fillRect(17 * T + 5, 6, 2, 2);
+    ctx.fillRect(17 * T + 11, 3, 2, 1);
 
     // 18 = underwater_sand — wet underwater sand
-    ctx.fillStyle = '#5A6A5A';
+    ctx.fillStyle = '#7A8A7A';
     ctx.fillRect(18 * T, 0, T, T);
-    ctx.fillStyle = '#4A5A4A';
+    ctx.fillStyle = '#6A7A6A';
     for (let i = 0; i < 8; i++) {
       ctx.fillRect(18 * T + (i * 3 % 14), (i * 4 % 14), 1, 1);
     }
+    // Sand ripple highlights
+    ctx.fillStyle = 'rgba(160,200,180,0.10)';
+    ctx.fillRect(18 * T + 2, 5, 6, 1);
+    ctx.fillRect(18 * T + 7, 11, 5, 1);
 
-    // 19 = cloud_white — fluffy soft-lavender cloud floor (less glaring)
-    ctx.fillStyle = '#D8D8F0';
+    // 19 = cloud_white — fluffy cloud with blue shadow detail
+    ctx.fillStyle = '#C8CCE8';
     ctx.fillRect(19 * T, 0, T, T);
-    ctx.fillStyle = '#E4E4F8';
-    ctx.fillRect(19 * T + 2, 2, 4, 3);
-    ctx.fillRect(19 * T + 8, 5, 5, 3);
-    ctx.fillRect(19 * T + 4, 9, 6, 4);
-    ctx.fillStyle = 'rgba(140, 140, 200, 0.4)';
-    ctx.fillRect(19 * T + 1, 13, 14, 2);
+    // Cloud puff highlights
+    ctx.fillStyle = '#D8DCF0';
+    ctx.fillRect(19 * T + 2, 1, 5, 4);
+    ctx.fillRect(19 * T + 8, 3, 6, 4);
+    ctx.fillRect(19 * T + 3, 7, 7, 4);
+    // Light top highlights
+    ctx.fillStyle = '#E8ECFF';
+    ctx.fillRect(19 * T + 3, 1, 3, 2);
+    ctx.fillRect(19 * T + 9, 3, 4, 2);
+    ctx.fillRect(19 * T + 5, 8, 3, 2);
+    // Blue shadow lines for depth
+    ctx.fillStyle = '#9098C0';
+    ctx.fillRect(19 * T + 1, 12, 14, 1);
+    ctx.fillRect(19 * T + 0, 14, 5, 1);
+    ctx.fillRect(19 * T + 10, 15, 4, 1);
+    // Subtle edge outline
+    ctx.fillStyle = '#A0A8D0';
+    ctx.fillRect(19 * T + 1, 5, 1, 3);
+    ctx.fillRect(19 * T + 14, 6, 1, 3);
 
-    // 20 = cloud_pink — pink-tinted cloud
-    ctx.fillStyle = '#FFE8F0';
+    // 20 = cloud_pink — more saturated pink cloud
+    ctx.fillStyle = '#F0B8D0';
     ctx.fillRect(20 * T, 0, T, T);
-    ctx.fillStyle = '#FFF0F5';
-    ctx.fillRect(20 * T + 3, 2, 5, 4);
-    ctx.fillRect(20 * T + 7, 6, 6, 3);
-    ctx.fillRect(20 * T + 2, 10, 7, 3);
-    ctx.fillStyle = 'rgba(220, 180, 200, 0.3)';
-    ctx.fillRect(20 * T + 1, 13, 14, 2);
+    // Pink puff highlights
+    ctx.fillStyle = '#F8D0E0';
+    ctx.fillRect(20 * T + 3, 1, 5, 4);
+    ctx.fillRect(20 * T + 7, 4, 6, 4);
+    ctx.fillRect(20 * T + 2, 8, 7, 4);
+    // Light spots
+    ctx.fillStyle = '#FFE0F0';
+    ctx.fillRect(20 * T + 4, 2, 3, 2);
+    ctx.fillRect(20 * T + 8, 5, 3, 2);
+    ctx.fillRect(20 * T + 4, 9, 3, 2);
+    // Darker pink shadows
+    ctx.fillStyle = '#C890A8';
+    ctx.fillRect(20 * T + 1, 12, 14, 1);
+    ctx.fillRect(20 * T + 0, 14, 6, 1);
+    ctx.fillRect(20 * T + 9, 15, 5, 1);
+    // Edge outline
+    ctx.fillStyle = '#D0A0B8';
+    ctx.fillRect(20 * T + 1, 5, 1, 3);
+    ctx.fillRect(20 * T + 14, 6, 1, 3);
 
-    // 21 = cloud_gold — golden cloud floor
-    ctx.fillStyle = '#FFE8AA';
+    // 21 = cloud_gold — vivid golden cloud floor
+    ctx.fillStyle = '#E8C860';
     ctx.fillRect(21 * T, 0, T, T);
-    ctx.fillStyle = '#FFD700';
-    ctx.fillRect(21 * T + 3, 2, 5, 4);
-    ctx.fillRect(21 * T + 8, 5, 5, 4);
-    ctx.fillRect(21 * T + 2, 9, 6, 3);
+    // Gold puff highlights
+    ctx.fillStyle = '#F0D878';
+    ctx.fillRect(21 * T + 3, 1, 5, 4);
+    ctx.fillRect(21 * T + 8, 3, 5, 5);
+    ctx.fillRect(21 * T + 2, 7, 6, 4);
+    // Bright gold highlights
+    ctx.fillStyle = '#FFE890';
+    ctx.fillRect(21 * T + 4, 2, 3, 2);
+    ctx.fillRect(21 * T + 9, 4, 3, 2);
+    ctx.fillRect(21 * T + 4, 8, 3, 2);
+    // White sparkle dots
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(21 * T + 5, 3, 1, 1);
-    ctx.fillRect(21 * T + 11, 7, 1, 1);
-    ctx.fillRect(21 * T + 4, 11, 1, 1);
-    ctx.fillStyle = 'rgba(200, 160, 60, 0.3)';
-    ctx.fillRect(21 * T + 1, 13, 14, 2);
+    ctx.fillRect(21 * T + 5, 2, 1, 1);
+    ctx.fillRect(21 * T + 11, 5, 1, 1);
+    ctx.fillRect(21 * T + 3, 9, 1, 1);
+    // Amber shadow lines
+    ctx.fillStyle = '#B89830';
+    ctx.fillRect(21 * T + 1, 12, 14, 1);
+    ctx.fillRect(21 * T + 0, 14, 5, 1);
+    ctx.fillRect(21 * T + 10, 15, 4, 1);
 
-    // 22 = crystal_floor — sparkling crystal floor
-    ctx.fillStyle = '#C8D8F0';
+    // 22 = crystal_floor — sparkling crystal with high contrast
+    ctx.fillStyle = '#90A8D8';
     ctx.fillRect(22 * T, 0, T, T);
-    ctx.fillStyle = '#D8E8FF';
+    // Crystal facets — lighter surfaces
+    ctx.fillStyle = '#A8C0E8';
     ctx.fillRect(22 * T + 2, 1, 5, 5);
     ctx.fillRect(22 * T + 9, 4, 4, 6);
     ctx.fillRect(22 * T + 3, 8, 6, 5);
+    // Bright crystal highlights
+    ctx.fillStyle = '#C8DFFF';
+    ctx.fillRect(22 * T + 3, 2, 3, 3);
+    ctx.fillRect(22 * T + 10, 5, 2, 3);
+    ctx.fillRect(22 * T + 4, 9, 4, 3);
+    // Sparkle dots (bright white)
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(22 * T + 4, 2, 1, 1);
     ctx.fillRect(22 * T + 11, 5, 1, 1);
     ctx.fillRect(22 * T + 6, 10, 1, 1);
-    ctx.fillRect(22 * T + 13, 13, 1, 1);
-    ctx.fillStyle = 'rgba(100, 120, 160, 0.3)';
+    ctx.fillRect(22 * T + 13, 1, 1, 1);
+    ctx.fillRect(22 * T + 1, 13, 1, 1);
+    // Crystal grid lines (darker blue for structure)
+    ctx.fillStyle = '#6878A8';
     ctx.fillRect(22 * T + 7, 0, 1, T);
     ctx.fillRect(22 * T, 7, T, 1);
+    // Dark shadow edges
+    ctx.fillStyle = '#5868A0';
+    ctx.fillRect(22 * T + 0, 15, T, 1);
+    ctx.fillRect(22 * T + 15, 0, 1, T);
 
     // ══════════════════════════════════════════════════════
     //  AUTO-TILE EDGES — extracted from Cute Fantasy auto-tile sets
@@ -426,8 +491,8 @@ export async function generateTilesetAsync() {
       '#be9e76', '#9b8060', '#917850', '#af9258',
       '#48903a', '#9b9ea8', '#3a7ab0',
       '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
-      '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
-      '#D8D8F0', '#FFE8F0', '#FFE8AA', '#C8D8F0',
+      '#3A5A7A', '#4A7A9A', '#3A7A5A', '#7A8A7A',
+      '#C8CCE8', '#F0B8D0', '#E8C860', '#90A8D8',
       // Water auto-tiles fallback (12 tiles: edges as mid-blue)
       '#4a8ab0', '#4a8ab0', '#4a8ab0', '#4a8ab0',
       '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',
@@ -466,8 +531,8 @@ export function generateTileset() {
     '#be9e76', '#9b8060', '#917850', '#af9258',
     '#48903a', '#9b9ea8', '#3a7ab0',
     '#F5DEB3', '#C4A97D', '#F0D9A8', '#8B6F47',
-    '#2A3A5A', '#3A5A7A', '#2A5A3A', '#5A6A5A',
-    '#F0F0FF', '#FFE8F0', '#FFE8AA', '#C8D8F0',
+    '#3A5A7A', '#4A7A9A', '#3A7A5A', '#7A8A7A',
+    '#C8CCE8', '#F0B8D0', '#E8C860', '#90A8D8',
     // Water auto-tiles
     '#4a8ab0', '#4a8ab0', '#4a8ab0', '#4a8ab0',
     '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',

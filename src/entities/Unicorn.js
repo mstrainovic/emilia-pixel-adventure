@@ -94,16 +94,19 @@ export class Unicorn extends Entity {
         if (frame === 1 || frame === 3) px(tx - 1, ty + 1, maneColors[i]);
       }
 
-      // ── Sparkles (magical particles around unicorn) ──
+      // ── Sparkles (subtle magical particles around unicorn) ──
       const sparklePositions = [
-        [ox + 52, 16], [ox + 16, 22], [ox + 50, 36], [ox + 14, 38],
+        [ox + 52, 16], [ox + 16, 22], [ox + 50, 36],
+      ];
+      const sparkleColors = [
+        'rgba(255, 255, 200, 0.35)', // soft gold
+        'rgba(210, 180, 255, 0.3)',   // soft purple
+        'rgba(180, 220, 255, 0.3)',   // soft blue
       ];
       for (let i = 0; i < sparklePositions.length; i++) {
         if ((frame + i) % 3 === 0) {
           const [sx, sy] = sparklePositions[i];
-          ctx.fillStyle = 'rgba(255, 255, 180, 0.7)';
-          px(sx, sy + bob, 'rgba(255, 255, 180, 0.8)');
-          px(sx + 1, sy + bob, 'rgba(255, 220, 100, 0.6)');
+          px(sx, sy + bob, sparkleColors[i % sparkleColors.length]);
         }
       }
 

@@ -144,6 +144,44 @@ export function generateCloudCastleMap() {
   // Rainbow bridge prop (rendered as overlay, not a tile — per spec)
   props.push({ type: 'rainbow_bridge', x: 34, y: 4, width: 5, height: 1 });
 
+  // ── Decorative props (cloud puffs, sparkles, rainbow arcs) ───────────
+  // Cloud puffs at platform edges
+  const cloudPuffPositions = [
+    // Cloud Garden edges
+    { x: 5, y: 26 }, { x: 5, y: 33 }, { x: 23, y: 27 }, { x: 23, y: 35 },
+    { x: 8, y: 25 }, { x: 18, y: 25 }, { x: 12, y: 39 },
+    // Crystal Halls edges
+    { x: 25, y: 16 }, { x: 38, y: 16 }, { x: 25, y: 33 }, { x: 38, y: 33 },
+    // Throne Room edges
+    { x: 10, y: 6 }, { x: 23, y: 6 }, { x: 10, y: 18 }, { x: 23, y: 18 },
+    // Star Terrace edges
+    { x: 30, y: 1 }, { x: 43, y: 1 }, { x: 30, y: 8 }, { x: 43, y: 8 },
+  ];
+  for (const cp of cloudPuffPositions) {
+    props.push({ type: 'cloud_puff', x: cp.x, y: cp.y });
+  }
+
+  // Sparkle/star decorations on platforms
+  const sparklePositions = [
+    // Cloud Garden sparkles
+    { x: 10, y: 28 }, { x: 16, y: 31 }, { x: 20, y: 27 }, { x: 12, y: 36 },
+    // Crystal Halls sparkles
+    { x: 29, y: 20 }, { x: 34, y: 22 }, { x: 30, y: 30 }, { x: 36, y: 28 },
+    // Throne Room sparkles
+    { x: 15, y: 8 }, { x: 19, y: 8 }, { x: 17, y: 14 },
+    // Star Terrace sparkles
+    { x: 33, y: 3 }, { x: 38, y: 5 }, { x: 41, y: 2 },
+  ];
+  for (const sp of sparklePositions) {
+    props.push({ type: 'sparkle_deco', x: sp.x, y: sp.y });
+  }
+
+  // Rainbow arcs — decorative arches between zones
+  props.push({ type: 'rainbow_arc', x: 14, y: 22, size: 'small' });   // Garden→Throne bridge
+  props.push({ type: 'rainbow_arc', x: 24, y: 28, size: 'small' });   // Garden→Crystal bridge
+  props.push({ type: 'rainbow_arc', x: 35, y: 12, size: 'small' });   // Crystal→Terrace bridge
+  props.push({ type: 'rainbow_arc', x: 37, y: 4, size: 'large' });    // Star Terrace feature
+
   // ── Exits ──────────────────────────────────────────────────────────────
   const exits = [
     // South exit → unicorn_meadow (rainbow bridge descent)
