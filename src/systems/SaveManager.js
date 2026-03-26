@@ -20,6 +20,7 @@ export class SaveManager {
         y: gameState.playerY,
       },
       inventory: gameState.inventorySlots,
+      coins: gameState.coins || 0,
       plantsHealed: gameState.plantsHealed,
       unicornUnlocked: gameState.unicornUnlocked,
       progression: gameState.progression,

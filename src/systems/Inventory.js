@@ -13,6 +13,7 @@ export class Inventory {
     // Each slot: { itemId: string|null, count: number }
     this.slots = Array.from({ length: this.totalSlots }, () => ({ itemId: null, count: 0 }));
     this.selectedHotbar = 0; // currently selected hotbar slot
+    this.coins = 0; // player currency for trading
     this.onChange = null; // callback when inventory changes
   }
 
@@ -144,6 +145,19 @@ export class Inventory {
       this.selectedHotbar = index;
       if (this.onChange) this.onChange();
     }
+  }
+
+  /**
+   * Swap two hotbar slots. Used for hotbar reordering.
+   */
+  swapHotbarSlots(indexA, indexB) {
+    if (indexA < 0 || indexA >= this.hotbarSize) return;
+    if (indexB < 0 || indexB >= this.hotbarSize) return;
+    if (indexA === indexB) return;
+    const temp = this.slots[indexA];
+    this.slots[indexA] = this.slots[indexB];
+    this.slots[indexB] = temp;
+    if (this.onChange) this.onChange();
   }
 
   getHotbarSlots() {

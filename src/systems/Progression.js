@@ -88,6 +88,7 @@ export class Progression {
     // Unlock quests for this level
     if (data.unlockQuest && QUESTS[data.unlockQuest] && !this.completedQuests[data.unlockQuest]) {
       this.activeQuests[data.unlockQuest] = { progress: 0, completed: false };
+      this._prepopulateQuestProgress(data.unlockQuest);
     }
 
     // Check reach_level quests
@@ -300,6 +301,52 @@ export class Progression {
       const nextId = QUEST_ORDER[idx + 1];
       if (!this.activeQuests[nextId] && !this.completedQuests[nextId]) {
         this.activeQuests[nextId] = { progress: 0, completed: false };
+        this._prepopulateQuestProgress(nextId);
+      }
+    }
+  }
+
+  /**
+   * Pre-populate a newly activated quest's progress from already-tracked stats.
+   * This ensures kills/collects/heals done before the quest was unlocked still count.
+   */
+  _prepopulateQuestProgress(questId) {
+    const def = QUESTS[questId];
+    const q = this.activeQuests[questId];
+    if (!def || !q || q.completed) return;
+
+    let existing = 0;
+
+    if (def.type === 'kill') {
+      // Sum all matching kill stats for the target base type
+      for (const [mobType, count] of Object.entries(this.stats.mobsKilled || {})) {
+        let baseType = mobType.startsWith('slime') ? 'slime'
+          : mobType.startsWith('skeleton') ? 'skeleton'
+          : mobType.startsWith('crab') ? 'crab'
+          : mobType;
+        if (mobType.startsWith('jellyfish')) baseType = 'jellyfish_glow';
+        if (mobType.startsWith('octopus')) baseType = 'octopus';
+        if (mobType === 'ghost_crab') baseType = 'ghost_crab';
+        if (baseType === def.target) existing += count;
+      }
+    } else if (def.type === 'collect') {
+      existing = this.stats.itemsCollected[def.target] || 0;
+    } else if (def.type === 'heal' && def.target === 'plant') {
+      existing = this.stats.plantsHealed || 0;
+    } else if (def.type === 'pet' && def.target === 'unicorn') {
+      existing = this.stats.unicornsPetted || 0;
+    } else if (def.type === 'craft') {
+      existing = this.stats.itemsCrafted || 0;
+    } else if (def.type === 'visit') {
+      existing = this.stats.scenesVisited[def.target] ? 1 : 0;
+    } else if (def.type === 'talk') {
+      existing = this.stats.npcsSpoken[def.target] ? 1 : 0;
+    }
+
+    if (existing > 0) {
+      q.progress = Math.min(existing, def.count);
+      if (q.progress >= def.count) {
+        this._completeQuest(questId);
       }
     }
   }

@@ -57,6 +57,8 @@ export class TileMapRenderer {
       mat.map.minFilter = THREE.NearestFilter;
       mat.map.generateMipmaps = false;
       mat.map.colorSpace = THREE.SRGBColorSpace;
+      mat.map.wrapS = THREE.ClampToEdgeWrapping;
+      mat.map.wrapT = THREE.ClampToEdgeWrapping;
       mat.map.repeat.set(TILE_SIZE / texW, TILE_SIZE / texH);
       mat.map.offset.set(
         (def.x * TILE_SIZE) / texW,
@@ -92,6 +94,8 @@ export class TileMapRenderer {
     mat.map.minFilter = THREE.NearestFilter;
     mat.map.generateMipmaps = false;
     mat.map.colorSpace = THREE.SRGBColorSpace;
+    mat.map.wrapS = THREE.ClampToEdgeWrapping;
+    mat.map.wrapT = THREE.ClampToEdgeWrapping;
 
     const mesh = new THREE.Mesh(geo, mat);
     // Position: center of prop, Y flipped, z for depth sorting
@@ -116,6 +120,8 @@ export class TileMapRenderer {
     clonedTex.minFilter = THREE.NearestFilter;
     clonedTex.generateMipmaps = false;
     clonedTex.colorSpace = THREE.SRGBColorSpace;
+    clonedTex.wrapS = THREE.ClampToEdgeWrapping;
+    clonedTex.wrapT = THREE.ClampToEdgeWrapping;
     clonedTex.repeat.set(srcW / texW, srcH / texH);
     clonedTex.offset.set(srcX / texW, 1 - (srcY + srcH) / texH);
 

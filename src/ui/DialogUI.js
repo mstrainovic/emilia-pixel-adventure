@@ -10,7 +10,7 @@ export class DialogUI {
       <div id="dialog-bubble">
         <div id="dialog-name"></div>
         <div id="dialog-text"></div>
-        <div id="dialog-hint">Klick zum Weiter / Schliessen</div>
+        <div id="dialog-hint">Leertaste / E / Klick zum Weiter</div>
       </div>
     `;
     this.container.style.display = 'none';
@@ -39,7 +39,10 @@ export class DialogUI {
 
     this.container.addEventListener('click', advanceOrFinish);
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Escape' && this.isOpen) advanceOrFinish();
+      if (!this.isOpen) return;
+      if (e.code === 'Escape' || e.code === 'Space' || e.code === 'KeyE') {
+        advanceOrFinish();
+      }
     });
   }
 

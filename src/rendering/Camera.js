@@ -8,7 +8,7 @@ export class Camera {
     const halfH = VISIBLE_TILES_Y / 2;
     const halfW = halfH * aspect;
 
-    this.cam = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.1, 100);
+    this.cam = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.01, 100);
     this.cam.position.set(0, 0, 50);
     this.cam.lookAt(0, 0, 0);
 

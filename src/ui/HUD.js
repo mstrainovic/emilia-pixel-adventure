@@ -5,6 +5,9 @@ export class HUD {
   constructor() {
     this._inventoryOpen = false;
 
+    // Hotbar reorder state: click slot to select, click another to swap
+    this._reorderSource = null; // index of selected hotbar slot (null = none)
+
     // Smooth animation state
     this.displayedHp = undefined;
     this.displayedHpTrail = undefined;
@@ -35,6 +38,7 @@ export class HUD {
           </div>
         </div>
       </div>
+      <div id="hud-coins-display"></div>
       <div id="hud-quest-tracker"></div>
       <div id="hud-info"></div>
       <div id="hud-mute" title="Sound An/Aus">🔊</div>
@@ -199,6 +203,14 @@ export class HUD {
     this._lastXpLevel = progression.level;
   }
 
+  updateCoins(coins) {
+    const el = document.getElementById('hud-coins-display');
+    if (el) {
+      el.textContent = `\uD83E\uDE99 ${coins}`;
+      el.style.display = coins > 0 ? 'block' : 'none';
+    }
+  }
+
   /** Called each frame to animate XP bar smoothly */
   _updateXpBar(dt) {
     if (this._targetXpProgress === undefined || this.displayedXpProgress === undefined) return;
@@ -343,8 +355,9 @@ export class HUD {
       const slot = slots[i];
       const selected = i === inventory.selectedHotbar ? ' hud-slot-selected' : '';
       const itemDef = slot.itemId ? getItem(slot.itemId) : null;
+      const reorderSrc = i === this._reorderSource ? ' hud-slot-reorder' : '';
 
-      html += `<div class="hud-slot${selected}" data-slot="${i}" data-item="${slot.itemId || ''}">`;
+      html += `<div class="hud-slot${selected}${reorderSrc}" data-slot="${i}" data-item="${slot.itemId || ''}">`;
       if (itemDef) {
         const iconURL = getItemIconDataURL(slot.itemId);
         html += `<img class="hud-slot-icon" src="${iconURL}" alt="${itemDef.name}" draggable="false">`;
@@ -373,6 +386,11 @@ export class HUD {
           tooltip.style.left = (e.clientX + 12) + 'px';
           tooltip.style.top = (e.clientY - 40) + 'px';
         }
+      });
+      // Click-to-swap hotbar reorder
+      el.addEventListener('click', () => {
+        const slotIdx = parseInt(el.getAttribute('data-slot'), 10);
+        this._handleHotbarReorderClick(inventory, slotIdx);
       });
     });
 
@@ -481,6 +499,47 @@ export class HUD {
     this.updateHotbar(inventory);
   }
 
+  /**
+   * Click-to-swap hotbar reorder: first click selects, second click swaps.
+   */
+  _handleHotbarReorderClick(inventory, slotIdx) {
+    if (this._reorderSource === null) {
+      // First click — select this slot
+      this._reorderSource = slotIdx;
+      this.updateHotbar(inventory);
+    } else if (this._reorderSource === slotIdx) {
+      // Clicked same slot — deselect
+      this._reorderSource = null;
+      this.updateHotbar(inventory);
+    } else {
+      // Second click — swap with source
+      inventory.swapHotbarSlots(this._reorderSource, slotIdx);
+      this._reorderSource = null;
+      this.updateHotbar(inventory);
+    }
+  }
+
+  /**
+   * Number key hotbar reorder: if a slot is selected for reorder,
+   * pressing another number key swaps them. Returns true if handled.
+   */
+  handleHotbarReorderKey(inventory, keyIndex) {
+    if (this._reorderSource === null) {
+      return false; // no reorder in progress, let normal selection happen
+    }
+    if (this._reorderSource === keyIndex) {
+      // Same slot — cancel reorder
+      this._reorderSource = null;
+      this.updateHotbar(inventory);
+      return true;
+    }
+    // Swap slots
+    inventory.swapHotbarSlots(this._reorderSource, keyIndex);
+    this._reorderSource = null;
+    this.updateHotbar(inventory);
+    return true;
+  }
+
   _showTooltip(item, event) {
     const tooltip = document.getElementById('hud-tooltip');
     if (!tooltip) return;
@@ -499,6 +558,7 @@ export class HUD {
     else if (item.category === 'coral') desc = '\uD83E\uDEB8 Koralle';
     else if (item.category === 'rare') desc = '\u2B50 Selten';
     else if (item.category === 'fish') desc = '\uD83D\uDC1F Fisch';
+    if (item.sellValue) desc += (desc ? ' | ' : '') + `\uD83E\uDE99 Verkauf: ${item.sellValue}`;
 
     tooltip.innerHTML = `
       <div class="tooltip-header">
@@ -584,6 +644,17 @@ export class HUD {
         padding: 6px 10px;
         border-radius: 2px;
         box-shadow: 0 2px 0 #4a3608;
+      }
+      #hud-coins-display {
+        position: absolute; top: 52px; left: 10px;
+        color: #FFD700; font-size: 9px; font-weight: bold;
+        background: rgba(20, 15, 10, 0.75);
+        border: 2px solid #8B6914;
+        padding: 3px 8px;
+        border-radius: 2px;
+        box-shadow: 0 2px 0 #4a3608;
+        text-shadow: 1px 1px 0 #4a3608;
+        display: none;
       }
       #hud-level-badge {
         color: #FFD700; font-size: 10px; font-weight: bold;
@@ -838,6 +909,16 @@ export class HUD {
         border-color: #FFD700;
         background: rgba(255,215,0,0.12);
         box-shadow: 0 0 6px rgba(255,215,0,0.3);
+      }
+      .hud-slot-reorder {
+        border-color: #44DDFF !important;
+        background: rgba(68,221,255,0.15) !important;
+        box-shadow: 0 0 10px rgba(68,221,255,0.5) !important;
+        animation: hud-reorder-pulse 0.8s ease-in-out infinite;
+      }
+      @keyframes hud-reorder-pulse {
+        0%, 100% { box-shadow: 0 0 6px rgba(68,221,255,0.3); }
+        50% { box-shadow: 0 0 14px rgba(68,221,255,0.6); }
       }
       .hud-slot-icon {
         position: absolute; top: 5px; left: 5px;

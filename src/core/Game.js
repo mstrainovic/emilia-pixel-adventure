@@ -67,6 +67,7 @@ import { DamageNumbers } from '../rendering/DamageNumbers.js';
 import { PickupPopup } from '../ui/PickupPopup.js';
 import { MapVignette } from '../rendering/MapVignette.js';
 import { GameOverScreen } from '../ui/GameOverScreen.js';
+import { TradeUI } from '../ui/TradeUI.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -236,10 +237,23 @@ export class Game {
     this.damageNumbers = null; // floating damage numbers, created per scene
     this.dialog = new DialogSystem();
     // After NPC dialog ends → open their crafting station automatically
+    this.tradeUI = new TradeUI();
+    this.tradeUI.onSell = (slotIndex, itemId, sellValue) => {
+      this.hud.showInfo(`Verkauft! +${sellValue} Muenze${sellValue > 1 ? 'n' : ''}`);
+      this.hud.updateHotbar(this.inventory);
+      this.hud.updateCoins(this.inventory.coins);
+      if (this.audio) this.audio.playUIClick();
+    };
     this.dialog.onDialogEnd = (npcId, stationId) => {
       if (this.crafting && stationId) {
         this.crafting.openStation(stationId);
         this.crafting.cooldown = 0.5; // prevent double-open from manual E press
+      }
+      // Ferdinand: open trade UI after dialog
+      if (npcId === 'ferdinand' && this.tradeUI && this.inventory) {
+        setTimeout(() => {
+          this.tradeUI.show(this.inventory);
+        }, 200);
       }
       // Oma: garden expansion with earth
       if (npcId === 'oma' && this.inventory && this.inventory.hasItem('earth', 3)) {
@@ -359,11 +373,22 @@ export class Game {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Hotbar number keys + item usage
+    // Hotbar number keys + item usage + reorder
     window.addEventListener('keydown', (e) => {
       if (e.code >= 'Digit1' && e.code <= 'Digit8') {
-        this.inventory.selectHotbar(parseInt(e.code.slice(5)) - 1);
+        const keyIndex = parseInt(e.code.slice(5)) - 1;
+        // If reorder is active, swap instead of select
+        if (this.hud.handleHotbarReorderKey(this.inventory, keyIndex)) {
+          this.audio.playUIClick();
+          return;
+        }
+        this.inventory.selectHotbar(keyIndex);
         this.audio.playUIClick();
+        // Show weapon equip feedback when selecting a weapon slot
+        const selected = this.inventory.getSelectedItem();
+        if (selected && selected.category === 'weapon') {
+          this.hud.showInfo(`${selected.name} ausgeruestet! (${selected.damage} Schaden)`);
+        }
       }
       // Q key = use selected item (eat food, drink potion)
       if (e.code === 'KeyQ') {
@@ -509,6 +534,7 @@ export class Game {
       menu.hide();
       await this._buildScene('hub', { x: 20, y: 15 });
       this.hud.updateHotbar(this.inventory);
+      this.hud.updateCoins(this.inventory.coins);
       this.hud.updateXp(this.progression);
       this.hud.updateQuest(this.progression.getActiveQuest());
       this.running = true;
@@ -527,6 +553,7 @@ export class Game {
             this.inventory.slots[i] = save.inventory[i];
           }
         }
+        if (typeof save.coins === 'number') this.inventory.coins = save.coins;
         this.plantHealing.totalHealed = save.plantsHealed || 0;
         this.plantHealing.unicornUnlocked = save.unicornUnlocked || false;
         if (save.progression) this.progression.loadSaveData(save.progression);
@@ -573,6 +600,7 @@ export class Game {
         await this._buildScene('hub', { x: 20, y: 15 });
       }
       this.hud.updateHotbar(this.inventory);
+      this.hud.updateCoins(this.inventory.coins);
       this.hud.updateXp(this.progression);
       this.hud.updateQuest(this.progression.getActiveQuest());
       this.running = true;
@@ -2009,8 +2037,8 @@ export class Game {
       this.hud.toggleInventory(this.inventory);
     }
 
-    // Skip gameplay updates if dialog, crafting, fishing, explorer book UI, or inventory is open
-    const uiBlocking = this.dialog.isActive || this.crafting.isActive || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen();
+    // Skip gameplay updates if dialog, crafting, trading, fishing, explorer book UI, or inventory is open
+    const uiBlocking = this.dialog.isActive || this.crafting.isActive || (this.tradeUI && this.tradeUI.isOpen) || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen();
 
     // Dialog system
     this.dialog.update(dt, this.player, this.npcs, this.input);
@@ -2366,6 +2394,7 @@ export class Game {
       playerX: this.player.x,
       playerY: this.player.y,
       inventorySlots: this.inventory.slots,
+      coins: this.inventory.coins,
       plantsHealed: this.plantHealing.totalHealed,
       unicornUnlocked: this.plantHealing.unicornUnlocked,
       progression: this.progression.getSaveData(),
@@ -2401,14 +2430,28 @@ export class Game {
     const item = this.inventory.getSelectedItem();
     if (!item) return;
 
-    if (item.healAmount && this.player.hp < this.player.maxHp) {
+    // Consumable items (food, potions) — heal the player
+    if (item.healAmount) {
+      if (this.player.hp >= this.player.maxHp) {
+        this.hud.showInfo('HP bereits voll!');
+        return;
+      }
+      const healed = Math.min(item.healAmount, this.player.maxHp - this.player.hp);
       this.player.heal(item.healAmount);
       this.inventory.removeItem(item.id, 1);
       this.hud.updateHotbar(this.inventory);
-      this.hud.showInfo(`${item.name} benutzt! +${item.healAmount} HP`);
+      this.hud.showInfo(`${item.name} benutzt! +${healed} HP`);
       if (this.juice) this.juice.healFlash();
       this.audio.playEat();
       this.audio.playHeal();
+      return;
+    }
+
+    // Weapon items — show equip feedback (weapon is active by being in selected slot)
+    if (item.category === 'weapon') {
+      this.hud.showInfo(`${item.name} ausgeruestet! (${item.damage} Schaden)`);
+      this.audio.playUIClick();
+      return;
     }
   }
 

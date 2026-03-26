@@ -178,6 +178,29 @@ export const FAMILY_NPCS = [
       'Am Alchemie-Tisch kann Deda Zaubertranke brauen. Bring mir Zutaten aus dem Wald!',
       'Fruher hat Deda Sterne gezaehlt und sich Geschichten dazu ausgedacht. Magst du Sterne?'
     ]
+  },
+  {
+    id: 'ferdinand',
+    name: 'Ferdinand',
+    role: 'Haendler',
+    type: 'trader',
+    hairStyle: 'short',
+    hairColor: 0xd4a030,   // Blondes Haar
+    clothingColor: 0x44aa88, // Gruenes Haendler-Shirt
+    x: 17, y: 15,
+    direction: 'down',
+    dialogs: [
+      'Hey Emilia! Willst du was verkaufen? Ich kauf alles!',
+      'Mein Bruder Wenzl wollte auch mitkommen, aber er musste Hausaufgaben machen.',
+      'Ich sammle alles Moegliche! Zeig mal was du hast!',
+      'Weisst du noch, im Kindergarten? Da hab ich immer Sticker getauscht!',
+      'Ich bin der beste Haendler im ganzen Dorf! Naja... der einzige.',
+      'Fuer seltene Sachen zahle ich extra viel! Kristalle sind mega cool!',
+      'Wenzl sagt, ich soll sparen. Aber Sammeln macht viel mehr Spass!',
+      'Wenn du Muenzen brauchst, bring mir einfach Sachen aus dem Wald!',
+      'Ich hab sogar einen eigenen Laden! Na gut, es ist nur ein Tisch...',
+      'Emilia, du bist meine beste Kundin! Und meine einzige... hehe!'
+    ]
   }
 ];
 

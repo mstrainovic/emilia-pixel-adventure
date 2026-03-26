@@ -281,8 +281,9 @@ export const NPC_PALETTE_CONFIGS = {
   papa_milos:  { hairColor: [15, 12, 8],     clothColor: [70, 110, 180] },   // Black hair, blue shirt
   marie:       { hairColor: [180, 140, 60],  clothColor: [255, 180, 50] },   // Blonde, yellow dress
   liam:        { hairColor: [50, 30, 15],    clothColor: [60, 160, 80] },    // Dark brown, green shirt
-  oma:         { hairColor: [180, 175, 170], clothColor: [160, 100, 140] },  // Grey hair, mauve
-  opa:         { hairColor: [160, 155, 145], clothColor: [100, 130, 100] },  // Grey, olive shirt
+  oma:         { hairColor: [25, 25, 30],    clothColor: [160, 100, 140] },  // Black hair, mauve
+  opa:         { hairColor: [235, 200, 160], clothColor: [100, 130, 100] },  // Bald (hair=skin tone), olive shirt
   baba:        { hairColor: [100, 50, 25],   clothColor: [190, 70, 60] },    // Auburn, red blouse
   deda:        { hairColor: [130, 125, 115], clothColor: [60, 80, 130] },    // Grey, navy
+  ferdinand:   { hairColor: [210, 180, 80],  clothColor: [60, 160, 130] },  // Blonde hair, teal trader shirt
 };
