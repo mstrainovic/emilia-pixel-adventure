@@ -1542,34 +1542,34 @@ export class Game {
         case 'signpost': {
           // Canvas-drawn signpost with directional arrow + label
           const spCanvas = document.createElement('canvas');
-          spCanvas.width = 64;
-          spCanvas.height = 48;
+          spCanvas.width = 32;
+          spCanvas.height = 24;
           const spCtx = spCanvas.getContext('2d');
 
           // Post
           spCtx.fillStyle = '#8B5E3C';
-          spCtx.fillRect(29, 28, 6, 20);
+          spCtx.fillRect(14, 14, 4, 10);
 
           // Sign board background
           spCtx.fillStyle = '#C8924A';
-          spCtx.fillRect(4, 4, 56, 28);
+          spCtx.fillRect(2, 2, 28, 13);
           // Board outline
           spCtx.strokeStyle = '#5a3010';
-          spCtx.lineWidth = 2;
-          spCtx.strokeRect(4, 4, 56, 28);
+          spCtx.lineWidth = 1;
+          spCtx.strokeRect(2, 2, 28, 13);
 
           // Arrow indicator based on direction
           spCtx.fillStyle = '#3a1a00';
-          spCtx.font = 'bold 11px sans-serif';
+          spCtx.font = 'bold 7px sans-serif';
           spCtx.textAlign = 'center';
           spCtx.textBaseline = 'top';
           const arrowMap = { north: '↑', south: '↓', east: '→', west: '←' };
           const arrow = arrowMap[prop.dir] || '→';
-          spCtx.fillText(arrow, 32, 6);
+          spCtx.fillText(arrow, 16, 3);
 
-          // Label text (trim emoji for canvas if needed)
-          spCtx.font = 'bold 9px sans-serif';
-          spCtx.fillText(prop.label || '', 32, 19);
+          // Label text
+          spCtx.font = 'bold 5px sans-serif';
+          spCtx.fillText(prop.label || '', 16, 10);
 
           const spTex = new THREE.CanvasTexture(spCanvas);
           spTex.magFilter = THREE.NearestFilter;

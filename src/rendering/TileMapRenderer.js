@@ -83,6 +83,26 @@ export class TileMapRenderer {
    * Add a prop (static sprite) at a world position
    */
   addProp(texture, x, y, widthTiles, heightTiles, zOffset = 0.1) {
+    // Add soft ground shadow for large props (trees, houses)
+    if (heightTiles >= 3) {
+      const shadowW = widthTiles * 0.7;
+      const shadowH = 0.5;
+      const shadowGeo = new THREE.PlaneGeometry(shadowW, shadowH);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false,
+      });
+      const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+      shadowMesh.position.set(
+        x + widthTiles / 2,
+        -(y + heightTiles - 0.2),
+        0.05 + y * 0.001
+      );
+      this.propGroup.add(shadowMesh);
+    }
+
     const geo = new THREE.PlaneGeometry(widthTiles, heightTiles);
     const mat = new THREE.MeshBasicMaterial({
       map: texture,
