@@ -29,7 +29,7 @@ import { CraftingSystem } from '../systems/CraftingSystem.js';
 import { SaveManager } from '../systems/SaveManager.js';
 import { MainMenu } from '../ui/MainMenu.js';
 import { getItem } from '../data/items.js';
-import { generateHubMap, TREE_VARIANTS } from '../world/maps/hub.js';
+import { generateHubMap } from '../world/maps/hub.js';
 import { generateForestMap } from '../world/maps/forest.js';
 import { generateDungeonMap } from '../world/maps/dungeon.js';
 import { generateLakeMap } from '../world/maps/lake.js';
@@ -1025,15 +1025,6 @@ export class Game {
   }
 
   async _loadProps(props) {
-    const treeSheets = {};
-    for (const m of [1, 2, 3]) {
-      try {
-        treeSheets[m] = await this.assetLoader.loadTexture(
-          `Environment/Props/Static/Trees/Model_0${m}/Size_02.png`
-        );
-      } catch (e) {}
-    }
-
     // ── Cute_Fantasy asset textures ──
     let cfOakTex = null, cfOakSmallTex = null, cfDecorTex = null;
     let cfHouseTex = null, cfFenceTex = null, cfBridgeTex = null, cfChestTex = null;
@@ -1060,31 +1051,9 @@ export class Game {
     try { cfBridgeTex = await cfLoad('Outdoor decoration/Bridge_Wood.png'); } catch (e) {}
     try { cfChestTex = await cfLoad('Outdoor decoration/Chest.png'); } catch (e) {}
 
-    let bonfireSheet = null;
-    try {
-      bonfireSheet = await this.assetLoader.loadSpriteSheet(
-        'Environment/Structures/Stations/Bonfire/Bonfire_01-Sheet.png', 32, 32, 4
-      );
-    } catch (e) {}
-
-    // ── Station sprite textures ──
-    let cookingStationTex = null, workbenchTex = null, anvilTex = null;
-    let sawmillTex = null, alchemyTex = null;
-    try { cookingStationTex = await this.assetLoader.loadTexture('Environment/Structures/Stations/Cooking Station/Cooking Station.png'); } catch (e) {}
-    try { workbenchTex = await this.assetLoader.loadTexture('Environment/Structures/Stations/Workbench/Workbench.png'); } catch (e) {}
-    try { anvilTex = await this.assetLoader.loadTexture('Environment/Structures/Stations/Anvil/Anvil.png'); } catch (e) {}
-    try { sawmillTex = await this.assetLoader.loadTexture('Environment/Structures/Stations/Sawmill/Base.png'); } catch (e) {}
-    try { alchemyTex = await this.assetLoader.loadTexture('Environment/Structures/Stations/Alchemy/Alchemy_Table_01-Sheet.png'); } catch (e) {}
-
-    let vegTex = null;
-    try { vegTex = await this.assetLoader.loadTexture('Environment/Props/Static/Vegetation.png'); } catch (e) {}
-
-    let farmTex = null;
-    try { farmTex = await this.assetLoader.loadTexture('Environment/Props/Static/Farm.png'); } catch (e) {}
-
-    // ── NEW Farm RPG Asset Pack — load via direct path (not ASSET_PATH) ──
-    let houseTex = null, fenceTex = null, mapleTex = null, cropsTex = null;
-    let roadTex = null, chestTex = null, chickenTex = null;
+    // ── Farm RPG Asset Pack — load via direct path (keep only cropsTex, mapleTex, chickenTex) ──
+    let mapleTex = null, cropsTex = null;
+    let chickenTex = null;
     const farmLoad = (path) => {
       const farmBase = import.meta.env.BASE_URL || '/';
       const url = `${farmBase}Farm RPG FREE 16x16 - Tiny Asset Pack/${path}`;
@@ -1100,15 +1069,9 @@ export class Game {
         }, undefined, reject);
       });
     };
-    try { houseTex = await farmLoad('Objects/House.png'); } catch (e) { console.warn('House not loaded'); }
-    try { fenceTex = await farmLoad("Objects/Fence's copiar.png"); } catch (e) { console.warn('Fence not loaded'); }
     try { mapleTex = await farmLoad('Objects/Maple Tree.png'); } catch (e) { console.warn('Maple not loaded'); }
     try { cropsTex = await farmLoad('Objects/Spring Crops.png'); } catch (e) { console.warn('Crops not loaded'); }
-    try { roadTex = await farmLoad('Objects/Road copiar.png'); } catch (e) {}
-    try { chestTex = await farmLoad('Objects/chest.png'); } catch (e) {}
     try {
-      const chickenBase = import.meta.env.BASE_URL || '/';
-      const chickenUrl = `${chickenBase}Farm RPG FREE 16x16 - Tiny Asset Pack/Farm Animals/Baby Chicken Yellow.png`;
       const chickenBaseTex = await farmLoad('Farm Animals/Baby Chicken Yellow.png');
       chickenTex = {
         texture: chickenBaseTex, frameWidth: 16, frameHeight: 16,
@@ -1133,25 +1096,68 @@ export class Game {
           } else if (cfOakSmallTex) {
             // Small trees: 32x48 each, 3 trees in the sheet
             this.tileMapRenderer.addPropFromSheet(cfOakSmallTex, 0, 0, 32, 48, prop.x, prop.y - 1.5, 2, 3);
-          } else {
-            this._placeTree(prop, treeSheets);
           }
           break;
-        case 'bonfire':
-          if (bonfireSheet) {
-            const bonfire = new SpriteRenderer(bonfireSheet, 200);
-            bonfire.setPosition((prop.x || 0) + 1, (prop.y || 0) + 1, 0.15 + (prop.y || 0) * 0.001);
-            this.scene.add(bonfire.mesh);
-            this._animatedSprites.push(bonfire);
+        case 'bonfire': {
+          // Canvas-drawn animated bonfire (4-frame strip, 128x32)
+          const bfCanvas = document.createElement('canvas');
+          bfCanvas.width = 128; bfCanvas.height = 32;
+          const bfCtx = bfCanvas.getContext('2d');
+          for (let f = 0; f < 4; f++) {
+            const ox = f * 32;
+            // Stone ring base
+            bfCtx.fillStyle = '#777777';
+            bfCtx.fillRect(ox + 6, 24, 4, 4); bfCtx.fillRect(ox + 22, 24, 4, 4);
+            bfCtx.fillRect(ox + 10, 26, 12, 4);
+            bfCtx.fillStyle = '#666666';
+            bfCtx.fillRect(ox + 8, 28, 16, 2);
+            // Log base
+            bfCtx.fillStyle = '#5A4010';
+            bfCtx.fillRect(ox + 10, 22, 12, 4);
+            bfCtx.fillRect(ox + 8, 24, 4, 2);
+            bfCtx.fillRect(ox + 20, 24, 4, 2);
+            // Flame core (varies per frame)
+            const flameH = [12, 14, 11, 13][f];
+            const flameW = [8, 10, 9, 7][f];
+            const flameOx = [12, 11, 11, 12][f];
+            // Red outer flame
+            bfCtx.fillStyle = '#CC3300';
+            bfCtx.fillRect(ox + flameOx - 1, 22 - flameH, flameW + 2, flameH);
+            // Orange middle flame
+            bfCtx.fillStyle = '#FF6600';
+            bfCtx.fillRect(ox + flameOx + 1, 22 - flameH + 2, flameW - 2, flameH - 3);
+            // Yellow inner flame
+            bfCtx.fillStyle = '#FFCC00';
+            bfCtx.fillRect(ox + flameOx + 2, 22 - flameH + 5, flameW - 4, flameH - 7);
+            // Bright tip
+            bfCtx.fillStyle = '#FFEE88';
+            bfCtx.fillRect(ox + 14 + (f % 2), 22 - flameH + 3, 2, 3);
+            // Sparks
+            bfCtx.fillStyle = '#FFAA00';
+            bfCtx.fillRect(ox + 10 + f * 2, 22 - flameH - 1, 1, 1);
+            bfCtx.fillRect(ox + 18 - f, 22 - flameH + 1, 1, 1);
           }
+          const bfTex = new THREE.CanvasTexture(bfCanvas);
+          bfTex.magFilter = THREE.NearestFilter;
+          bfTex.minFilter = THREE.NearestFilter;
+          bfTex.generateMipmaps = false;
+          bfTex.colorSpace = THREE.SRGBColorSpace;
+          const bfSheet = {
+            texture: bfTex, frameWidth: 32, frameHeight: 32,
+            frameCount: 4, sheetWidth: 128, sheetHeight: 32,
+          };
+          const bonfire = new SpriteRenderer(bfSheet, 200);
+          bonfire.setPosition((prop.x || 0) + 1, (prop.y || 0) + 1, 0.15 + (prop.y || 0) * 0.001);
+          this.scene.add(bonfire.mesh);
+          this._animatedSprites.push(bonfire);
           break;
+        }
         case 'station':
-          this._placeStation(prop, { cookingStationTex, workbenchTex, anvilTex, sawmillTex, alchemyTex });
+          this._placeStation(prop);
           break;
         case 'bush':
           // Cute_Fantasy bush from Outdoor_Decor (row 0: grass/bushes)
           if (cfDecorTex) this.tileMapRenderer.addPropFromSheet(cfDecorTex, 0, 0, 16, 16, prop.x, prop.y, 1, 1);
-          else if (vegTex) this.tileMapRenderer.addPropFromSheet(vegTex, 0, 96, 32, 32, prop.x, prop.y - 0.5, 1.5, 1.5);
           break;
         case 'flower':
           // Cute_Fantasy flowers from Outdoor_Decor (bottom rows: flower beds)
@@ -1159,16 +1165,13 @@ export class Game {
             const flowerCol = Math.floor((prop.x * 7 + prop.y * 3) % 7);
             this.tileMapRenderer.addPropFromSheet(cfDecorTex, flowerCol * 16, 176, 16, 16, prop.x, prop.y, 1, 1);
           }
-          else if (vegTex) this.tileMapRenderer.addPropFromSheet(vegTex, 16, 224, 16, 16, prop.x + 0.1, prop.y + 0.1, 0.8, 0.8);
           break;
         case 'garden':
           if (cropsTex) this.tileMapRenderer.addPropFromSheet(cropsTex, ((prop.x * 7) % 4) * 16, 0, 16, 16, prop.x, prop.y, 1, 1);
-          else if (farmTex) this.tileMapRenderer.addPropFromSheet(farmTex, ((prop.x * 7) % 4) * 16, 0, 16, 16, prop.x, prop.y, 1, 1);
           break;
         case 'fence':
           // Cute_Fantasy fences
           if (cfFenceTex) this.tileMapRenderer.addPropFromSheet(cfFenceTex, 0, 0, 16, 16, prop.x, prop.y, 1, 1);
-          else if (farmTex) this.tileMapRenderer.addPropFromSheet(farmTex, 224, 16, 16, 32, prop.x, prop.y - 0.5, 0.8, 1.5);
           break;
         case 'rock': {
           // Canvas-drawn stone — works in all scene contexts
@@ -1198,10 +1201,6 @@ export class Game {
           // Cute_Fantasy House (96x128)
           if (cfHouseTex) {
             this.tileMapRenderer.addProp(cfHouseTex, prop.x, prop.y - 4, 6, 8, 0.1);
-          } else if (houseTex) {
-            this.tileMapRenderer.addPropFromSheet(houseTex, 128, 16, 96, 96, prop.x, prop.y - 2, 6, 6);
-          } else {
-            this._placeHouse(prop);
           }
           break;
         case 'maple_tree':
@@ -1220,18 +1219,13 @@ export class Game {
               cfFenceTex, 16, 0, 16, 16,
               prop.x, prop.y, 1, 1
             );
-          } else if (fenceTex) {
-            this.tileMapRenderer.addPropFromSheet(fenceTex, 16, 0, 16, 32, prop.x, prop.y - 0.5, 1, 2);
           }
           break;
         case 'cobble':
-          // Cobblestone path from Road.png
-          if (roadTex) {
-            const rx = ((prop.x * 3 + prop.y * 7) % 4) * 16;
-            this.tileMapRenderer.addPropFromSheet(
-              roadTex, rx % 64, 0, 16, 16,
-              prop.x, prop.y, 1, 1
-            );
+          // Canvas-drawn cobblestone path tile
+          if (cfDecorTex) {
+            // Use stone/path tiles from Cute_Fantasy decor
+            this.tileMapRenderer.addPropFromSheet(cfDecorTex, 0, 96, 16, 16, prop.x, prop.y, 1, 1);
           }
           break;
         case 'crop':
@@ -1258,11 +1252,9 @@ export class Game {
           }
           break;
         case 'chest':
-          if (chestTex) {
-            this.tileMapRenderer.addPropFromSheet(
-              chestTex, 0, 0, 16, 16,
-              prop.x, prop.y, 1, 1
-            );
+          if (cfChestTex) {
+            // Cute_Fantasy chest (32x32)
+            this.tileMapRenderer.addProp(cfChestTex, prop.x, prop.y, 1, 1, 0.12);
           }
           break;
         case 'chicken':
@@ -1783,153 +1775,33 @@ export class Game {
     }
   }
 
-  _placeTree(prop, treeSheets) {
-    const variant = TREE_VARIANTS[prop.variant];
-    if (!variant) return;
-    const sheet = treeSheets[variant.model];
-    if (!sheet) return;
-    const { srcX, srcY, srcW, srcH } = variant;
-
-    // Scale trees to fit nicely (max 2.5×3 tiles)
-    const maxW = 2.5;
-    const maxH = 3;
-    const rawW = srcW / 16;
-    const rawH = srcH / 16;
-    const scale = Math.min(maxW / rawW, maxH / rawH, 1);
-    const wTiles = rawW * scale;
-    const hTiles = rawH * scale;
-
-    // Position: trunk at prop position, canopy above
-    let px = prop.x - wTiles / 2 + 0.5;
-    let py = prop.y - hTiles + 1.2;
-
-    // Clamp to map bounds to prevent clipping
-    if (this.tileMap) {
-      px = Math.max(0, Math.min(this.tileMap.width - wTiles, px));
-      py = Math.max(0, py);
-    }
-
-    this.tileMapRenderer.addPropFromSheet(
-      sheet, srcX, srcY, srcW, srcH,
-      px, py, wTiles, hTiles
-    );
-  }
-
-  _placeHouse(prop) {
-    const w = prop.w || 4;
-    const h = prop.h || 3;
-    const roofColor = prop.roofColor || [140, 60, 50];
-    const wallColor = prop.wallColor || [200, 180, 140];
-
-    // Draw house as canvas texture
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-
-    // Walls
-    ctx.fillStyle = `rgb(${wallColor[0]},${wallColor[1]},${wallColor[2]})`;
-    ctx.fillRect(4, 24, 56, 36);
-    // Wall shadow
-    ctx.fillStyle = `rgba(0,0,0,0.15)`;
-    ctx.fillRect(4, 48, 56, 12);
-
-    // Wall detail — horizontal wood lines
-    ctx.fillStyle = `rgba(0,0,0,0.08)`;
-    for (let y = 30; y < 60; y += 8) {
-      ctx.fillRect(4, y, 56, 1);
-    }
-
-    // Door
-    ctx.fillStyle = `rgb(${roofColor[0]-20},${roofColor[1]-10},${roofColor[2]-10})`;
-    ctx.fillRect(26, 38, 12, 22);
-    // Door handle
-    ctx.fillStyle = '#FFD700';
-    ctx.fillRect(34, 48, 2, 2);
-
-    // Window left
-    ctx.fillStyle = '#AADDFF';
-    ctx.fillRect(10, 32, 10, 10);
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fillRect(10, 32, 5, 5);
-    ctx.fillStyle = `rgb(${wallColor[0]-30},${wallColor[1]-30},${wallColor[2]-30})`;
-    ctx.fillRect(14, 32, 2, 10);
-    ctx.fillRect(10, 36, 10, 2);
-
-    // Window right
-    ctx.fillStyle = '#AADDFF';
-    ctx.fillRect(44, 32, 10, 10);
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fillRect(44, 32, 5, 5);
-    ctx.fillStyle = `rgb(${wallColor[0]-30},${wallColor[1]-30},${wallColor[2]-30})`;
-    ctx.fillRect(48, 32, 2, 10);
-    ctx.fillRect(44, 36, 10, 2);
-
-    // Roof
-    ctx.fillStyle = `rgb(${roofColor[0]},${roofColor[1]},${roofColor[2]})`;
-    ctx.beginPath();
-    ctx.moveTo(0, 26);
-    ctx.lineTo(32, 4);
-    ctx.lineTo(64, 26);
-    ctx.closePath();
-    ctx.fill();
-    // Roof highlight
-    ctx.fillStyle = `rgba(255,255,255,0.12)`;
-    ctx.beginPath();
-    ctx.moveTo(8, 24);
-    ctx.lineTo(32, 8);
-    ctx.lineTo(40, 14);
-    ctx.lineTo(16, 24);
-    ctx.closePath();
-    ctx.fill();
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.magFilter = THREE.NearestFilter;
-    tex.minFilter = THREE.NearestFilter;
-
-    const geo = new THREE.PlaneGeometry(w, h);
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.1, depthWrite: false });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(
-      prop.x + w / 2,
-      -(prop.y + h / 2) + 0.5,
-      0.08 + prop.y * 0.001
-    );
-    this.scene.add(mesh);
-  }
-
-  _placeStation(prop, textures = {}) {
+  _placeStation(prop) {
     const info = {
-      cooking: { color: 0xcc4444, label: 'Kueche' },
-      workbench: { color: 0x886633, label: 'Werkbank' },
-      anvil: { color: 0x888888, label: 'Amboss' },
-      sawmill: { color: 0xaa8844, label: 'Saege' },
-      alchemy: { color: 0x8844aa, label: 'Alchemie' },
-    }[prop.station] || { color: 0x666666, label: prop.station };
+      cooking: { label: 'Kueche' },
+      workbench: { label: 'Werkbank' },
+      anvil: { label: 'Amboss' },
+      sawmill: { label: 'Saege' },
+      alchemy: { label: 'Alchemie' },
+    }[prop.station] || { label: prop.station };
 
-    // Sprite configs: srcX/Y/W/H from spritesheets, display w/h in tiles
-    const spriteConfig = {
-      cooking:   { tex: textures.cookingStationTex, srcX: 0,  srcY: 0,  srcW: 48, srcH: 48, w: 3, h: 3 },
-      workbench: { tex: textures.workbenchTex,      srcX: 0,  srcY: 96, srcW: 64, srcH: 32, w: 4, h: 2 },
-      anvil:     { tex: textures.anvilTex,          srcX: 0,  srcY: 112, srcW: 32, srcH: 32, w: 2, h: 2 },
-      sawmill:   { tex: textures.sawmillTex,        srcX: 0,  srcY: 0,  srcW: 64, srcH: 64, w: 4, h: 4 },
-      alchemy:   { tex: textures.alchemyTex,        srcX: 0,  srcY: 0,  srcW: 48, srcH: 32, w: 3, h: 2 },
+    // Canvas-drawn station sprites in Cute_Fantasy pixel art style
+    const stationCanvas = this._createStationCanvas(prop.station);
+    const stationTex = new THREE.CanvasTexture(stationCanvas);
+    stationTex.magFilter = THREE.NearestFilter;
+    stationTex.minFilter = THREE.NearestFilter;
+
+    // Display sizes per station type (in tile units)
+    const sizes = {
+      cooking:   { w: 3, h: 3 },
+      workbench: { w: 4, h: 2 },
+      anvil:     { w: 2, h: 2 },
+      sawmill:   { w: 4, h: 4 },
+      alchemy:   { w: 3, h: 2 },
     };
-
-    const cfg = spriteConfig[prop.station];
-    if (cfg && cfg.tex) {
-      this.tileMapRenderer.addPropFromSheet(
-        cfg.tex, cfg.srcX, cfg.srcY, cfg.srcW, cfg.srcH,
-        prop.x, prop.y - (cfg.h - (prop.h || 1)) * 0.5, cfg.w, cfg.h
-      );
-    } else {
-      // Fallback: colored rectangle
-      const geo = new THREE.PlaneGeometry(prop.w || 1, prop.h || 1);
-      const mat = new THREE.MeshBasicMaterial({ color: info.color, transparent: true, opacity: 0.7 });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(prop.x + (prop.w || 1) / 2, -(prop.y + (prop.h || 1) / 2), 0.12 + prop.y * 0.001);
-      this.scene.add(mesh);
-    }
+    const sz = sizes[prop.station] || { w: 2, h: 2 };
+    this.tileMapRenderer.addProp(
+      stationTex, prop.x, prop.y - (sz.h - (prop.h || 1)) * 0.5, sz.w, sz.h, 0.12
+    );
 
     // Label
     const canvas = document.createElement('canvas');
@@ -1946,6 +1818,259 @@ export class Game {
     const label = new THREE.Mesh(lGeo, lMat);
     label.position.set(prop.x + (prop.w || 1) / 2, -(prop.y - 0.5), 0.5);
     this.scene.add(label);
+  }
+
+  /**
+   * Create canvas-drawn station sprites in Cute_Fantasy pixel art style.
+   * Uses 16px grid, matching color palette, 1px black outlines.
+   */
+  _createStationCanvas(stationType) {
+    switch (stationType) {
+      case 'cooking': {
+        // Cooking Station (48x48): Stone base with fire pit and pot
+        const c = document.createElement('canvas');
+        c.width = 48; c.height = 48;
+        const ctx = c.getContext('2d');
+        // Stone base
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(8, 32, 32, 12);
+        ctx.fillStyle = '#777777';
+        ctx.fillRect(10, 34, 28, 8);
+        // Black outline
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
+        ctx.strokeRect(8, 32, 32, 12);
+        // Fire pit opening
+        ctx.fillStyle = '#444444';
+        ctx.fillRect(14, 34, 20, 6);
+        // Flames
+        ctx.fillStyle = '#CC3300';
+        ctx.fillRect(16, 28, 16, 6);
+        ctx.fillStyle = '#FF6600';
+        ctx.fillRect(18, 26, 12, 6);
+        ctx.fillStyle = '#FFCC00';
+        ctx.fillRect(20, 24, 8, 6);
+        ctx.fillStyle = '#FFEE88';
+        ctx.fillRect(22, 22, 4, 4);
+        // Pot stand (metal rods)
+        ctx.fillStyle = '#555555';
+        ctx.fillRect(12, 16, 2, 18);
+        ctx.fillRect(34, 16, 2, 18);
+        ctx.fillRect(12, 16, 24, 2);
+        // Pot
+        ctx.fillStyle = '#4A4A4A';
+        ctx.fillRect(16, 18, 16, 10);
+        ctx.fillStyle = '#3A3A3A';
+        ctx.fillRect(14, 18, 20, 2);
+        // Pot highlight
+        ctx.fillStyle = '#5A5A5A';
+        ctx.fillRect(18, 20, 4, 4);
+        // Steam wisps
+        ctx.fillStyle = 'rgba(200,200,200,0.4)';
+        ctx.fillRect(20, 12, 2, 4);
+        ctx.fillRect(24, 10, 2, 5);
+        ctx.fillRect(28, 13, 2, 3);
+        return c;
+      }
+      case 'workbench': {
+        // Workbench (64x32): Wooden table with tools
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 32;
+        const ctx = c.getContext('2d');
+        // Table top
+        ctx.fillStyle = '#8B6914';
+        ctx.fillRect(4, 8, 56, 8);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
+        ctx.strokeRect(4, 8, 56, 8);
+        // Wood grain
+        ctx.fillStyle = '#7A5A10';
+        ctx.fillRect(8, 10, 20, 1);
+        ctx.fillRect(36, 12, 16, 1);
+        // Table highlight
+        ctx.fillStyle = '#9A7A20';
+        ctx.fillRect(6, 8, 52, 2);
+        // Legs
+        ctx.fillStyle = '#6B4E10';
+        ctx.fillRect(6, 16, 4, 14);
+        ctx.fillRect(54, 16, 4, 14);
+        ctx.fillRect(28, 16, 4, 12);
+        ctx.strokeStyle = '#000000';
+        ctx.strokeRect(6, 16, 4, 14);
+        ctx.strokeRect(54, 16, 4, 14);
+        // Tools on table
+        // Hammer
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(12, 4, 8, 4);
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(15, 6, 2, 8);
+        // Saw blade
+        ctx.fillStyle = '#AAAAAA';
+        ctx.fillRect(40, 2, 12, 6);
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(40, 3, 1, 1); ctx.fillRect(44, 3, 1, 1);
+        ctx.fillRect(48, 3, 1, 1); ctx.fillRect(51, 3, 1, 1);
+        // Saw handle
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(38, 4, 4, 4);
+        return c;
+      }
+      case 'anvil': {
+        // Anvil (32x32): Dark gray anvil on wooden stump
+        const c = document.createElement('canvas');
+        c.width = 32; c.height = 32;
+        const ctx = c.getContext('2d');
+        // Wooden stump base
+        ctx.fillStyle = '#6B4E1A';
+        ctx.fillRect(6, 20, 20, 10);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
+        ctx.strokeRect(6, 20, 20, 10);
+        // Stump rings
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(8, 22, 16, 1);
+        ctx.fillRect(8, 26, 16, 1);
+        // Anvil body
+        ctx.fillStyle = '#555566';
+        ctx.fillRect(8, 12, 16, 10);
+        ctx.strokeStyle = '#000000';
+        ctx.strokeRect(8, 12, 16, 10);
+        // Anvil top (wider horn)
+        ctx.fillStyle = '#666677';
+        ctx.fillRect(4, 10, 24, 4);
+        ctx.strokeRect(4, 10, 24, 4);
+        // Anvil horn (left point)
+        ctx.fillStyle = '#555566';
+        ctx.fillRect(0, 10, 6, 3);
+        ctx.strokeRect(0, 10, 6, 3);
+        // Anvil highlight
+        ctx.fillStyle = '#777788';
+        ctx.fillRect(6, 10, 18, 1);
+        // Anvil shadow
+        ctx.fillStyle = '#444455';
+        ctx.fillRect(10, 18, 12, 2);
+        return c;
+      }
+      case 'sawmill': {
+        // Sawmill (64x64): Wooden frame with log and saw blade
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        const ctx = c.getContext('2d');
+        // Wooden base/frame
+        ctx.fillStyle = '#7A5A18';
+        ctx.fillRect(4, 40, 56, 20);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
+        ctx.strokeRect(4, 40, 56, 20);
+        // Frame legs
+        ctx.fillStyle = '#6B4E10';
+        ctx.fillRect(6, 56, 6, 8);
+        ctx.fillRect(52, 56, 6, 8);
+        // Support beams (A-frame)
+        ctx.fillStyle = '#8B6914';
+        ctx.fillRect(8, 8, 6, 34);
+        ctx.fillRect(50, 8, 6, 34);
+        ctx.strokeRect(8, 8, 6, 34);
+        ctx.strokeRect(50, 8, 6, 34);
+        // Top beam
+        ctx.fillStyle = '#7A5A18';
+        ctx.fillRect(8, 8, 48, 6);
+        ctx.strokeRect(8, 8, 48, 6);
+        // Log on table
+        ctx.fillStyle = '#6B4E1A';
+        ctx.fillRect(16, 36, 32, 8);
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(16, 38, 32, 1);
+        ctx.fillRect(16, 42, 32, 1);
+        // Log end circles
+        ctx.fillStyle = '#8B7030';
+        ctx.fillRect(14, 36, 4, 8);
+        ctx.fillStyle = '#9A8040';
+        ctx.fillRect(15, 38, 2, 4);
+        // Saw blade (circular)
+        ctx.fillStyle = '#AAAAAA';
+        ctx.fillRect(26, 18, 12, 16);
+        ctx.fillRect(24, 20, 16, 12);
+        ctx.fillRect(22, 22, 20, 8);
+        // Blade center
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(28, 22, 8, 8);
+        ctx.fillStyle = '#999999';
+        ctx.fillRect(30, 24, 4, 4);
+        // Blade teeth suggestion
+        ctx.fillStyle = '#CCCCCC';
+        ctx.fillRect(22, 25, 2, 2);
+        ctx.fillRect(40, 25, 2, 2);
+        ctx.fillRect(30, 18, 2, 2);
+        ctx.fillRect(30, 32, 2, 2);
+        // Sawdust on ground
+        ctx.fillStyle = '#C8A860';
+        ctx.fillRect(20, 48, 2, 2);
+        ctx.fillRect(28, 50, 3, 2);
+        ctx.fillRect(38, 48, 2, 2);
+        return c;
+      }
+      case 'alchemy': {
+        // Alchemy Table (48x32): Wooden table with potion bottles
+        const c = document.createElement('canvas');
+        c.width = 48; c.height = 32;
+        const ctx = c.getContext('2d');
+        // Table top
+        ctx.fillStyle = '#6B4E1A';
+        ctx.fillRect(4, 12, 40, 6);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
+        ctx.strokeRect(4, 12, 40, 6);
+        // Table highlight
+        ctx.fillStyle = '#7A5A20';
+        ctx.fillRect(6, 12, 36, 2);
+        // Table legs
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(6, 18, 4, 12);
+        ctx.fillRect(38, 18, 4, 12);
+        ctx.strokeRect(6, 18, 4, 12);
+        ctx.strokeRect(38, 18, 4, 12);
+        // Blue potion bottle
+        ctx.fillStyle = '#4488CC';
+        ctx.fillRect(10, 4, 6, 8);
+        ctx.fillStyle = '#66AAEE';
+        ctx.fillRect(11, 5, 4, 5);
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(11, 2, 4, 3); // cork
+        ctx.strokeStyle = '#000000';
+        ctx.strokeRect(10, 2, 6, 10);
+        // Green potion bottle
+        ctx.fillStyle = '#44AA44';
+        ctx.fillRect(20, 4, 6, 8);
+        ctx.fillStyle = '#66CC66';
+        ctx.fillRect(21, 5, 4, 5);
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(21, 2, 4, 3);
+        ctx.strokeStyle = '#000000';
+        ctx.strokeRect(20, 2, 6, 10);
+        // Purple potion bottle (round)
+        ctx.fillStyle = '#8844AA';
+        ctx.fillRect(30, 4, 8, 8);
+        ctx.fillStyle = '#AA66CC';
+        ctx.fillRect(32, 5, 4, 5);
+        ctx.fillStyle = '#5A4010';
+        ctx.fillRect(32, 2, 4, 3);
+        ctx.strokeStyle = '#000000';
+        ctx.strokeRect(30, 2, 8, 10);
+        // Small bubbles near bottles
+        ctx.fillStyle = 'rgba(100,200,100,0.4)';
+        ctx.fillRect(22, 0, 2, 2);
+        ctx.fillStyle = 'rgba(100,100,200,0.4)';
+        ctx.fillRect(12, 0, 2, 2);
+        return c;
+      }
+      default: {
+        // Generic station fallback
+        const c = document.createElement('canvas');
+        c.width = 32; c.height = 32;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#8B6914';
+        ctx.fillRect(4, 8, 24, 20);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
+        ctx.strokeRect(4, 8, 24, 20);
+        return c;
+      }
+    }
   }
 
   async _createNPCs(npcDataArray) {
