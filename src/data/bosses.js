@@ -140,7 +140,7 @@ export function isBossUnlocked(bossId, progression, player, unicornsPetted) {
   switch (boss.unlockCondition) {
     case 'all_m4_quests':
       return !!(completed['shell_collector'] && completed['master_angler'] &&
-                completed['crab_problem'] && completed['shooting_star']);
+                completed['crab_problem']);
 
     case 'all_m5_quests':
       return !!(completed['coral_healer'] && completed['deep_explorer'] &&

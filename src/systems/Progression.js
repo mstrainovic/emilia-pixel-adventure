@@ -198,6 +198,9 @@ export class Progression {
     if (this.stats.grottoZones.has(zoneId)) return;
     this.stats.grottoZones.add(zoneId);
     this._incrementQuest('deep_explorer', 1);
+    if (zoneId === 'treasure') {
+      this._incrementQuest('sunken_treasure', 1);
+    }
   }
 
   reportPetChosen() {
