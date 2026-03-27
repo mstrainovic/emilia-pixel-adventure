@@ -120,10 +120,10 @@ export const QUESTS = {
   shell_collector: {
     id: 'shell_collector',
     name: 'Muschelsammlerin',
-    description: 'Finde 5 verschiedene Muscheln am Strand',
+    description: 'Finde 3 verschiedene Muscheln am Strand',
     type: 'collect_unique',
     target: 'shell',
-    count: 5,
+    count: 3,
     xpReward: 50,
     itemReward: [],
   },
