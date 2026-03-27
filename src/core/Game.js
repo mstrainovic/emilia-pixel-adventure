@@ -600,6 +600,8 @@ export class Game {
         this.progression.initNewGame();
         await this._buildScene('hub', { x: 20, y: 15 });
       }
+      // Recheck quests that may now be complete (e.g. after quest count changes)
+      this.progression.recheckActiveQuests();
       this.hud.updateHotbar(this.inventory);
       this.hud.updateCoins(this.inventory.coins);
       this.hud.updateXp(this.progression);

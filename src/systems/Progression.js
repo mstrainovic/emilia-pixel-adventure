@@ -259,6 +259,18 @@ export class Progression {
     if (q.progress >= def.count) this._completeQuest(questId);
   }
 
+  recheckActiveQuests() {
+    for (const [questId, state] of Object.entries(this.activeQuests)) {
+      if (state.completed) continue;
+      const def = QUESTS[questId];
+      if (!def) continue;
+      this._prepopulateQuestProgress(questId);
+      if (state.progress >= def.count) {
+        this._completeQuest(questId);
+      }
+    }
+  }
+
   _completeQuest(questId) {
     const q = this.activeQuests[questId];
     const def = QUESTS[questId];
