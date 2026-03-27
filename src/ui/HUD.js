@@ -5,8 +5,9 @@ export class HUD {
   constructor() {
     this._inventoryOpen = false;
 
-    // Hotbar reorder state: click slot to select, click another to swap
-    this._reorderSource = null; // index of selected hotbar slot (null = none)
+    // Inventory select-and-swap state (RPG-style: click=select, click=swap/move)
+    this._selectedSlot = null; // index of selected slot (null = none)
+    this._reorderSource = null; // legacy hotbar reorder (kept for number keys)
 
     // Callback for double-click item use (set by Game.js)
     this.onItemUse = null;
@@ -359,8 +360,9 @@ export class HUD {
       const selected = i === inventory.selectedHotbar ? ' hud-slot-selected' : '';
       const itemDef = slot.itemId ? getItem(slot.itemId) : null;
       const reorderSrc = i === this._reorderSource ? ' hud-slot-reorder' : '';
+      const picked = this._selectedSlot === i ? ' hud-slot-picked' : '';
 
-      html += `<div class="hud-slot${selected}${reorderSrc}" data-slot="${i}" data-item="${slot.itemId || ''}">`;
+      html += `<div class="hud-slot${selected}${reorderSrc}${picked}" data-slot="${i}" data-item="${slot.itemId || ''}">`;
       if (itemDef) {
         const iconURL = getItemIconDataURL(slot.itemId);
         html += `<img class="hud-slot-icon" src="${iconURL}" alt="${itemDef.name}" draggable="false">`;
@@ -390,10 +392,14 @@ export class HUD {
           tooltip.style.top = (e.clientY - 40) + 'px';
         }
       });
-      // Click-to-swap hotbar reorder
+      // Click: if inventory is open, use unified select-and-swap; otherwise hotbar reorder
       el.addEventListener('click', () => {
         const slotIdx = parseInt(el.getAttribute('data-slot'), 10);
-        this._handleHotbarReorderClick(inventory, slotIdx);
+        if (this._inventoryOpen) {
+          this._handleInventorySlotClick(inventory, slotIdx);
+        } else {
+          this._handleHotbarReorderClick(inventory, slotIdx);
+        }
       });
       el.addEventListener('dblclick', (e) => {
         e.stopPropagation();
@@ -441,6 +447,7 @@ export class HUD {
       let cls = 'hud-inv-slot';
       if (isHotbar) cls += ' hud-inv-slot-hotbar';
       if (isSelected) cls += ' hud-slot-selected';
+      if (this._selectedSlot === i) cls += ' hud-slot-picked';
 
       html += `<div class="${cls}" data-inv-slot="${i}" data-item="${slot.itemId || ''}">`;
       if (isHotbar) {
@@ -488,27 +495,32 @@ export class HUD {
   }
 
   _handleInventorySlotClick(inventory, slotIdx) {
-    const clickedSlot = inventory.slots[slotIdx];
-    if (!clickedSlot.itemId) return;
-
-    const isHotbar = slotIdx < 8;
-
-    if (isHotbar) {
-      // Move from hotbar to first free main slot
-      const targetIdx = inventory.slots.findIndex((s, i) => i >= 8 && !s.itemId);
-      if (targetIdx === -1) return; // no free main slot
-      inventory.slots[targetIdx] = { ...clickedSlot };
-      inventory.slots[slotIdx] = { itemId: null, count: 0 };
-    } else {
-      // Move from main to first free hotbar slot
-      const targetIdx = inventory.slots.findIndex((s, i) => i < 8 && !s.itemId);
-      if (targetIdx === -1) return; // no free hotbar slot
-      inventory.slots[targetIdx] = { ...clickedSlot };
-      inventory.slots[slotIdx] = { itemId: null, count: 0 };
+    if (this._selectedSlot === null) {
+      // No slot selected yet — select this one (only if it has an item)
+      if (!inventory.slots[slotIdx].itemId) return;
+      this._selectedSlot = slotIdx;
+      this.updateInventory(inventory);
+      this.updateHotbar(inventory);
+      return;
     }
 
+    // A slot is already selected — perform swap/move
+    const srcIdx = this._selectedSlot;
+    this._selectedSlot = null;
+
+    if (srcIdx === slotIdx) {
+      // Clicked same slot → deselect
+      this.updateInventory(inventory);
+      this.updateHotbar(inventory);
+      return;
+    }
+
+    // Swap the two slots (works even when both are full)
+    const temp = { ...inventory.slots[slotIdx] };
+    inventory.slots[slotIdx] = { ...inventory.slots[srcIdx] };
+    inventory.slots[srcIdx] = temp;
+
     this.updateInventory(inventory);
-    // Also refresh hotbar display
     this.updateHotbar(inventory);
   }
 
@@ -922,6 +934,16 @@ export class HUD {
         border-color: #FFD700;
         background: rgba(255,215,0,0.12);
         box-shadow: 0 0 6px rgba(255,215,0,0.3);
+      }
+      .hud-slot-picked {
+        border-color: #44FF88 !important;
+        background: rgba(68,255,136,0.2) !important;
+        box-shadow: 0 0 8px rgba(68,255,136,0.5) !important;
+        animation: slotPulse 0.6s ease-in-out infinite alternate;
+      }
+      @keyframes slotPulse {
+        from { box-shadow: 0 0 8px rgba(68,255,136,0.3); }
+        to   { box-shadow: 0 0 14px rgba(68,255,136,0.6); }
       }
       .hud-slot-reorder {
         border-color: #44DDFF !important;
