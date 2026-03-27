@@ -8,7 +8,7 @@ const QUEST_ORDER = [
   'lake_visitor', 'dungeon_explorer', 'master_cook', 'skeleton_slayer',
   'unicorn_friend', 'master_crafter', 'meadow_hero',
   // M4
-  'shell_collector', 'master_angler', 'crab_problem', 'shooting_star',
+  'shell_collector', 'master_angler', 'crab_problem',
   // M5
   'coral_healer', 'deep_explorer', 'best_friend', 'collector_page1', 'sunken_treasure',
   // M6

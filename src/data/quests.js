@@ -147,16 +147,6 @@ export const QUESTS = {
     xpReward: 45,
     itemReward: [],
   },
-  shooting_star: {
-    id: 'shooting_star',
-    name: 'Wunsch-Stern',
-    description: 'Warte bis es Nacht wird und beobachte eine Sternschnuppe',
-    type: 'observe',
-    target: 'shooting_star',
-    count: 1,
-    xpReward: 70,
-    itemReward: [],
-  },
   coral_healer: {
     id: 'coral_healer',
     name: 'Korallen-Retterin',

@@ -41,7 +41,7 @@ export const LEVEL_TABLE = [
   // Level 17
   { level: 17, xpRequired: 1600, statBonus: { damagePct: 5 }, rewards: [], unlockQuest: 'crab_problem' },
   // Level 18
-  { level: 18, xpRequired: 2000, statBonus: { maxHp: 10, speedPct: 5 }, rewards: [], unlockQuest: 'shooting_star' },
+  { level: 18, xpRequired: 2000, statBonus: { maxHp: 10, speedPct: 5 }, rewards: [] },
   // Level 19
   { level: 19, xpRequired: 2500, statBonus: { damagePct: 5 }, rewards: [], unlockQuest: null },
   // Level 20

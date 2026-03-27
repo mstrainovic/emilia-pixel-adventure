@@ -211,15 +211,13 @@ export function generateGrottoMap() {
   props.push({ type: 'wilted_plant', variant: 'coral', x: 13, y: 3,  id: 'coral_sick4' });
   props.push({ type: 'wilted_plant', variant: 'coral', x: 2,  y: 9,  id: 'coral_sick5' });
 
-  // --- Fishing spots (reef area, near water tiles) ---
-  props.push({ type: 'fishing_spot', x: 4,  y: 7  });
-  props.push({ type: 'fishing_spot', x: 7,  y: 8  });
-  props.push({ type: 'fishing_spot', x: 3,  y: 5  });
+  // --- Single fishing spot (away from sick corals to avoid F-key conflict) ---
+  props.push({ type: 'fishing_spot', x: 11, y: 9 });
 
   // --- Sunken Ruins props: stone walls, treasure chests ---
   props.push({ type: 'decoration', variant: 'stone_wall', x: 16, y: 2,  w: 2, h: 2, collision: true });
   props.push({ type: 'decoration', variant: 'stone_wall', x: 30, y: 2,  w: 2, h: 2, collision: true });
-  props.push({ type: 'decoration', variant: 'stone_wall', x: 33, y: 9,  w: 2, h: 2, collision: true });
+  props.push({ type: 'decoration', variant: 'stone_wall', x: 33, y: 12, w: 2, h: 2, collision: true });
   props.push({ type: 'decoration', variant: 'stone_wall', x: 16, y: 11, w: 2, h: 2, collision: true });
 
   // Ruins collision for stone_wall decorations
@@ -227,8 +225,8 @@ export function generateGrottoMap() {
   collision[3][16] = 1; collision[3][17] = 1;
   collision[2][30] = 1; collision[2][31] = 1;
   collision[3][30] = 1; collision[3][31] = 1;
-  collision[9][33]  = 1; collision[9][34]  = 1;
-  collision[10][33] = 1; collision[10][34] = 1;
+  collision[12][33] = 1; collision[12][34] = 1;
+  collision[13][33] = 1; collision[13][34] = 1;
   collision[11][16] = 1; collision[11][17] = 1;
   collision[12][16] = 1; collision[12][17] = 1;
 

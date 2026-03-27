@@ -2410,14 +2410,11 @@ export class Game {
       this.explorerBookUI.toggle(this.explorerBook);
     }
 
-    // Fishing (F key) — MUST be BEFORE plantHealing to get first crack at KeyF
-    // Always call update: the state machine must keep ticking while active.
-    // Idle→casting is gated internally by proximity + KeyF.
-    this.fishing.update(dt, this.player, this.input, this.dayNight, this.inventory, this.progression, this.hud);
-
-    // Plant healing (F key) — after fishing so fishing gets priority
-    // (justPressed is single-consumer, so order matters)
+    // Plant healing (F key) — gets priority over fishing
     this.plantHealing.update(dt, this.player, this.input, this.hud);
+
+    // Fishing (F key) — only consumes F if no plant was healed
+    this.fishing.update(dt, this.player, this.input, this.dayNight, this.inventory, this.progression, this.hud);
 
     // Water magic (F key) — spray only if plant healing didn't consume it
     if (!uiBlocking && this.input.justPressed('KeyF') && this.vfx) {
