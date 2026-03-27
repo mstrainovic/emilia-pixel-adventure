@@ -7,7 +7,7 @@ export class DayNightRenderer {
     this.starMesh = null;
     this.shootingStars = [];
     this._shootingStarTimer = 0;
-    this._shootingStarInterval = 180;
+    this._shootingStarInterval = 15;
     this._initLights();
   }
 
@@ -53,7 +53,7 @@ export class DayNightRenderer {
       this._shootingStarTimer += dt;
       if (this._shootingStarTimer >= this._shootingStarInterval) {
         this._shootingStarTimer = 0;
-        this._shootingStarInterval = 120 + Math.random() * 120;
+        this._shootingStarInterval = 20 + Math.random() * 30;
         this._spawnShootingStar(mapWidth, mapHeight);
       }
     } else if (this.starMesh) {
