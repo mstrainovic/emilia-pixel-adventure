@@ -68,13 +68,13 @@ export class DayNightRenderer {
     const startY = -(Math.random() * mapHeight * 0.5);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([startX, startY, 0.96]), 3));
-    const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.3, transparent: true, opacity: 1 });
+    const mat = new THREE.PointsMaterial({ color: 0xffffcc, size: 0.6, transparent: true, opacity: 1 });
     const mesh = new THREE.Points(geo, mat);
     this.scene.add(mesh);
     this.shootingStars.push({
-      mesh, life: 0, maxLife: 1.5,
-      vx: 3 + Math.random() * 2,
-      vy: -(1 + Math.random()),
+      mesh, life: 0, maxLife: 2.5,
+      vx: 4 + Math.random() * 3,
+      vy: -(1.5 + Math.random()),
     });
   }
 
@@ -100,8 +100,9 @@ export class DayNightRenderer {
     if (!camera || this.shootingStars.length === 0) return false;
     const halfW = (camera.right - camera.left) / 2;
     const halfH = (camera.top - camera.bottom) / 2;
-    const cx = (camera.left + camera.right) / 2;
-    const cy = (camera.top + camera.bottom) / 2;
+    // Use camera WORLD position, not view-space origin
+    const cx = camera.position.x;
+    const cy = camera.position.y;
     for (const s of this.shootingStars) {
       const pos = s.mesh.geometry.attributes.position.array;
       if (Math.abs(pos[0] - cx) < halfW && Math.abs(pos[1] - cy) < halfH) return true;
