@@ -1194,7 +1194,7 @@ export class Game {
           }
           const rkTex = new THREE.CanvasTexture(rkCanvas);
           rkTex.magFilter = THREE.NearestFilter; rkTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(rkTex, prop.x, prop.y, 0.8, 0.8, 0.11);
+          this.tileMapRenderer.addProp(rkTex, prop.x, prop.y, 0.8, 0.8, 0.1);
           break;
         }
         case 'house':
@@ -1253,7 +1253,7 @@ export class Game {
         case 'chest':
           if (cfChestTex) {
             // Cute_Fantasy chest (32x32)
-            this.tileMapRenderer.addProp(cfChestTex, prop.x, prop.y, 1, 1, 0.12);
+            this.tileMapRenderer.addProp(cfChestTex, prop.x, prop.y, 1, 1, 0.1);
           }
           break;
         case 'chicken':
@@ -1527,7 +1527,7 @@ export class Game {
             buCtx.fillRect(6, 28, 20, 2);
             const buTex = new THREE.CanvasTexture(buCanvas);
             buTex.magFilter = THREE.NearestFilter; buTex.minFilter = THREE.NearestFilter;
-            this.tileMapRenderer.addProp(buTex, prop.x - 0.5, prop.y - 1, 2, 2, 0.12);
+            this.tileMapRenderer.addProp(buTex, prop.x - 0.5, prop.y - 1, 2, 2, 0.1);
           }
           break;
         case 'signpost': {
@@ -1565,7 +1565,7 @@ export class Game {
           const spTex = new THREE.CanvasTexture(spCanvas);
           spTex.magFilter = THREE.NearestFilter;
           spTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(spTex, prop.x - 0.5, prop.y - 1, 2, 1.5, 0.15);
+          this.tileMapRenderer.addProp(spTex, prop.x - 0.5, prop.y - 1, 2, 1.5, 0.1);
           break;
         }
         case 'coral_deco': {
@@ -1605,7 +1605,7 @@ export class Game {
           cdCtx.fillRect(26, 8, 2, 2);
           const cdTex = new THREE.CanvasTexture(cdCanvas);
           cdTex.magFilter = THREE.NearestFilter; cdTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(cdTex, prop.x - 0.5, prop.y - 1, 1.5, 1.5, 0.12);
+          this.tileMapRenderer.addProp(cdTex, prop.x - 0.5, prop.y - 1, 1.5, 1.5, 0.1);
           break;
         }
         case 'glow_plant': {
@@ -1639,7 +1639,7 @@ export class Game {
           gpCtx.fillRect(1, 8, 14, 4);
           const gpTex = new THREE.CanvasTexture(gpCanvas);
           gpTex.magFilter = THREE.NearestFilter; gpTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(gpTex, prop.x, prop.y - 1.2, 0.8, 1.6, 0.13);
+          this.tileMapRenderer.addProp(gpTex, prop.x, prop.y - 1.2, 0.8, 1.6, 0.1);
           break;
         }
         case 'crystal': {
@@ -1654,7 +1654,7 @@ export class Game {
           crCtx.fillStyle = '#aaccff'; crCtx.fillRect(9, 5, 1, 1);
           const crTex = new THREE.CanvasTexture(crCanvas);
           crTex.magFilter = THREE.NearestFilter; crTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(crTex, prop.x, prop.y - 0.5, 1, 1.2, 0.13);
+          this.tileMapRenderer.addProp(crTex, prop.x, prop.y - 0.5, 1, 1.2, 0.1);
           break;
         }
         case 'torch': {
@@ -1668,7 +1668,7 @@ export class Game {
           toCtx.fillStyle = '#ff4400'; toCtx.fillRect(6, 5, 1, 2); toCtx.fillRect(9, 5, 1, 2);
           const toTex = new THREE.CanvasTexture(toCanvas);
           toTex.magFilter = THREE.NearestFilter; toTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(toTex, prop.x, prop.y - 0.3, 0.8, 1.0, 0.13);
+          this.tileMapRenderer.addProp(toTex, prop.x, prop.y - 0.3, 0.8, 1.0, 0.1);
           break;
         }
         case 'crystal_pillar': {
@@ -1684,7 +1684,7 @@ export class Game {
           cpCtx.fillStyle = '#ddeeff'; cpCtx.fillRect(7, 16, 1, 4);
           const cpTex = new THREE.CanvasTexture(cpCanvas);
           cpTex.magFilter = THREE.NearestFilter; cpTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(cpTex, prop.x, prop.y - 1.5, 1, 2.5, 0.14);
+          this.tileMapRenderer.addProp(cpTex, prop.x, prop.y - 1.5, 1, 2.5, 0.1);
           break;
         }
         case 'cloud_puff': {
@@ -1730,7 +1730,7 @@ export class Game {
           skCtx.fillRect(7, 7, 2, 2);
           const skTex = new THREE.CanvasTexture(skCanvas);
           skTex.magFilter = THREE.NearestFilter; skTex.minFilter = THREE.NearestFilter;
-          this.tileMapRenderer.addProp(skTex, prop.x + 0.25, prop.y + 0.25, 0.5, 0.5, 0.12);
+          this.tileMapRenderer.addProp(skTex, prop.x + 0.25, prop.y + 0.25, 0.5, 0.5, 0.1);
           break;
         }
         case 'rainbow_arc': {

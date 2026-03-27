@@ -150,16 +150,16 @@ export function generateHubMap() {
 
   // ── Trees — well-placed, minimum 2 tiles from edges to prevent clipping ──
   const trees = [
-    // Border trees — top (min y=2 so canopy doesn't clip)
-    { x: 3,  y: 2, v: 'pine_dark' },
-    { x: 7,  y: 2, v: 'oak_green' },
-    { x: 11, y: 2, v: 'pine_med' },
-    { x: 15, y: 2, v: 'round_green' },
+    // Border trees — top (min y=3 so canopy doesn't clip at camera edge)
+    { x: 3,  y: 3, v: 'pine_dark' },
+    { x: 7,  y: 3, v: 'oak_green' },
+    { x: 11, y: 3, v: 'pine_med' },
+    { x: 15, y: 3, v: 'round_green' },
     // (north exit gap 18-21)
-    { x: 23, y: 2, v: 'round_dark' },
-    { x: 27, y: 2, v: 'pine_light' },
-    { x: 31, y: 2, v: 'oak_green' },
-    { x: 35, y: 2, v: 'pine_dark' },
+    { x: 23, y: 3, v: 'round_dark' },
+    { x: 27, y: 3, v: 'pine_light' },
+    { x: 31, y: 3, v: 'oak_green' },
+    { x: 35, y: 3, v: 'pine_dark' },
 
     // Border trees — bottom (y=28 max, leaves room for canopy)
     { x: 3,  y: 28, v: 'pine_dark2' },

@@ -34,10 +34,10 @@ export class Camera {
     let camX = lerp(this.cam.position.x, targetX, t);
     let camY = lerp(this.cam.position.y, -targetY, t);
 
-    // Clamp to map bounds (with 2-tile margin so tree canopies at edges aren't cut off)
+    // Clamp to map bounds (with 3-tile margin so tree canopies at edges aren't cut off)
     const halfW = (this.cam.right - this.cam.left) / 2;
     const halfH = (this.cam.top - this.cam.bottom) / 2;
-    const margin = 2;
+    const margin = 3;
 
     camX = clamp(camX, halfW - margin, this.mapWidth - halfW + margin);
     camY = clamp(camY, -(this.mapHeight - halfH + margin), -(halfH - margin));

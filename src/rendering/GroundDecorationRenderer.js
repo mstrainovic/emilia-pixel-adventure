@@ -38,7 +38,7 @@ const MUSHROOM_SPRITES = [
 const SCENE_CONFIGS = {
   hub: {
     seed: 12345,
-    density: 0.55,
+    density: 0.35,
     types: [
       { kind: 'tuft', weight: 40, sizeMin: 0.45, sizeMax: 0.7 },
       { kind: 'flower', weight: 35, sizeMin: 0.4, sizeMax: 0.6 },
@@ -47,7 +47,7 @@ const SCENE_CONFIGS = {
   },
   forest: {
     seed: 67890,
-    density: 0.58,
+    density: 0.38,
     types: [
       { kind: 'tuft', weight: 35, sizeMin: 0.45, sizeMax: 0.7 },
       { kind: 'mushroom', weight: 25, sizeMin: 0.4, sizeMax: 0.55 },
@@ -57,7 +57,7 @@ const SCENE_CONFIGS = {
   },
   lake: {
     seed: 11111,
-    density: 0.52,
+    density: 0.32,
     types: [
       { kind: 'tuft', weight: 38, sizeMin: 0.45, sizeMax: 0.65 },
       { kind: 'flower', weight: 42, sizeMin: 0.45, sizeMax: 0.6 },
@@ -66,7 +66,7 @@ const SCENE_CONFIGS = {
   },
   unicorn_meadow: {
     seed: 99999,
-    density: 0.68,
+    density: 0.45,
     types: [
       { kind: 'flower', weight: 55, sizeMin: 0.5, sizeMax: 0.7 },
       { kind: 'tuft', weight: 35, sizeMin: 0.4, sizeMax: 0.6 },
@@ -75,7 +75,7 @@ const SCENE_CONFIGS = {
   },
   dungeon: {
     seed: 22222,
-    density: 0.15,
+    density: 0.10,
     allowedTiles: STONE_IDS,
     types: [
       { kind: 'pebble', weight: 75, sizeMin: 0.25, sizeMax: 0.4 },
@@ -207,7 +207,7 @@ export class GroundDecorationRenderer {
         placements[key].push({ x: c + ox, y: r + oy, size });
 
         // 20% chance of a second, smaller decoration on the same tile
-        if (rng() < 0.20) {
+        if (rng() < 0.10) {
           const key2 = pickSpriteKey(chosen.kind, rng);
           if (key2) {
             const ox2 = margin + rng() * (1 - 2 * margin);
