@@ -8,6 +8,9 @@ export class HUD {
     // Hotbar reorder state: click slot to select, click another to swap
     this._reorderSource = null; // index of selected hotbar slot (null = none)
 
+    // Callback for double-click item use (set by Game.js)
+    this.onItemUse = null;
+
     // Smooth animation state
     this.displayedHp = undefined;
     this.displayedHpTrail = undefined;
@@ -392,6 +395,11 @@ export class HUD {
         const slotIdx = parseInt(el.getAttribute('data-slot'), 10);
         this._handleHotbarReorderClick(inventory, slotIdx);
       });
+      el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const slotIdx = parseInt(el.getAttribute('data-slot'), 10);
+        if (this.onItemUse) this.onItemUse(slotIdx);
+      });
     });
 
     // Keep inventory panel in sync if open
@@ -470,6 +478,11 @@ export class HUD {
       el.addEventListener('click', () => {
         const slotIdx = parseInt(el.getAttribute('data-inv-slot'), 10);
         this._handleInventorySlotClick(inventory, slotIdx);
+      });
+      el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const slotIdx = parseInt(el.getAttribute('data-inv-slot'), 10);
+        if (this.onItemUse) this.onItemUse(slotIdx);
       });
     });
   }

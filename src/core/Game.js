@@ -232,6 +232,7 @@ export class Game {
     this.groundDeco = null; // ground decoration overlay
     this.combat = new CombatSystem();
     this.hud = new HUD();
+    this.hud.onItemUse = (slotIdx) => this._useItemFromSlot(slotIdx);
     this.pickupPopup = new PickupPopup();
     this.gameOverScreen = new GameOverScreen();
     this.damageNumbers = null; // floating damage numbers, created per scene
@@ -2547,6 +2548,39 @@ export class Game {
     } else {
       this.renderer.render(this.scene, this.camera.three);
     }
+  }
+
+  _useItemFromSlot(slotIdx) {
+    if (!this.player || this.player.state === 'dead') return;
+    const slot = this.inventory.slots[slotIdx];
+    if (!slot || !slot.itemId) return;
+    const item = getItem(slot.itemId);
+    if (!item) return;
+
+    if (item.healAmount) {
+      if (this.player.hp >= this.player.maxHp) {
+        this.hud.showInfo('HP bereits voll!');
+        return;
+      }
+      const healed = Math.min(item.healAmount, this.player.maxHp - this.player.hp);
+      this.player.heal(item.healAmount);
+      this.inventory.removeItem(item.id, 1);
+      this.hud.updateHotbar(this.inventory);
+      this.hud.updateInventory(this.inventory);
+      this.hud.showInfo(`${item.name} benutzt! +${healed} HP`);
+      if (this.juice) this.juice.healFlash();
+      this.audio.playEat();
+      this.audio.playHeal();
+      return;
+    }
+
+    if (item.category === 'weapon') {
+      this.hud.showInfo(`${item.name} — Waffe! Ziehe sie in die Hotbar (Klick).`);
+      this.audio.playUIClick();
+      return;
+    }
+
+    this.hud.showInfo(`${item.name} kann nicht direkt benutzt werden.`);
   }
 
   _useSelectedItem() {
