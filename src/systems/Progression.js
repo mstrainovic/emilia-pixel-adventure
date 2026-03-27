@@ -1,5 +1,6 @@
 import { LEVEL_TABLE, MAX_LEVEL, getXpToNextLevel } from '../data/levels.js';
 import { QUESTS } from '../data/quests.js';
+import { SHELL_TYPES } from '../data/shells.js';
 
 // Quest chain order — each quest unlocks the next
 const QUEST_ORDER = [
@@ -341,6 +342,29 @@ export class Progression {
       existing = this.stats.scenesVisited[def.target] ? 1 : 0;
     } else if (def.type === 'talk') {
       existing = this.stats.npcsSpoken[def.target] ? 1 : 0;
+    } else if (def.type === 'collect_unique') {
+      // Check stats first
+      const uniqueSet = this.stats.uniqueCollected?.[def.target];
+      if (uniqueSet) existing = uniqueSet.size || 0;
+      // Also scan inventory for items the player already has
+      const inv = window.__game?.inventory;
+      if (inv && def.target === 'shell') {
+        const shellIds = Object.keys(SHELL_TYPES);
+        if (!this.stats.uniqueCollected) this.stats.uniqueCollected = {};
+        if (!this.stats.uniqueCollected.shell) this.stats.uniqueCollected.shell = new Set();
+        for (const slot of inv.slots) {
+          if (slot.itemId && shellIds.includes(slot.itemId)) {
+            this.stats.uniqueCollected.shell.add(slot.itemId);
+          }
+        }
+        existing = this.stats.uniqueCollected.shell.size;
+      }
+    } else if (def.type === 'fish') {
+      const fishCaught = this.stats.fishCaught;
+      if (fishCaught) existing = Object.keys(fishCaught).length;
+    } else if (def.type === 'observe') {
+      const observed = this.stats.observed;
+      if (observed) existing = observed[def.target] || 0;
     }
 
     if (existing > 0) {
