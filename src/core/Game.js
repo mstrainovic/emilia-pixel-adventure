@@ -409,8 +409,8 @@ export class Game {
     this.sceneManager.beforeTransition = (target, exit) => {
       if (target === 'cloud_castle') {
         const unicornsPetted = this.progression.stats.unicornsPetted || 0;
-        if (this.progression.level < 22 || unicornsPetted < 1) {
-          this.hud.showInfo('Du brauchst Level 22 und musst ein Einhorn gestreichelt haben!');
+        if (this.progression.level < 15 || unicornsPetted < 1) {
+          this.hud.showInfo('Du brauchst Level 15 und musst ein Einhorn gestreichelt haben!');
           return true; // blocked
         }
       }
@@ -2228,24 +2228,26 @@ export class Game {
       }
     }
 
-    // Boss combat
-    if (this._activeBoss && this._activeBoss.alive && !uiBlocking) {
+    // Boss combat (use !defeated instead of alive so death animation can finish)
+    if (this._activeBoss && !this._activeBoss.defeated && !uiBlocking) {
       updateKnockback(this._activeBoss, dt);
       this._activeBoss.update(dt, this.player, this.tileMap);
       this.bossHealthBar.update(this._activeBoss.hp, this._activeBoss.maxHp);
 
-      // Check player attacks against boss (reuse combat system's attack check)
-      const bossAsMob = this._activeBoss;
-      const bossHits = this.combat.update(dt, this.player, [bossAsMob]);
-      if (bossHits.length > 0) {
-        if (this.vfx) this.vfx.hitSparks(this._activeBoss.x, this._activeBoss.y);
-        if (this.damageNumbers) this.damageNumbers.spawn(this._activeBoss.x, this._activeBoss.y, bossHits[0].damage, false);
-        this.juice.shakeMedium();
-        this.juice.hitstop(0.05);
-        applyKnockback(this._activeBoss, this.player, 1.0, 0.1);
+      // Only check combat while boss is alive (not during death anim)
+      if (this._activeBoss.alive) {
+        const bossAsMob = this._activeBoss;
+        const bossHits = this.combat.update(dt, this.player, [bossAsMob]);
+        if (bossHits.length > 0) {
+          if (this.vfx) this.vfx.hitSparks(this._activeBoss.x, this._activeBoss.y);
+          if (this.damageNumbers) this.damageNumbers.spawn(this._activeBoss.x, this._activeBoss.y, bossHits[0].damage, false);
+          this.juice.shakeMedium();
+          this.juice.hitstop(0.05);
+          applyKnockback(this._activeBoss, this.player, 1.0, 0.1);
+        }
       }
 
-      // Boss defeated
+      // Boss defeated (after death animation completes)
       if (this._activeBoss.defeated) {
         const boss = this._activeBoss;
         this._bossStates[boss.bossType] = boss.getState();

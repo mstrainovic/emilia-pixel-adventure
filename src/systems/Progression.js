@@ -380,6 +380,16 @@ export class Progression {
     } else if (def.type === 'observe') {
       const observed = this.stats.observed;
       if (observed) existing = observed[def.target] || 0;
+    } else if (def.type === 'discover') {
+      existing = this.stats.bookEntries || 0;
+    } else if (def.type === 'visit_zones') {
+      existing = this.stats.grottoZones ? this.stats.grottoZones.size : 0;
+    } else if (def.type === 'heal' && def.target === 'coral') {
+      existing = this.stats.coralHealed || 0;
+    }
+    // sunken_treasure: triggered by visiting treasure zone, but uses _incrementQuest by ID
+    if (questId === 'sunken_treasure' && this.stats.grottoZones && this.stats.grottoZones.has('treasure')) {
+      existing = 1;
     }
 
     if (existing > 0) {
@@ -415,7 +425,18 @@ export class Progression {
       bonusSpeedPct: this.bonusSpeedPct,
       activeQuests: this.activeQuests,
       completedQuests: this.completedQuests,
-      stats: this.stats,
+      stats: {
+        ...this.stats,
+        grottoZones: [...this.stats.grottoZones], // Set → Array for JSON
+        // Convert uniqueCollected Sets to Arrays for JSON
+        uniqueCollected: this.stats.uniqueCollected
+          ? Object.fromEntries(
+              Object.entries(this.stats.uniqueCollected).map(
+                ([k, v]) => [k, v instanceof Set ? [...v] : v]
+              )
+            )
+          : {},
+      },
       bossesKilled: this.stats.bossesKilled,
       puzzlesSolved: this.stats.puzzlesSolved,
       achievementCount: this.stats.achievementCount,
@@ -433,6 +454,24 @@ export class Progression {
     this.activeQuests = data.activeQuests || {};
     this.completedQuests = data.completedQuests || {};
     this.stats = data.stats || this.stats;
+    // Restore grottoZones as Set (JSON serializes Set as {} or Array)
+    const gz = this.stats.grottoZones;
+    if (gz instanceof Set) {
+      // already a Set — keep it
+    } else if (Array.isArray(gz)) {
+      this.stats.grottoZones = new Set(gz);
+    } else {
+      // Old save had {} from broken Set serialization
+      this.stats.grottoZones = new Set();
+    }
+    // Restore uniqueCollected Sets (same JSON serialization issue)
+    if (this.stats.uniqueCollected) {
+      for (const cat of Object.keys(this.stats.uniqueCollected)) {
+        const val = this.stats.uniqueCollected[cat];
+        if (val instanceof Set) continue;
+        this.stats.uniqueCollected[cat] = Array.isArray(val) ? new Set(val) : new Set();
+      }
+    }
     if (data.bossesKilled) this.stats.bossesKilled = data.bossesKilled;
     if (data.puzzlesSolved) this.stats.puzzlesSolved = data.puzzlesSolved;
     if (typeof data.achievementCount === 'number') this.stats.achievementCount = data.achievementCount;

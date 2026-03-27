@@ -148,7 +148,7 @@ export function isBossUnlocked(bossId, progression, player, unicornsPetted) {
                 completed['sunken_treasure']);
 
     case 'cloud_castle_access':
-      return (progression.level >= 22) && (unicornsPetted >= 3);
+      return (progression.level >= 15) && (unicornsPetted >= 1);
 
     default:
       return false;
