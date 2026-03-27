@@ -386,7 +386,7 @@ export function generateBeachMap() {
   props.push({ type: 'mob_spawn', mobType: 'crab_coconut', x: 16, y: 28, respawnTime: 20 });
   props.push({ type: 'mob_spawn', mobType: 'crab_coconut', x: 38, y: 30, respawnTime: 20 });
 
-  // 8 shell resource nodes
+  // 10 shell resource nodes (5+ unique types for shell_collector quest)
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'shell_common',    x: 7,  y: 14, hitsNeeded: 1, respawnTime: 480 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'shell_common',    x: 35, y: 16, hitsNeeded: 1, respawnTime: 480 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'sand_dollar',     x: 15, y: 18, hitsNeeded: 1, respawnTime: 480 });
@@ -395,6 +395,8 @@ export function generateBeachMap() {
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'starfish_shell',  x: 32, y: 27, hitsNeeded: 1, respawnTime: 480 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'coral_piece',     x: 11, y: 26, hitsNeeded: 1, respawnTime: 480 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'coral_piece',     x: 48, y: 24, hitsNeeded: 1, respawnTime: 480 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'pearl',           x: 26, y: 20, hitsNeeded: 1, respawnTime: 600 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'rainbow_shell',   x: 40, y: 28, hitsNeeded: 1, respawnTime: 900 });
 
   // Boss arena marker — Coconut King
   props.push({ type: 'boss_spawn', bossType: 'coconut_king', x: 25, y: 10 });
