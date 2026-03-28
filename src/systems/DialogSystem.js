@@ -15,7 +15,7 @@ export class DialogSystem {
     this.ui = new DialogUI();
     this.activeNPC = null;
     this.dialogIndex = 0;
-    this.interactRange = 3.5;
+    this.interactRange = 2.0;
     this.cooldown = 0;
     this.onDialogEnd = null; // callback: (npcId, stationId) => open crafting
 
