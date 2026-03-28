@@ -13,16 +13,14 @@ export const FAMILY_NPCS = [
     x: 8, y: 11,
     direction: 'down',
     dialogs: [
-      'Hallo mein Schatz! Schoen, dass du da bist! Die Welt wartet auf dich — aber iss erstmal was!',
-      'Emilia, wenn du Fisch mitbringst, koche ich dir mein Geheimrezept! Geh doch mal zum See!',
-      'Du wirst jeden Tag mutiger, mein Schatz! Ich bin so stolz auf dich!',
-      'Hast du schon Opa besucht? Er braucht Holz fuer seine Werkstatt!',
-      'Hast du heute schon was gegessen? Ich hab Kuchen gebacken!',
-      'Pass auf dich auf da draussen, mein Schatz! Und komm zum Essen zurueck!',
-      'Emilia, du bist so mutig! Mama ist stolz auf dich!',
-      'Wenn du muede bist, komm nach Hause — ich mach dir heissen Kakao.',
-      'Die Blumen im Wald sehen krank aus... vielleicht kannst du ihnen helfen?',
-      'An meinem Kochtopf kannst du leckere Sachen zubereiten! Bring einfach Zutaten mit!'
+      'Hallo Schatz! Die Welt wartet — aber iss erstmal was!',
+      'Bring Fisch mit, ich koch mein Geheimrezept! Geh zum See!',
+      'Du wirst jeden Tag mutiger! Ich bin so stolz!',
+      'Besuch mal Opa — er braucht Holz!',
+      'Ich hab Kuchen gebacken! Magst du ein Stueck?',
+      'Pass auf dich auf! Komm zum Essen zurueck!',
+      'Die Blumen im Wald sind krank... hilf ihnen mit F!',
+      'Am Kochtopf kannst du kochen! Bring Zutaten mit!'
     ]
   },
   {
@@ -35,16 +33,14 @@ export const FAMILY_NPCS = [
     x: 30, y: 11,
     direction: 'down',
     dialogs: [
-      'Hey mala moja! Willst du was bauen? An der Werkbank kannst du tolle Sachen herstellen!',
-      'Im Osten gibt es eine geheimnisvolle Hoehle... traust du dich rein?',
-      'Du bist genau wie ich — eine echte Entdeckerin! Nimm dein Schwert mit!',
-      'Wenn du Erz aus der Hoehle mitbringst, schmieden wir zusammen ein starkes Schwert!',
-      'Leertaste zum Kaempfen — vergiss das nicht, Emilia!',
-      'Weisst du, als ich klein war, hab ich auch Monster gejagt. Naja... kleine Monster.',
-      'Ich hab das ganze Dorf mit meinen Haenden gebaut! Na gut, Opa hat geholfen.',
-      'Wenn du dich verletzt hast, geh zu Mama — sie kocht dir was Gutes!',
-      'Die Hoehle im Osten hat Schaetze, aber auch Skelette. Sei vorsichtig!',
-      'Papa glaubt an dich, Emilia! Du schaffst alles, was du dir vornimmst!'
+      'Hey mala moja! An der Werkbank baust du tolle Sachen!',
+      'Im Osten ist eine Hoehle... traust du dich rein?',
+      'Du bist eine echte Entdeckerin! Nimm dein Schwert mit!',
+      'Bring Erz aus der Hoehle — wir schmieden ein Schwert!',
+      'Leertaste zum Kaempfen! Vergiss das nicht!',
+      'Verletzt? Geh zu Mama — sie kocht was Gutes!',
+      'Die Hoehle hat Schaetze, aber auch Skelette!',
+      'Papa glaubt an dich! Du schaffst alles!'
     ]
   },
   {
@@ -57,16 +53,14 @@ export const FAMILY_NPCS = [
     x: 15, y: 7,
     direction: 'down',
     dialogs: [
-      'Emilia! Im Wald Richtung Norden gibt es lustige Schleime! Komm, wir schauen!',
-      'Psst! Ich hab hinter einem grossen Baum im Wald etwas Magisches gesehen...',
-      'Hast du schon die leuchtenden Pilze in der Hoehle gesehen? Die sind so cool!',
-      'Ich hab gehoert, wenn man genug Pflanzen heilt, oeffnet sich ein geheimer Weg!',
-      'Glaubst du, die Einhoerner moegen Blumen? Ich hab welche gepflueckt!',
-      'Lass uns zusammen den Wald erkunden! ...aber nicht zu weit, okay?',
-      'Ich hab gehoert, im See gibt es einen geheimen Schatz!',
-      'Emilia, du bist meine beste Freundin! Zusammen sind wir unschlagbar!',
-      'Stell dir vor, wir haetten ein eigenes Einhorn! Das waere sooo toll!',
-      'Ich hab gestern von einem fliegenden Einhorn getraeumt... vielleicht gibt es die wirklich?'
+      'Im Wald gibt es lustige Schleime! Komm mit!',
+      'Psst! Im Wald hab ich was Magisches gesehen...',
+      'Die leuchtenden Pilze in der Hoehle sind so cool!',
+      'Heile genug Pflanzen — dann oeffnet sich ein Geheimweg!',
+      'Ob Einhoerner Blumen moegen? Ich hab welche!',
+      'Im See gibt es einen geheimen Schatz!',
+      'Du bist meine beste Freundin! Wir sind unschlagbar!',
+      'Stell dir vor, wir haetten ein Einhorn! Sooo toll!'
     ]
   },
   {
@@ -79,16 +73,14 @@ export const FAMILY_NPCS = [
     x: 20, y: 26,
     direction: 'down',
     dialogs: [
-      'Hey Emilia! Geh zum See im Sueden — da kann man toll fischen! Drueck F am Wasser!',
-      'Am Strand noch weiter suedlich gibt es Muscheln und Krabben!',
-      'Wenn du nachts rausschaust, siehst du manchmal Sternschnuppen — wuensch dir was!',
-      'Papa Milos hat mir das Fischen beigebracht. Du schaffst das auch!',
-      'Ich hab ein Monster gesehen! ...naja, vielleicht war es doch nur ein Busch.',
-      'Wenn ich gross bin, werde ich ein Ritter! Oder ein Astronaut. Oder beides!',
-      'Hast du schon die Hoehle erkundet? Da drin ist es gruselig! Aber auch spannend!',
-      'Komm, wir machen ein Wettrennen zum See! Eins, zwei, drei... los!',
-      'Ich hab am See einen riesigen Fisch gesehen! Der war bestimmt so gross wie ich!',
-      'Emilia, weisst du was cool waere? Wenn wir ein Baumhaus bauen!'
+      'Hey! Geh zum See im Sueden — drueck F zum Fischen!',
+      'Am Strand gibt es Muscheln und Krabben!',
+      'Nachts siehst du Sternschnuppen — wuensch dir was!',
+      'Ich hab ein Monster gesehen! ...oder doch nur ein Busch.',
+      'Wenn ich gross bin, werd ich Ritter! Oder Astronaut!',
+      'Die Hoehle ist gruselig — aber auch spannend!',
+      'Am See hab ich einen riesigen Fisch gesehen!',
+      'Wir sollten ein Baumhaus bauen! Das waer cool!'
     ]
   },
   {
@@ -101,16 +93,13 @@ export const FAMILY_NPCS = [
     x: 8, y: 23,
     direction: 'side',
     dialogs: [
-      'Emilia, mein Sonnenschein! Siehst du die welken Pflanzen? Drueck F um sie zu heilen!',
-      'Wenn du genug Pflanzen heilst, passiert etwas ganz Wunderbares... wart nur ab!',
-      'Mein Garten ist so schoen geworden! Danke fuer deine Hilfe, Liebes!',
-      'Die Natur hat viele Geheimnisse — schau dich ueberall gut um!',
-      'Frueher hat mir meine Oma das Gaertnern beigebracht. Jetzt zeig ich es dir!',
-      'Jede Blume hat eine Geschichte, Emilia. Man muss nur genau hinhoeren.',
-      'Weisst du, Pflanzen sind wie kleine Freunde — sie brauchen Liebe und Pflege.',
-      'Oma hat frische Kekse gebacken! Magst du einen? Natuerlich magst du!',
-      'Im Wald wachsen besondere Krauter. Sammel sie und bring sie zu Deda!',
-      'Du hast gruene Daumen, mein Liebling! Genau wie deine Oma!'
+      'Sonnenschein! Siehst du die welken Pflanzen? Drueck F!',
+      'Heile genug Pflanzen — dann passiert was Wunderbares!',
+      'Mein Garten ist so schoen! Danke, Liebes!',
+      'Pflanzen sind wie Freunde — sie brauchen Liebe!',
+      'Oma hat Kekse gebacken! Magst du einen?',
+      'Im Wald wachsen Krauter — bring sie zu Deda!',
+      'Du hast gruene Daumen! Genau wie Oma!'
     ]
   },
   {
@@ -123,16 +112,13 @@ export const FAMILY_NPCS = [
     x: 30, y: 24,
     direction: 'down',
     dialogs: [
-      'Na, meine Kleine! Holz ist das wichtigste Material! Sammle welches im Wald mit E!',
-      'Frueher hab ich ganz alleine dieses Dorf gebaut, weisst du?',
-      'An meiner Saege kannst du Holz zu tollen Sachen verarbeiten!',
-      'Du bist fleissig wie eine Biene! Weiter so, Emilia!',
-      'An meiner Werkbank kannst du tolle Sachen bauen! Versuch es mal!',
-      'Ich hab als Kind auch immer mit Holz gespielt. Daraus wurde dann ein ganzes Haus!',
-      'Weisst du, was das Geheimnis eines guten Handwerkers ist? Geduld! Und gutes Holz.',
-      'Wenn du Bretter brauchst, bring Holz zur Saege — Opa macht das fuer dich!',
-      'Frueher gab es hier nur Wald und Wiese. Jetzt steht ein ganzes Dorf!',
-      'Emilia, du erinnerst mich an mich als Kind — immer neugierig und voller Energie!'
+      'Holz ist wichtig! Sammle welches im Wald mit E!',
+      'An meiner Saege verarbeitest du Holz zu Sachen!',
+      'Du bist fleissig wie eine Biene! Weiter so!',
+      'Geduld und gutes Holz — das Geheimnis!',
+      'Bring Holz zur Saege — Opa hilft dir!',
+      'Frueher war hier nur Wald. Jetzt steht ein Dorf!',
+      'Du bist neugierig wie Opa als Kind!'
     ]
   },
   {
@@ -145,16 +131,14 @@ export const FAMILY_NPCS = [
     x: 18, y: 20,
     direction: 'side',
     dialogs: [
-      'Dobar dan, Emilia! Dodji ovamo, sedi pored vatre! Setz dich ans Feuer, zlato moje!',
-      'Baba kocht ueber dem Feuer — bring Pilze und Beeren mit, ja?',
-      'Weisst du, frueher in Serbien gab es auch magische Waelder und Einhoerner...',
-      'Svaka cast, Emilia! Du bist so tapfer! Baba ist sehr stolz auf dich!',
-      'Moja mala Emilia! Komm, Baba hat Pita gemacht — frisch aus dem Ofen!',
-      'In Serbien sagen wir: Ko rano rani, dve srece grabi! Wer frueh aufsteht, fängt doppeltes Glueck!',
-      'Baba vermisst die Berge manchmal... aber mit dir ist es ueberall schoen, zlato!',
-      'Jesi gladna? Baba kocht immer genug fuer alle! Komm, iss etwas!',
-      'Ach, Emilia! Du bist Babas groesster Schatz. Volim te, moja mala!',
-      'Frueher hat Baba am Lagerfeuer Geschichten erzaehlt. Soll ich dir eine erzaehlen?'
+      'Dodji ovamo! Setz dich ans Feuer, zlato moje!',
+      'Bring Pilze und Beeren — Baba kocht was!',
+      'In Serbien gab es auch magische Waelder!',
+      'Svaka cast! Du bist so tapfer, Emilia!',
+      'Baba hat Pita gemacht — frisch aus dem Ofen!',
+      'Ko rano rani, dve srece grabi! Frueh aufstehen bringt Glueck!',
+      'Jesi gladna? Baba kocht genug fuer alle!',
+      'Volim te, moja mala! Du bist Babas Schatz!'
     ]
   },
   {
@@ -167,16 +151,14 @@ export const FAMILY_NPCS = [
     x: 33, y: 13,
     direction: 'down',
     dialogs: [
-      'Ah, Emilia! Mein Deda hat mir von magischen Einhoernern erzaehlt... sie verstecken sich!',
-      'Donesi mi kristale iz pecine — pokazacu ti pravu magiju! Bring Kristalle aus der Hoehle!',
-      'Mit Kristallen braue ich dir einen Zaubertrank am Alchemie-Tisch!',
-      'Hoch ueber den Wolken gibt es ein Schloss... aber nur die Mutigsten finden es!',
-      'Bravo, Emilia! Du bist ein mutiges Maedchen! Deda ist stolz auf dich!',
-      'In Serbien erzaehlt man sich von Zmaj — dem Drachen, der die Guten beschuetzt.',
-      'Deda kennt viele alte Geschichten. Soll ich dir von der goldenen Aepfeln erzaehlen?',
-      'Moja unuka! Meine Enkelin! Du hast das Herz einer echten Heldin!',
-      'Am Alchemie-Tisch kann Deda Zaubertranke brauen. Bring mir Zutaten aus dem Wald!',
-      'Fruher hat Deda Sterne gezaehlt und sich Geschichten dazu ausgedacht. Magst du Sterne?'
+      'Einhoerner verstecken sich! Mein Deda hat davon erzaehlt!',
+      'Donesi mi kristale! Bring Kristalle aus der Hoehle!',
+      'Mit Kristallen braue ich Zaubertranke!',
+      'Ueber den Wolken gibt es ein Schloss!',
+      'Bravo! Du bist mutig! Deda ist stolz!',
+      'Der Zmaj ist ein Drache der die Guten beschuetzt!',
+      'Moja unuka! Du hast das Herz einer Heldin!',
+      'Bring Zutaten — Deda braut Zaubertranke!'
     ]
   },
   {
@@ -190,16 +172,13 @@ export const FAMILY_NPCS = [
     x: 25, y: 15,
     direction: 'side',
     dialogs: [
-      'Hey Emilia! Willst du was verkaufen? Ich kauf alles!',
-      'Mein Bruder Wenzl wollte auch mitkommen, aber er musste Hausaufgaben machen.',
-      'Ich sammle alles Moegliche! Zeig mal was du hast!',
-      'Weisst du noch, im Kindergarten? Da hab ich immer Sticker getauscht!',
-      'Ich bin der beste Haendler im ganzen Dorf! Naja... der einzige.',
-      'Fuer seltene Sachen zahle ich extra viel! Kristalle sind mega cool!',
-      'Wenzl sagt, ich soll sparen. Aber Sammeln macht viel mehr Spass!',
-      'Wenn du Muenzen brauchst, bring mir einfach Sachen aus dem Wald!',
-      'Ich hab sogar einen eigenen Laden! Na gut, es ist nur ein Tisch...',
-      'Emilia, du bist meine beste Kundin! Und meine einzige... hehe!'
+      'Hey! Willst du was verkaufen? Ich kauf alles!',
+      'Wenzl musste Hausaufgaben machen. Ich nicht! Hehe!',
+      'Zeig mal was du hast! Ich sammle alles!',
+      'Ich bin der beste Haendler! Naja, der einzige.',
+      'Fuer Kristalle zahle ich extra viel!',
+      'Brauchst du Muenzen? Bring mir Sachen!',
+      'Du bist meine beste Kundin! Und einzige... hehe!'
     ]
   }
 ];
