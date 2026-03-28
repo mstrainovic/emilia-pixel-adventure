@@ -53,7 +53,13 @@ export class MainMenu {
     const style = document.createElement('style');
     style.id = 'mm-styles';
     style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+      @font-face {
+        font-family: 'Press Start 2P';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('./fonts/PressStart2P-Regular.ttf') format('truetype');
+      }
       #main-menu {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: linear-gradient(180deg, #1a3520 0%, #2d5a27 40%, #3a6b30 70%, #2a4820 100%);

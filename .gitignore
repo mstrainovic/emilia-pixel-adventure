@@ -7,3 +7,8 @@ test-artifacts/
 .playwright-mcp/
 ~$*.docx
 temp_docx*/
+.env
+.env.*
+*.pem
+*.key
+credentials.*
