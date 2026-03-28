@@ -70,6 +70,7 @@ import { GameOverScreen } from '../ui/GameOverScreen.js';
 import { TradeUI } from '../ui/TradeUI.js';
 import { LightingSystem } from '../rendering/LightingSystem.js';
 import { EmotionBubbles } from '../rendering/EmotionBubbles.js';
+import { WaterRenderer } from '../rendering/WaterRenderer.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -881,6 +882,11 @@ export class Game {
     if (this.emotionBubbles) this.emotionBubbles.dispose();
     this.emotionBubbles = new EmotionBubbles(this.scene);
 
+    // Animated water shader overlay
+    if (this.waterRenderer) this.waterRenderer.dispose();
+    this.waterRenderer = new WaterRenderer(this.scene);
+    this.waterRenderer.init(sceneName, mapData.ground, mapData.width, mapData.height);
+
     // Teleport pet to new scene
     if (this.pet) {
       this.pet.teleportTo(this.player.x, this.player.y);
@@ -1005,6 +1011,7 @@ export class Game {
     if (this.ambientLife) { this.ambientLife.dispose(); this.ambientLife = null; }
     if (this.lighting) { this.lighting.dispose(); this.lighting = null; }
     if (this.emotionBubbles) { this.emotionBubbles.dispose(); this.emotionBubbles = null; }
+    if (this.waterRenderer) { this.waterRenderer.dispose(); this.waterRenderer = null; }
 
     // Clear fishing spots
     this.fishing.setSpots([]);
@@ -2368,6 +2375,9 @@ export class Game {
 
     // Dynamic lighting update
     if (this.lighting) this.lighting.update(dt);
+
+    // Water shader update
+    if (this.waterRenderer) this.waterRenderer.update(dt);
 
     // Emotion bubbles
     if (this.emotionBubbles) {

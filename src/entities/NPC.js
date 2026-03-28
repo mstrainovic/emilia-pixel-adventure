@@ -15,6 +15,12 @@ export class NPC extends Entity {
     this._labelColor = config.clothingColor || 0xFFD700;
     this._dialogs = config.dialogs || [];
     this._characterId = config.id; // maps to CHARACTER_CONFIGS key
+    // Idle breathing animation
+    this._breathTime = Math.random() * Math.PI * 2; // random phase
+    this._breathSpeed = 1.2 + Math.random() * 0.4; // 1.2-1.6 cycles/sec
+    // Occasional look-around timer
+    this._lookTimer = 5 + Math.random() * 10;
+    this._originalDirection = config.direction || 'down';
   }
 
   async loadAnimations(_assetLoader) {
@@ -85,6 +91,36 @@ export class NPC extends Entity {
 
     this.nameLabel = new THREE.Mesh(geo, mat);
     scene.add(this.nameLabel);
+  }
+
+  update(dt) {
+    super.update(dt);
+
+    // Idle breathing — subtle Y-scale oscillation
+    this._breathTime += dt * this._breathSpeed;
+    const breathScale = 1.0 + Math.sin(this._breathTime * Math.PI * 2) * 0.015;
+    if (this.activeSprite?.mesh) {
+      this.activeSprite.mesh.scale.y = Math.abs(this.activeSprite.mesh.scale.y) * breathScale;
+    }
+
+    // Occasional look-around (change facing direction briefly)
+    this._lookTimer -= dt;
+    if (this._lookTimer <= 0) {
+      this._lookTimer = 8 + Math.random() * 15; // 8-23 seconds
+      const dirs = ['idle', 'idle_side', 'idle_up'];
+      const current = this.activeAnim;
+      const others = dirs.filter(d => d !== current && this.sprites[d]);
+      if (others.length > 0) {
+        const newDir = others[Math.floor(Math.random() * others.length)];
+        this.setAnimation(newDir);
+        // Look back after 2-4 seconds
+        setTimeout(() => {
+          const origAnim = this._originalDirection === 'side' ? 'idle_side'
+            : this._originalDirection === 'up' ? 'idle_up' : 'idle';
+          if (this.sprites[origAnim]) this.setAnimation(origAnim);
+        }, 2000 + Math.random() * 2000);
+      }
+    }
   }
 
   updatePosition() {
