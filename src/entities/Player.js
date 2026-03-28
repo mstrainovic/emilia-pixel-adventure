@@ -77,14 +77,13 @@ export class Player extends Entity {
         this.activeSprite.flipX(this.direction === DIR_LEFT);
       }
 
-      // Lunge animation — step forward then spring back
+      // Subtle lunge — small step forward then back (no sprite deformation)
       if (!this._lungeTimer) this._lungeTimer = 0;
       this._lungeTimer += dt;
       const lungeT = Math.min(1, this._lungeTimer / 0.3);
-      // Quick forward, slow return (ease-out-back)
-      const lungeAmount = lungeT < 0.35
-        ? (lungeT / 0.35) * 0.4
-        : 0.4 * (1 - (lungeT - 0.35) / 0.65);
+      const lungeAmount = lungeT < 0.3
+        ? (lungeT / 0.3) * 0.25
+        : 0.25 * (1 - (lungeT - 0.3) / 0.7);
       const lungeDirs = {
         [DIR_DOWN]: { dx: 0, dy: lungeAmount },
         [DIR_UP]: { dx: 0, dy: -lungeAmount },
@@ -94,14 +93,6 @@ export class Player extends Entity {
       const lunge = lungeDirs[this.direction] || lungeDirs[DIR_DOWN];
       this._attackOffsetX = lunge.dx;
       this._attackOffsetY = lunge.dy;
-
-      // Squash-and-stretch for swing feel
-      if (this.activeSprite?.mesh) {
-        const squash = lungeT < 0.2 ? 1 + lungeT * 1.5 : 1 + (1 - lungeT) * 0.15;
-        const stretch = lungeT < 0.2 ? 1 - lungeT * 0.5 : 1;
-        this.activeSprite.mesh.scale.x = Math.abs(this.activeSprite.mesh.scale.x) * (this.direction === DIR_LEFT ? -stretch : stretch);
-        this.activeSprite.mesh.scale.y = Math.abs(this.activeSprite.mesh.scale.y) * squash;
-      }
 
       super.update(dt);
       return;
