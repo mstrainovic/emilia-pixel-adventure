@@ -75,7 +75,9 @@ import { QuestWaypoint } from '../ui/QuestWaypoint.js';
 import { Minimap } from '../ui/Minimap.js';
 import { TutorialTooltips } from '../ui/TutorialTooltips.js';
 import { HelpOverlay } from '../ui/HelpOverlay.js';
+import { TrophyShelf } from '../ui/TrophyShelf.js';
 import { FriendshipSystem } from '../systems/FriendshipSystem.js';
+import { GardenSystem } from '../systems/GardenSystem.js';
 import { FAMILY_NPCS } from '../data/npcs.js';
 
 function _createPalmSprite() {
@@ -246,6 +248,7 @@ export class Game {
     this.minimap = new Minimap();
     this.tutorialTooltips = new TutorialTooltips();
     this.helpOverlay = new HelpOverlay();
+    this.trophyShelf = new TrophyShelf();
     this._isNewGame = false;
     this.pickupPopup = new PickupPopup();
     this.gameOverScreen = new GameOverScreen();
@@ -295,6 +298,8 @@ export class Game {
       return false;
     };
     this._gardenExpansions = 0; // track how many beds Oma has added
+    this._garden = null; // GardenSystem — only active in hub
+    this._gardenSaveData = null; // persisted garden state across scene changes
     this.saveManager = new SaveManager();
     this.itemDrops = null; // created per scene
     this.vfx = null; // visual effects, created per scene
@@ -629,6 +634,8 @@ export class Game {
         if (save.collectedRareFinds) this._collectedRareFinds = new Set(save.collectedRareFinds);
         if (this.tutorialTooltips) this.tutorialTooltips.loadState(save.seenTooltips || []);
         if (this.friendship) this.friendship.loadState(save.friendship || {});
+        // Restore garden state (before _buildScene so it can be applied during init)
+        if (save.garden) this._gardenSaveData = save.garden;
         this._isNewGame = false;
         const scene = save.player?.scene || 'hub';
         const x = save.player?.x || 20;
@@ -814,6 +821,18 @@ export class Game {
         this.progression.reportHealCoral();
       }
     };
+
+    // Garden system (only in hub — Omas Garten)
+    if (sceneName === 'hub') {
+      this._garden = new GardenSystem(this.scene);
+      this._garden.initPlots(mapData.props, this.scene);
+      // Restore saved garden state if available
+      if (this._gardenSaveData) {
+        this._garden.loadState(this._gardenSaveData);
+      }
+    } else {
+      this._garden = null;
+    }
 
     // Unicorns (only in unicorn_meadow)
     const unicornSpawns = mapData.props.filter(p => p.type === 'unicorn_spawn');
@@ -1007,6 +1026,13 @@ export class Game {
     // Dispose unicorns
     for (const u of this.unicorns) u.dispose();
     this.unicorns = [];
+
+    // Dispose garden system (save state before disposing)
+    if (this._garden) {
+      this._gardenSaveData = this._garden.getState();
+      this._garden.dispose();
+      this._garden = null;
+    }
 
     // Dispose resources
     if (this.resources) { this.resources.dispose(); this.resources = null; }
@@ -1322,6 +1348,12 @@ export class Game {
             const cy = prop.stage ? prop.stage * 16 : 48;
             this.tileMapRenderer.addPropFromSheet(cropsTex, cx, cy, 16, 16, prop.x, prop.y, 1, 1);
           }
+          break;
+        case 'garden_plot':
+          // Handled by GardenSystem — visual mesh is created there
+          break;
+        case 'trophy_shelf':
+          // Handled by TrophyShelf system (Modul 2)
           break;
         case 'chest':
           if (cfChestTex) {
@@ -2254,7 +2286,7 @@ export class Game {
     }
 
     // Skip gameplay updates if dialog, crafting, trading, fishing, explorer book UI, inventory, or help is open
-    const uiBlocking = this.dialog.isActive || this.crafting.isActive || (this.tradeUI && this.tradeUI.isOpen) || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen() || (this.helpOverlay && this.helpOverlay.isOpen);
+    const uiBlocking = this.dialog.isActive || this.crafting.isActive || (this.tradeUI && this.tradeUI.isOpen) || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen() || (this.helpOverlay && this.helpOverlay.isOpen) || (this.trophyShelf && this.trophyShelf.isOpen);
 
     // Dialog system — subtle zoom during conversations
     const wasDialogActive = this.dialog.isActive;
@@ -2271,6 +2303,23 @@ export class Game {
     } else if (this.dialog.isActive) {
       // Consume any E press so it doesn't leak to crafting after dialog closes
       this.input.justPressed('KeyE');
+    }
+
+    // Trophy shelf interaction (E near trophy_shelf prop in hub)
+    if (this.trophyShelf && !uiBlocking && this.sceneManager.currentScene === 'hub' && this.tileMap?.props) {
+      const shelfProp = this.tileMap.props.find(p => p.type === 'trophy_shelf');
+      if (shelfProp) {
+        const dx = this.player.x - (shelfProp.x + 0.5);
+        const dy = this.player.y - (shelfProp.y + 0.5);
+        if (Math.sqrt(dx * dx + dy * dy) < 2.0 && this.input.justPressed('KeyE')) {
+          this.trophyShelf.show({
+            inventory: this.inventory,
+            collectedRareFinds: this._collectedRareFinds,
+            achievements: this.achievements,
+            friendship: this.friendship,
+          });
+        }
+      }
     }
 
     // Player
@@ -2612,6 +2661,11 @@ export class Game {
       this.resources.update(dt, this.player, this.input, this.itemDrops);
     }
 
+    // Garden system (only active in hub)
+    if (this._garden && !uiBlocking) {
+      this._garden.update(dt, this.player, this.input, this.inventory, this.itemDrops);
+    }
+
     // (Plant healing already called above, before water spray)
 
     // Unicorns
@@ -2682,6 +2736,7 @@ export class Game {
       collectedRareFinds: [...this._collectedRareFinds],
       seenTooltips: this.tutorialTooltips?.getState() || [],
       friendship: this.friendship?.getState() || {},
+      garden: this._garden ? this._garden.getState() : (this._gardenSaveData || []),
     }));
 
     // Input cleanup

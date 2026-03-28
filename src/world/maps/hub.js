@@ -215,6 +215,9 @@ export function generateHubMap() {
     { type: 'house', x: 27, y: 19 }, // Opa — sawmill
     { type: 'house', x: 32, y: 10 }, // Deda — alchemy lab
 
+    // ── Trophy shelf (neben Mama Tanjas Haus) ──
+    { type: 'trophy_shelf', x: 5, y: 10 },
+
     // ── Maple trees from Farm RPG (complement existing trees) ──
     { type: 'maple_tree', x: 22, y: 8 },
     { type: 'maple_tree', x: 22, y: 22 },
@@ -229,17 +232,17 @@ export function generateHubMap() {
     { type: 'station', station: 'sawmill',   x: 29, y: 22, w: 2, h: 1 },
     { type: 'station', station: 'alchemy',   x: 33, y: 11, w: 1, h: 1 },
 
-    // ── Real crops from Farm RPG (Oma's garden) ──
-    { type: 'crop', x: 6,  y: 22, cropType: 0 },
-    { type: 'crop', x: 7,  y: 22, cropType: 1 },
-    { type: 'crop', x: 8,  y: 22, cropType: 2 },
-    { type: 'crop', x: 9,  y: 22, cropType: 3 },
-    { type: 'crop', x: 10, y: 22, cropType: 4 },
-    { type: 'crop', x: 6,  y: 24, cropType: 5 },
-    { type: 'crop', x: 7,  y: 24, cropType: 6 },
-    { type: 'crop', x: 8,  y: 24, cropType: 0 },
-    { type: 'crop', x: 9,  y: 24, cropType: 1 },
-    { type: 'crop', x: 10, y: 24, cropType: 2 },
+    // ── Interactive garden plots (Oma's garden — GardenSystem) ──
+    { type: 'garden_plot', x: 6,  y: 22 },
+    { type: 'garden_plot', x: 7,  y: 22 },
+    { type: 'garden_plot', x: 8,  y: 22 },
+    { type: 'garden_plot', x: 9,  y: 22 },
+    { type: 'garden_plot', x: 10, y: 22 },
+    { type: 'garden_plot', x: 6,  y: 24 },
+    { type: 'garden_plot', x: 7,  y: 24 },
+    { type: 'garden_plot', x: 8,  y: 24 },
+    { type: 'garden_plot', x: 9,  y: 24 },
+    { type: 'garden_plot', x: 10, y: 24 },
 
     // ── Real fences from Farm RPG (around garden) ──
     { type: 'real_fence', x: 5,  y: 21 },

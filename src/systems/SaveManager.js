@@ -39,6 +39,7 @@ export class SaveManager {
     data.collectedRareFinds = gameState.collectedRareFinds || [];
     data.seenTooltips = gameState.seenTooltips || [];
     data.friendship = gameState.friendship || {};
+    data.garden = gameState.garden || [];
 
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
