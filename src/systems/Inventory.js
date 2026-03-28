@@ -4,7 +4,7 @@ import { getItem } from '../data/items.js';
  * Simple inventory with hotbar + main slots.
  */
 export class Inventory {
-  constructor(hotbarSize = 8, mainRows = 3, mainCols = 8) {
+  constructor(hotbarSize = 8, mainRows = 5, mainCols = 8) {
     this.hotbarSize = hotbarSize;
     this.mainRows = mainRows;
     this.mainCols = mainCols;

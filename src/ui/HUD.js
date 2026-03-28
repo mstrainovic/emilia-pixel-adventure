@@ -1053,7 +1053,7 @@ export class HUD {
       #hud-inventory-grid {
         display: grid;
         grid-template-columns: repeat(8, 44px);
-        grid-template-rows: repeat(4, 44px);
+        grid-template-rows: repeat(6, 44px);
         gap: 3px;
       }
       .hud-inv-slot {
