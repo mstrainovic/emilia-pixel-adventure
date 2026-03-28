@@ -406,6 +406,9 @@ export class HUD {
         const slotIdx = parseInt(el.getAttribute('data-slot'), 10);
         if (this.onItemUse) this.onItemUse(slotIdx);
       });
+      // Drag & Drop for hotbar slots
+      const slotIdx = parseInt(el.getAttribute('data-slot'), 10);
+      this._attachDragDrop(el, inventory, slotIdx);
     });
 
     // Keep inventory panel in sync if open
@@ -491,6 +494,66 @@ export class HUD {
         const slotIdx = parseInt(el.getAttribute('data-inv-slot'), 10);
         if (this.onItemUse) this.onItemUse(slotIdx);
       });
+      // Drag & Drop for inventory grid slots
+      const invSlotIdx = parseInt(el.getAttribute('data-inv-slot'), 10);
+      this._attachDragDrop(el, inventory, invSlotIdx);
+    });
+  }
+
+  /**
+   * Attach drag-and-drop to a slot element for WoW-style item swapping.
+   */
+  _attachDragDrop(el, inventory, slotIdx) {
+    if (!inventory.slots[slotIdx].itemId) {
+      el.draggable = false;
+    } else {
+      el.draggable = true;
+    }
+
+    el.addEventListener('dragstart', (e) => {
+      if (!inventory.slots[slotIdx].itemId) { e.preventDefault(); return; }
+      this._dragSourceSlot = slotIdx;
+      el.classList.add('hud-slot-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      // Small transparent drag image
+      const ghost = el.cloneNode(true);
+      ghost.style.cssText = 'position:absolute;top:-999px;width:44px;height:44px;opacity:0.7;';
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, 22, 22);
+      setTimeout(() => ghost.remove(), 0);
+    });
+
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.classList.add('hud-slot-dragover');
+    });
+
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('hud-slot-dragover');
+    });
+
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('hud-slot-dragover');
+      if (this._dragSourceSlot === null || this._dragSourceSlot === undefined) return;
+      const srcIdx = this._dragSourceSlot;
+      this._dragSourceSlot = null;
+      if (srcIdx === slotIdx) return;
+
+      // Swap slots
+      const temp = { ...inventory.slots[slotIdx] };
+      inventory.slots[slotIdx] = { ...inventory.slots[srcIdx] };
+      inventory.slots[srcIdx] = temp;
+
+      if (inventory.onChange) inventory.onChange();
+      this.updateHotbar(inventory);
+      if (this._inventoryOpen) this.updateInventory(inventory);
+    });
+
+    el.addEventListener('dragend', () => {
+      el.classList.remove('hud-slot-dragging');
+      this._dragSourceSlot = null;
     });
   }
 
@@ -944,6 +1007,21 @@ export class HUD {
       @keyframes slotPulse {
         from { box-shadow: 0 0 8px rgba(68,255,136,0.3); }
         to   { box-shadow: 0 0 14px rgba(68,255,136,0.6); }
+      }
+      .hud-slot-dragging {
+        opacity: 0.4;
+        border-color: #FFD700 !important;
+      }
+      .hud-slot-dragover {
+        border-color: #44DDFF !important;
+        background: rgba(68,221,255,0.2) !important;
+        box-shadow: 0 0 10px rgba(68,221,255,0.5) !important;
+      }
+      .hud-inv-slot[draggable="true"], .hud-slot[draggable="true"] {
+        cursor: grab;
+      }
+      .hud-inv-slot[draggable="true"]:active, .hud-slot[draggable="true"]:active {
+        cursor: grabbing;
       }
       .hud-slot-reorder {
         border-color: #44DDFF !important;
