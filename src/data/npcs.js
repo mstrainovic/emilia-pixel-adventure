@@ -54,8 +54,8 @@ export const FAMILY_NPCS = [
     hairStyle: 'medium',
     hairColor: 0xd4a030,   // Blondes Haar
     clothingColor: 0xffdd55, // Gelbes Kleid
-    x: 16, y: 13,
-    direction: 'side',
+    x: 15, y: 7,
+    direction: 'down',
     dialogs: [
       'Emilia! Im Wald Richtung Norden gibt es lustige Schleime! Komm, wir schauen!',
       'Psst! Ich hab hinter einem grossen Baum im Wald etwas Magisches gesehen...',
@@ -142,7 +142,7 @@ export const FAMILY_NPCS = [
     hairStyle: 'bun',
     hairColor: 0x8a4a30,   // Kastanienbraunes Haar
     clothingColor: 0xcc5544, // Warmes Rot
-    x: 21, y: 16,
+    x: 21, y: 20,
     direction: 'side',
     dialogs: [
       'Dobar dan, Emilia! Dodji ovamo, sedi pored vatre! Setz dich ans Feuer, zlato moje!',
@@ -187,8 +187,8 @@ export const FAMILY_NPCS = [
     hairStyle: 'short',
     hairColor: 0xd4a030,   // Blondes Haar
     clothingColor: 0x44aa88, // Gruenes Haendler-Shirt
-    x: 17, y: 15,
-    direction: 'down',
+    x: 25, y: 15,
+    direction: 'side',
     dialogs: [
       'Hey Emilia! Willst du was verkaufen? Ich kauf alles!',
       'Mein Bruder Wenzl wollte auch mitkommen, aber er musste Hausaufgaben machen.',

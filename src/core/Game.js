@@ -1574,40 +1574,53 @@ export class Game {
           }
           break;
         case 'signpost': {
-          // Canvas-drawn signpost with directional arrow + label
+          // Canvas-drawn signpost with directional arrow + label (high-res for readability)
           const spCanvas = document.createElement('canvas');
-          spCanvas.width = 32;
-          spCanvas.height = 24;
+          spCanvas.width = 128;
+          spCanvas.height = 96;
           const spCtx = spCanvas.getContext('2d');
 
           // Post
           spCtx.fillStyle = '#8B5E3C';
-          spCtx.fillRect(14, 14, 4, 10);
+          spCtx.fillRect(56, 56, 16, 40);
+          // Post highlight
+          spCtx.fillStyle = '#A07040';
+          spCtx.fillRect(60, 56, 4, 38);
 
-          // Sign board background
+          // Sign board background with wood grain
           spCtx.fillStyle = '#C8924A';
-          spCtx.fillRect(2, 2, 28, 13);
+          spCtx.fillRect(8, 8, 112, 50);
+          // Wood grain lines
+          spCtx.fillStyle = '#B8823A';
+          for (let gy = 14; gy < 52; gy += 8) {
+            spCtx.fillRect(10, gy, 108, 1);
+          }
           // Board outline
           spCtx.strokeStyle = '#5a3010';
-          spCtx.lineWidth = 1;
-          spCtx.strokeRect(2, 2, 28, 13);
+          spCtx.lineWidth = 3;
+          spCtx.strokeRect(8, 8, 112, 50);
+          // Board nails
+          spCtx.fillStyle = '#888';
+          spCtx.fillRect(14, 14, 4, 4);
+          spCtx.fillRect(110, 14, 4, 4);
 
           // Arrow indicator based on direction
           spCtx.fillStyle = '#3a1a00';
-          spCtx.font = 'bold 7px sans-serif';
+          spCtx.font = 'bold 24px sans-serif';
           spCtx.textAlign = 'center';
           spCtx.textBaseline = 'top';
-          const arrowMap = { north: '↑', south: '↓', east: '→', west: '←' };
-          const arrow = arrowMap[prop.dir] || '→';
-          spCtx.fillText(arrow, 16, 3);
+          const arrowMap = { north: '\u2191', south: '\u2193', east: '\u2192', west: '\u2190' };
+          const arrow = arrowMap[prop.dir] || '\u2192';
+          spCtx.fillText(arrow, 64, 10);
 
-          // Label text
-          spCtx.font = 'bold 5px sans-serif';
-          spCtx.fillText(prop.label || '', 16, 10);
+          // Label text (crisp, large)
+          spCtx.fillStyle = '#2a0e00';
+          spCtx.font = 'bold 18px sans-serif';
+          spCtx.fillText(prop.label || '', 64, 36);
 
           const spTex = new THREE.CanvasTexture(spCanvas);
-          spTex.magFilter = THREE.NearestFilter;
-          spTex.minFilter = THREE.NearestFilter;
+          spTex.magFilter = THREE.LinearFilter;
+          spTex.minFilter = THREE.LinearFilter;
           this.tileMapRenderer.addProp(spTex, prop.x - 0.5, prop.y - 1, 2, 1.5, 0.1);
           break;
         }
