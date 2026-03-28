@@ -60,16 +60,45 @@ export class DialogSystem {
       window.__game.progression.reportTalk(npc._characterId);
     }
 
-    const dialogs = npc._dialogs || ['...'];
+    // Friendship-based dialog selection
+    const dialogs = this._selectDialogs(npc);
+    this._activeDialogs = dialogs;
     if (dialogs.length === 0) return;
 
     this._showLine(npc, dialogs[0]);
   }
 
+  /**
+   * Waehlt Dialoge basierend auf Freundschafts-Level.
+   * 50% Chance fuer friendshipDialogs wenn Level > 0.
+   */
+  _selectDialogs(npc) {
+    const base = npc._dialogs || ['...'];
+    const npcId = npc._characterId;
+    if (!npcId) return base;
+
+    const friendship = window.__game?.friendship;
+    if (!friendship) return base;
+
+    const level = friendship.getLevel(npcId);
+    if (level <= 0) return base;
+
+    // Hole NPC-Definition fuer friendshipDialogs
+    const npcDefs = window.__game?._npcDefs;
+    const def = npcDefs?.find(d => d.id === npcId);
+    const fDialogs = def?.friendshipDialogs?.[level];
+
+    if (fDialogs && fDialogs.length > 0 && Math.random() < 0.5) {
+      return fDialogs;
+    }
+
+    return base;
+  }
+
   _advance() {
     if (!this.activeNPC) return;
 
-    const dialogs = this.activeNPC._dialogs || [];
+    const dialogs = this._activeDialogs || this.activeNPC._dialogs || [];
     this.dialogIndex++;
 
     if (this.dialogIndex < dialogs.length) {

@@ -75,6 +75,8 @@ import { QuestWaypoint } from '../ui/QuestWaypoint.js';
 import { Minimap } from '../ui/Minimap.js';
 import { TutorialTooltips } from '../ui/TutorialTooltips.js';
 import { HelpOverlay } from '../ui/HelpOverlay.js';
+import { FriendshipSystem } from '../systems/FriendshipSystem.js';
+import { FAMILY_NPCS } from '../data/npcs.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -249,6 +251,8 @@ export class Game {
     this.gameOverScreen = new GameOverScreen();
     this.damageNumbers = null; // floating damage numbers, created per scene
     this.dialog = new DialogSystem();
+    this.friendship = new FriendshipSystem();
+    this._npcDefs = FAMILY_NPCS; // expose for DialogSystem friendshipDialogs lookup
     // After NPC dialog ends → open their crafting station automatically
     this.tradeUI = new TradeUI();
     this.tradeUI.onSell = (slotIndex, itemId, sellValue) => {
@@ -258,6 +262,10 @@ export class Game {
       if (this.audio) this.audio.playUIClick();
     };
     this.dialog.onDialogEnd = (npcId, stationId) => {
+      // Track friendship on talk
+      if (this.friendship && npcId) {
+        this.friendship.onTalk(npcId, this.dayNight?.day || 0);
+      }
       if (this.crafting && stationId) {
         this.crafting.openStation(stationId);
         this.crafting.cooldown = 0.5; // prevent double-open from manual E press
@@ -493,6 +501,10 @@ export class Game {
       this.hud.updateXp(this.progression);
     };
     this.progression.onQuestComplete = (def) => {
+      // Track friendship for quest-associated NPC
+      if (this.friendship && def.id) {
+        this.friendship.onQuestComplete(def.id);
+      }
       this.audio.playChestOpen();
       this.hud.showQuestComplete(def.name);
       // Celebration particle burst around player
@@ -616,6 +628,7 @@ export class Game {
         if (save.bossNoHitKill) this._bossNoHitKill = save.bossNoHitKill;
         if (save.collectedRareFinds) this._collectedRareFinds = new Set(save.collectedRareFinds);
         if (this.tutorialTooltips) this.tutorialTooltips.loadState(save.seenTooltips || []);
+        if (this.friendship) this.friendship.loadState(save.friendship || {});
         this._isNewGame = false;
         const scene = save.player?.scene || 'hub';
         const x = save.player?.x || 20;
@@ -2668,6 +2681,7 @@ export class Game {
       bossNoHitKill: this._bossNoHitKill,
       collectedRareFinds: [...this._collectedRareFinds],
       seenTooltips: this.tutorialTooltips?.getState() || [],
+      friendship: this.friendship?.getState() || {},
     }));
 
     // Input cleanup

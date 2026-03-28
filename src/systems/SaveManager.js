@@ -38,6 +38,7 @@ export class SaveManager {
     data.bossNoHitKill = gameState.bossNoHitKill || false;
     data.collectedRareFinds = gameState.collectedRareFinds || [];
     data.seenTooltips = gameState.seenTooltips || [];
+    data.friendship = gameState.friendship || {};
 
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
