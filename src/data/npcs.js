@@ -142,7 +142,7 @@ export const FAMILY_NPCS = [
     hairStyle: 'bun',
     hairColor: 0x8a4a30,   // Kastanienbraunes Haar
     clothingColor: 0xcc5544, // Warmes Rot
-    x: 21, y: 20,
+    x: 18, y: 20,
     direction: 'side',
     dialogs: [
       'Dobar dan, Emilia! Dodji ovamo, sedi pored vatre! Setz dich ans Feuer, zlato moje!',
