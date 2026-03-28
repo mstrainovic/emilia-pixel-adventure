@@ -398,6 +398,11 @@ export function generateBeachMap() {
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'pearl',           x: 26, y: 20, hitsNeeded: 1, respawnTime: 45 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'rainbow_shell',   x: 40, y: 28, hitsNeeded: 1, respawnTime: 60 });
 
+  // --- Driftwood resource nodes ---
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'driftwood', x: 12, y: 12, id: 'drift1', hitsNeeded: 1, respawnTime: 30 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'driftwood', x: 38, y: 14, id: 'drift2', hitsNeeded: 1, respawnTime: 30 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'driftwood', x: 28, y: 25, id: 'drift3', hitsNeeded: 1, respawnTime: 30 });
+
   // Boss arena marker — Coconut King
   props.push({ type: 'boss_spawn', bossType: 'coconut_king', x: 25, y: 10 });
 

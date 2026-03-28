@@ -18,6 +18,7 @@ export class ResourceNode {
       ore:      { hitsNeeded: 2, loot: 'iron_ore', lootMin: 1, lootMax: 2, respawn: 30, color: 0x8a5533 },
       mushroom: { hitsNeeded: 1, loot: 'mushroom',  lootMin: 1, lootMax: 3, respawn: 15, color: 0xaa7744 },
       earth:    { hitsNeeded: 1, loot: 'earth',     lootMin: 1, lootMax: 2, respawn: 15, color: 0x5a3a1a },
+      herb:           { hitsNeeded: 1, loot: 'vegetable',       lootMin: 1, lootMax: 2, respawn: 45,  color: 0x33aa44 },
       shell:          { hitsNeeded: 1, loot: 'shell_common',   lootMin: 1, lootMax: 1, respawn: 480, color: 0xe8d5a3 },
       cloud_crystal:  { hitsNeeded: 2, loot: 'cloud_crystal',  lootMin: 1, lootMax: 2, respawn: 45,  color: 0xaaddff },
       rainbow_shard:  { hitsNeeded: 2, loot: 'rainbow_shard',  lootMin: 1, lootMax: 1, respawn: 60,  color: 0xff99cc },
@@ -38,7 +39,7 @@ export class ResourceNode {
     this.interactRange = 2.0;
 
     // Visual indicator — canvas-drawn pixel art
-    const size = this.type === 'mushroom' || this.type === 'earth' ? 0.8 : 1.0;
+    const size = this.type === 'mushroom' || this.type === 'earth' || this.type === 'herb' ? 0.8 : 1.0;
     const tex = ResourceNode._drawSprite(this.type, def.color);
     const geo = new THREE.PlaneGeometry(size, size);
     const mat = new THREE.MeshBasicMaterial({
@@ -209,6 +210,15 @@ export class ResourceNode {
         fill(5, 7, 6, 2, '#6a4a2a');
         fill(6, 6, 4, 2, '#7a5a3a');
         px(5, 9, '#4a2a0a'); px(9, 10, '#4a2a0a'); // dark spots
+        break;
+      case 'herb':
+        // Green herb / vegetable plant
+        fill(6, 8, 4, 4, '#5a3a1a'); // dirt base
+        fill(5, 5, 2, 4, '#22aa33'); // left leaves
+        fill(9, 5, 2, 4, '#22aa33'); // right leaves
+        fill(7, 3, 2, 5, '#33bb44'); // center stalk
+        fill(6, 2, 4, 2, '#44cc55'); // top leaves
+        px(7, 2, '#55dd66'); px(8, 3, '#55dd66'); // highlights
         break;
       case 'shell':
         // Spiral shell shape

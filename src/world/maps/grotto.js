@@ -263,6 +263,26 @@ export function generateGrottoMap() {
   props.push({ type: 'glow_plant', x: 22, y: 29 });
   props.push({ type: 'glow_plant', x: 28, y: 27 });
 
+  // --- Underwater plant nodes ---
+  props.push({ type: 'resource', resourceType: 'herb', itemId: 'underwater_plant', x: 8,  y: 5,  id: 'uwplant1', hitsNeeded: 1, respawnTime: 40 });
+  props.push({ type: 'resource', resourceType: 'herb', itemId: 'underwater_plant', x: 14, y: 8,  id: 'uwplant2', hitsNeeded: 1, respawnTime: 40 });
+  props.push({ type: 'resource', resourceType: 'herb', itemId: 'underwater_plant', x: 35, y: 15, id: 'uwplant3', hitsNeeded: 1, respawnTime: 40 });
+  props.push({ type: 'resource', resourceType: 'herb', itemId: 'underwater_plant', x: 22, y: 25, id: 'uwplant4', hitsNeeded: 1, respawnTime: 40 });
+
+  // --- Coral resource nodes ---
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'fire_coral',  x: 5,  y: 3,  id: 'coral_fire1',  hitsNeeded: 1, respawnTime: 60 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'fire_coral',  x: 30, y: 10, id: 'coral_fire2',  hitsNeeded: 1, respawnTime: 60 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'brain_coral', x: 12, y: 10, id: 'coral_brain1', hitsNeeded: 1, respawnTime: 60 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'brain_coral', x: 36, y: 20, id: 'coral_brain2', hitsNeeded: 1, respawnTime: 60 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'fan_coral',   x: 24, y: 8,  id: 'coral_fan1',   hitsNeeded: 1, respawnTime: 60 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'fan_coral',   x: 15, y: 28, id: 'coral_fan2',   hitsNeeded: 1, respawnTime: 60 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'glow_coral',  x: 20, y: 18, id: 'coral_glow1',  hitsNeeded: 2, respawnTime: 90 });
+
+  // --- Grotto-exclusive shell nodes ---
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'spiral_snail', x: 10, y: 15, id: 'shell_spiral1', hitsNeeded: 1, respawnTime: 45 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'spiral_snail', x: 32, y: 25, id: 'shell_spiral2', hitsNeeded: 1, respawnTime: 45 });
+  props.push({ type: 'resource', resourceType: 'shell', itemId: 'deep_crown',   x: 25, y: 30, id: 'shell_crown1',  hitsNeeded: 2, respawnTime: 90 });
+
   // --- Gem resource nodes (3 nodes: 1 sapphire, 1 ruby, 1 emerald) ---
   props.push({ type: 'resource', resourceType: 'gem', itemId: 'sapphire', x: 29, y: 5,  id: 'gem_sapphire', hitsNeeded: 3, respawnTime: 600 });
   props.push({ type: 'resource', resourceType: 'gem', itemId: 'ruby',     x: 20, y: 12, id: 'gem_ruby',     hitsNeeded: 3, respawnTime: 600 });

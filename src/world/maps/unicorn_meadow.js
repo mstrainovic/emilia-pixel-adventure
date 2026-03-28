@@ -130,6 +130,12 @@ export function generateUnicornMeadowMap() {
     { type: 'crystal_flower', x: 12, y: 3 },
     { type: 'crystal_flower', x: 12, y: 16 },
 
+    // ── Bloom petal resource nodes ──
+    { type: 'resource', resourceType: 'herb', itemId: 'bloom_petal', x: 5,  y: 8,  id: 'bloom1', hitsNeeded: 1, respawnTime: 50 },
+    { type: 'resource', resourceType: 'herb', itemId: 'bloom_petal', x: 19, y: 8,  id: 'bloom2', hitsNeeded: 1, respawnTime: 50 },
+    { type: 'resource', resourceType: 'herb', itemId: 'bloom_petal', x: 12, y: 11, id: 'bloom3', hitsNeeded: 1, respawnTime: 50 },
+    { type: 'resource', resourceType: 'herb', itemId: 'bloom_petal', x: 9,  y: 16, id: 'bloom4', hitsNeeded: 1, respawnTime: 50 },
+
     // ── Rainbow particle zone — center of the meadow ──
     { type: 'rainbow_zone', x: 8, y: 6, w: 9, h: 7 },
 

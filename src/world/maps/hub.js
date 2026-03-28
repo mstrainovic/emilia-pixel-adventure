@@ -254,6 +254,11 @@ export function generateHubMap() {
     { type: 'real_fence', x: 10, y: 25 },
     { type: 'real_fence', x: 11, y: 25 },
 
+    // ── Vegetable garden nodes (Oma's Ernte) ──
+    { type: 'resource', resourceType: 'herb', itemId: 'vegetable', x: 11, y: 23, id: 'veggie1', hitsNeeded: 1, respawnTime: 45 },
+    { type: 'resource', resourceType: 'herb', itemId: 'vegetable', x: 11, y: 24, id: 'veggie2', hitsNeeded: 1, respawnTime: 45 },
+    { type: 'resource', resourceType: 'herb', itemId: 'vegetable', x: 5,  y: 23, id: 'veggie3', hitsNeeded: 1, respawnTime: 45 },
+
     // ── Treasure chests ──
     { type: 'chest', x: 9,  y: 9 },  // inside kitchen
     { type: 'chest', x: 33, y: 12 }, // Deda's lab
