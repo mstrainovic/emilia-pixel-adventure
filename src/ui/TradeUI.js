@@ -22,6 +22,13 @@ export class TradeUI {
         <div id="trade-items"></div>
         <div id="trade-confirm" style="display:none">
           <div id="trade-confirm-text"></div>
+          <div id="trade-confirm-qty">
+            <button id="trade-qty-minus" class="trade-qty-btn">-</button>
+            <span id="trade-qty-value">1</span>
+            <button id="trade-qty-plus" class="trade-qty-btn">+</button>
+            <button id="trade-qty-all" class="trade-qty-btn">Alles</button>
+          </div>
+          <div id="trade-confirm-total"></div>
           <div id="trade-confirm-buttons">
             <button id="trade-confirm-yes">Verkaufen!</button>
             <button id="trade-confirm-no">Doch nicht</button>
@@ -34,7 +41,7 @@ export class TradeUI {
 
     this.isOpen = false;
     this.inventory = null;
-    this._pendingSell = null; // { slotIndex, itemId, count: 1 }
+    this._pendingSell = null; // { slotIndex, itemId, sellValue, maxCount, qty }
     this.onSell = null; // callback: (slotIndex, itemId, sellValue) => void
 
     document.getElementById('trade-close').addEventListener('click', () => this.hide());
@@ -50,6 +57,21 @@ export class TradeUI {
     });
     document.getElementById('trade-confirm-no').addEventListener('click', () => {
       this._cancelSell();
+    });
+    document.getElementById('trade-qty-minus').addEventListener('click', () => {
+      if (!this._pendingSell) return;
+      this._pendingSell.qty = Math.max(1, this._pendingSell.qty - 1);
+      this._updateQtyDisplay();
+    });
+    document.getElementById('trade-qty-plus').addEventListener('click', () => {
+      if (!this._pendingSell) return;
+      this._pendingSell.qty = Math.min(this._pendingSell.maxCount, this._pendingSell.qty + 1);
+      this._updateQtyDisplay();
+    });
+    document.getElementById('trade-qty-all').addEventListener('click', () => {
+      if (!this._pendingSell) return;
+      this._pendingSell.qty = this._pendingSell.maxCount;
+      this._updateQtyDisplay();
     });
   }
 
@@ -118,19 +140,35 @@ export class TradeUI {
   }
 
   _showConfirm(slotIndex, itemId, itemDef) {
-    this._pendingSell = { slotIndex, itemId, sellValue: itemDef.sellValue };
+    const slot = this.inventory.slots[slotIndex];
+    const maxCount = slot.count;
+    this._pendingSell = { slotIndex, itemId, sellValue: itemDef.sellValue, maxCount, qty: 1, name: itemDef.name };
     const confirmEl = document.getElementById('trade-confirm');
     const textEl = document.getElementById('trade-confirm-text');
     if (confirmEl && textEl) {
-      textEl.textContent = `${itemDef.name} fuer ${itemDef.sellValue} Muenze${itemDef.sellValue > 1 ? 'n' : ''} verkaufen?`;
+      textEl.textContent = `${itemDef.name} verkaufen?`;
+      // Show qty controls only if more than 1
+      const qtyRow = document.getElementById('trade-confirm-qty');
+      if (qtyRow) qtyRow.style.display = maxCount > 1 ? 'flex' : 'none';
       confirmEl.style.display = 'flex';
+      this._updateQtyDisplay();
     }
+  }
+
+  _updateQtyDisplay() {
+    if (!this._pendingSell) return;
+    const { qty, sellValue, maxCount, name } = this._pendingSell;
+    const qtyEl = document.getElementById('trade-qty-value');
+    if (qtyEl) qtyEl.textContent = qty;
+    const totalEl = document.getElementById('trade-confirm-total');
+    const total = qty * sellValue;
+    if (totalEl) totalEl.textContent = `${qty}x ${name} = ${total} Muenze${total > 1 ? 'n' : ''}`;
   }
 
   _executeSell() {
     if (!this._pendingSell || !this.inventory) return;
 
-    const { slotIndex, itemId, sellValue } = this._pendingSell;
+    const { slotIndex, itemId, sellValue, qty } = this._pendingSell;
     const slot = this.inventory.slots[slotIndex];
 
     // Verify item still exists in that slot
@@ -139,19 +177,21 @@ export class TradeUI {
       return;
     }
 
-    // Remove 1 item from slot
-    slot.count -= 1;
+    // Remove qty items from slot
+    const actualQty = Math.min(qty, slot.count);
+    slot.count -= actualQty;
     if (slot.count <= 0) {
       slot.itemId = null;
       slot.count = 0;
     }
 
     // Add coins
-    this.inventory.coins += sellValue;
+    const totalValue = sellValue * actualQty;
+    this.inventory.coins += totalValue;
 
     // Notify callback
     if (this.onSell) {
-      this.onSell(slotIndex, itemId, sellValue);
+      this.onSell(slotIndex, itemId, totalValue);
     }
 
     // Trigger inventory change
@@ -264,6 +304,23 @@ export class TradeUI {
       }
       #trade-confirm-text {
         color: #fff; font-size: 14px; text-align: center;
+      }
+      #trade-confirm-qty {
+        display: flex; align-items: center; gap: 6px;
+        justify-content: center; margin: 6px 0;
+      }
+      .trade-qty-btn {
+        background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: bold;
+        cursor: pointer; transition: background 0.15s;
+      }
+      .trade-qty-btn:hover { background: rgba(255,215,0,0.2); border-color: rgba(255,215,0,0.4); }
+      #trade-qty-value {
+        color: #FFD700; font-size: 16px; font-weight: bold;
+        min-width: 28px; text-align: center;
+      }
+      #trade-confirm-total {
+        color: #FFD700; font-size: 13px; text-align: center; font-weight: bold;
       }
       #trade-confirm-buttons {
         display: flex; gap: 12px;

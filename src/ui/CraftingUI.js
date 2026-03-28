@@ -73,6 +73,9 @@ export class CraftingUI {
       });
       const resultItem = getItem(recipe.result.itemId);
 
+      // Calculate max craftable amount
+      const maxCraft = this._calcMaxCraft(recipe, inventory);
+
       const el = document.createElement('div');
       el.className = 'craft-recipe' + (canCraft ? '' : ' craft-disabled');
       el.innerHTML = `
@@ -94,18 +97,49 @@ export class CraftingUI {
             </span>`;
           }).join('')}
         </div>
+        ${maxCraft > 1 ? `
+        <div class="craft-qty-row">
+          <button class="craft-qty-btn craft-qty-minus">-</button>
+          <span class="craft-qty-value">1</span>
+          <button class="craft-qty-btn craft-qty-plus">+</button>
+          <button class="craft-qty-btn craft-qty-max">Max (${maxCraft})</button>
+        </div>` : ''}
         <div class="craft-progress-wrap" style="display:none;">
           <div class="craft-progress-bar"></div>
         </div>
         <div class="craft-success-area"></div>
-        <button class="craft-btn" ${canCraft ? '' : 'disabled'}>Herstellen</button>
+        <button class="craft-btn" ${canCraft ? '' : 'disabled'}>Herstellen${maxCraft > 1 ? ' (1x)' : ''}</button>
       `;
 
       if (canCraft) {
+        let craftQty = 1;
         const btn = el.querySelector('.craft-btn');
+        const qtyEl = el.querySelector('.craft-qty-value');
+        const updateBtn = () => {
+          btn.textContent = `Herstellen (${craftQty}x)`;
+        };
+
+        if (maxCraft > 1) {
+          el.querySelector('.craft-qty-minus').addEventListener('click', () => {
+            craftQty = Math.max(1, craftQty - 1);
+            if (qtyEl) qtyEl.textContent = craftQty;
+            updateBtn();
+          });
+          el.querySelector('.craft-qty-plus').addEventListener('click', () => {
+            craftQty = Math.min(maxCraft, craftQty + 1);
+            if (qtyEl) qtyEl.textContent = craftQty;
+            updateBtn();
+          });
+          el.querySelector('.craft-qty-max').addEventListener('click', () => {
+            craftQty = maxCraft;
+            if (qtyEl) qtyEl.textContent = craftQty;
+            updateBtn();
+          });
+        }
+
         btn.addEventListener('click', () => {
           if (this._isCrafting) return;
-          this._animatedCraft(recipe, el);
+          this._animatedCraft(recipe, el, craftQty);
         });
       }
 
@@ -113,15 +147,29 @@ export class CraftingUI {
     }
   }
 
+  _calcMaxCraft(recipe, inventory) {
+    let max = 999;
+    for (const ing of recipe.ingredients) {
+      if (ing.itemId) {
+        const have = inventory.countItem(ing.itemId);
+        max = Math.min(max, Math.floor(have / ing.count));
+      } else if (ing.category) {
+        // Category ingredients can only match 1 at a time
+        const matchId = inventory.findItemByCategory(ing.category);
+        if (matchId) {
+          max = Math.min(max, Math.floor(inventory.countItem(matchId) / ing.count));
+        } else {
+          max = 0;
+        }
+      }
+    }
+    return Math.max(0, max);
+  }
+
   /**
-   * Animated crafting sequence:
-   * 1. Disable button, show progress bar
-   * 2. Fade out ingredients + sparkle
-   * 3. Execute actual craft
-   * 4. Pop result + floating success text
-   * 5. Re-enable and re-render
+   * Animated crafting sequence with batch support.
    */
-  async _animatedCraft(recipe, recipeEl) {
+  async _animatedCraft(recipe, recipeEl, count = 1) {
     this._isCrafting = true;
     const btn = recipeEl.querySelector('.craft-btn');
     const ingredientEls = recipeEl.querySelectorAll('.craft-ing');
@@ -158,10 +206,18 @@ export class CraftingUI {
     // Wait for progress animation
     await this._wait(1500);
 
-    // Step 5: Execute actual craft
+    // Step 5: Execute actual craft (batch)
     let success = false;
+    let totalCrafted = 0;
     if (this.onCraft) {
-      success = this.onCraft(recipe);
+      for (let i = 0; i < count; i++) {
+        if (this.onCraft(recipe)) {
+          totalCrafted++;
+        } else {
+          break; // ran out of materials
+        }
+      }
+      success = totalCrafted > 0;
     }
 
     // Hide progress bar
@@ -180,9 +236,10 @@ export class CraftingUI {
       // Step 8: Floating success text
       const resultItem = getItem(recipe.result.itemId);
       const itemName = resultItem?.name || recipe.name;
+      const totalCount = totalCrafted * recipe.result.count;
       const successText = document.createElement('div');
       successText.className = 'craft-success-text';
-      successText.textContent = `+${recipe.result.count} ${itemName}!`;
+      successText.textContent = `+${totalCount} ${itemName}!`;
       successArea.appendChild(successText);
 
       // Wait for pop + success text to show
@@ -325,6 +382,20 @@ export class CraftingUI {
         color: #FFD700 !important;
       }
       .craft-empty { color: #888; text-align: center; padding: 20px; }
+      .craft-qty-row {
+        display: flex; align-items: center; gap: 6px;
+        justify-content: center; margin: 4px 0;
+      }
+      .craft-qty-btn {
+        background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: bold;
+        cursor: pointer; transition: background 0.15s;
+      }
+      .craft-qty-btn:hover { background: rgba(255,215,0,0.2); border-color: rgba(255,215,0,0.4); }
+      .craft-qty-value {
+        color: #FFD700; font-size: 16px; font-weight: bold;
+        min-width: 28px; text-align: center;
+      }
 
       /* --- Progress bar --- */
       .craft-progress-wrap {
