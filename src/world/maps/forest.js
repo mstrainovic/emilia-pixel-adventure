@@ -245,6 +245,9 @@ export function generateForestMap() {
     { type: 'wilted_plant', x: 30, y: 14, id: 'wilt6' },
     { type: 'wilted_plant', x: 24, y: 30, id: 'wilt7' },
 
+    // ── Forest campfire (resting spot at central clearing crossroads) ──
+    { type: 'bonfire', x: 25, y: 20 },
+
     // ── Decorative props ──
     // Bushes along paths
     { type: 'bush', x: 22, y: 20 },
@@ -277,6 +280,9 @@ export function generateForestMap() {
     // Secret north exit to unicorn meadow (unlocked after healing 10 plants)
     { id: 'north_secret', x: 24, y: 0, w: 2, h: 2, target: 'unicorn_meadow', spawnX: 12, spawnY: 17, hidden: true, requirement: 'heal_10_plants' },
   ];
+
+  // Forest campfire collision
+  collision[20][25] = 1;
 
   // ── Auto-tile path edges ──
   resolveAutoTiles(ground, 4, PATH_EDGES, [5, 9]);

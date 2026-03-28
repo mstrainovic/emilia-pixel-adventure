@@ -202,8 +202,8 @@ export function generateLakeMap() {
     // ── NPC marker for Liam ──
     { type: 'npc_marker', npcId: 'liam', x: 14, y: 14 },
 
-    // ── Bonfire by the shore — for grilling fish ──
-    { type: 'bonfire', x: 15, y: 14 },
+    // ── Bonfire — cozy campsite near west fishing spot ──
+    { type: 'bonfire', x: 10, y: 16 },
 
     // ── Garden beds (wild gardens near west shore) ──
     { type: 'garden', x: 6, y: 10 },
@@ -264,7 +264,7 @@ export function generateLakeMap() {
   ];
 
   // Station/bonfire collision
-  collision[14][15] = 1; // bonfire
+  collision[16][10] = 1; // bonfire
 
   // Open south border for exit to beach
   fillRect(collision, 20, H - 2, 4, 2, 0);

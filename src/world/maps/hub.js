@@ -223,8 +223,8 @@ export function generateHubMap() {
     { type: 'maple_tree', x: 17, y: 22 },
     { type: 'maple_tree', x: 22, y: 22 },
 
-    // ── Bonfire (east side of village square, not on spawn) ──
-    { type: 'bonfire', x: 22, y: 15 },
+    // ── Bonfire (south side of park, communal gathering spot) ──
+    { type: 'bonfire', x: 20, y: 19 },
 
     // ── Crafting Stations ──
     { type: 'station', station: 'cooking',   x: 7,  y: 8,  w: 2, h: 1 },
@@ -348,7 +348,7 @@ export function generateHubMap() {
     if (p.type === 'station') fillRect(collision, p.x, p.y, p.w, p.h, 1);
 
   // Bonfire collision
-  collision[15][22] = 1;
+  collision[19][20] = 1;
 
   const exits = [
     { id: 'north', x: 18, y: 0, w: 4, h: 2, target: 'forest', spawnX: 25, spawnY: 37 },

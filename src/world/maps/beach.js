@@ -398,6 +398,9 @@ export function generateBeachMap() {
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'pearl',           x: 26, y: 20, hitsNeeded: 1, respawnTime: 45 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'rainbow_shell',   x: 40, y: 28, hitsNeeded: 1, respawnTime: 60 });
 
+  // --- Beach bonfire (campfire near pier for cozy sunset vibes) ---
+  props.push({ type: 'bonfire', x: 30, y: 18 });
+
   // --- Driftwood resource nodes ---
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'driftwood', x: 12, y: 12, id: 'drift1', hitsNeeded: 1, respawnTime: 30 });
   props.push({ type: 'resource', resourceType: 'shell', itemId: 'driftwood', x: 38, y: 14, id: 'drift2', hitsNeeded: 1, respawnTime: 30 });
@@ -410,6 +413,9 @@ export function generateBeachMap() {
   const exits = [
     { id: 'north', x: 24, y: 5, w: 6, h: 2, target: 'lake', spawnX: 21, spawnY: 33 },
   ];
+
+  // Beach bonfire collision
+  collision[18][30] = 1;
 
   // ── Auto-tile water edges (smooth ocean-sand transitions) ──
   resolveAutoTiles(ground, 10, WATER_EDGES);
