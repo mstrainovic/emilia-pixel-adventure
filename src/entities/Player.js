@@ -10,6 +10,18 @@ export class Player extends Entity {
   // Cute_Fantasy sprites already include a shadow in the texture
   _createShadow() {}
 
+  updatePosition() {
+    const ox = this._attackOffsetX || 0;
+    const oy = this._attackOffsetY || 0;
+    const z = 0.2 + this.y * 0.001;
+    for (const sprite of Object.values(this.sprites)) {
+      sprite.setPosition(this.x + ox, this.y + oy, z);
+    }
+    if (this.shadow) {
+      this.shadow.position.set(this.x + ox, -(this.y + oy + 0.8), z - 0.05);
+    }
+  }
+
   constructor() {
     super();
     this.direction = DIR_DOWN;
@@ -55,16 +67,49 @@ export class Player extends Entity {
     }
 
     if (this.state === 'attack') {
-      // Switch to sword swing sprite from Player_Actions.png
+      // Keep Emilia visible with her facing idle sprite (no slice swap)
       const dirKey = (this.direction === DIR_LEFT || this.direction === DIR_RIGHT) ? 'side' : this.direction;
-      this.setAnimation(`slice_${dirKey}`);
+      const idleAnim = `idle_${dirKey}`;
+      if (this.activeAnim !== idleAnim && this.sprites[idleAnim]) {
+        this.setAnimation(idleAnim);
+      }
       if (this.activeSprite) {
         this.activeSprite.flipX(this.direction === DIR_LEFT);
-        this.activeSprite.loop = false;
       }
+
+      // Lunge animation — step forward then spring back
+      if (!this._lungeTimer) this._lungeTimer = 0;
+      this._lungeTimer += dt;
+      const lungeT = Math.min(1, this._lungeTimer / 0.3);
+      // Quick forward, slow return (ease-out-back)
+      const lungeAmount = lungeT < 0.35
+        ? (lungeT / 0.35) * 0.4
+        : 0.4 * (1 - (lungeT - 0.35) / 0.65);
+      const lungeDirs = {
+        [DIR_DOWN]: { dx: 0, dy: lungeAmount },
+        [DIR_UP]: { dx: 0, dy: -lungeAmount },
+        [DIR_LEFT]: { dx: -lungeAmount, dy: 0 },
+        [DIR_RIGHT]: { dx: lungeAmount, dy: 0 },
+      };
+      const lunge = lungeDirs[this.direction] || lungeDirs[DIR_DOWN];
+      this._attackOffsetX = lunge.dx;
+      this._attackOffsetY = lunge.dy;
+
+      // Squash-and-stretch for swing feel
+      if (this.activeSprite?.mesh) {
+        const squash = lungeT < 0.2 ? 1 + lungeT * 1.5 : 1 + (1 - lungeT) * 0.15;
+        const stretch = lungeT < 0.2 ? 1 - lungeT * 0.5 : 1;
+        this.activeSprite.mesh.scale.x = Math.abs(this.activeSprite.mesh.scale.x) * (this.direction === DIR_LEFT ? -stretch : stretch);
+        this.activeSprite.mesh.scale.y = Math.abs(this.activeSprite.mesh.scale.y) * squash;
+      }
+
       super.update(dt);
       return;
     }
+    // Reset attack offsets
+    this._attackOffsetX = 0;
+    this._attackOffsetY = 0;
+    this._lungeTimer = 0;
 
     if (this.state === 'dead') {
       // Rapid flash during death animation

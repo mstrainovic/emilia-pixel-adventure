@@ -68,6 +68,13 @@ export class CombatSystem {
       if (this.attackTimer <= 0) {
         this.isAttacking = false;
         player.state = 'idle';
+        player._lungeTimer = 0;
+        player._attackOffsetX = 0;
+        player._attackOffsetY = 0;
+        // Reset sprite scale from squash-and-stretch
+        if (player.activeSprite?.mesh) {
+          player.activeSprite.mesh.scale.set(1, 1, 1);
+        }
       }
     }
 

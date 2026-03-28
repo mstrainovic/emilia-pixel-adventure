@@ -55,26 +55,32 @@ export class VisualEffects {
     swordTex.magFilter = THREE.NearestFilter;
     swordTex.minFilter = THREE.NearestFilter;
 
-    const sGeo = new THREE.PlaneGeometry(1, 2);
+    const sGeo = new THREE.PlaneGeometry(0.7, 1.6);
     const sMat = new THREE.MeshBasicMaterial({
       map: swordTex, transparent: true, depthWrite: false,
     });
     const sword = new THREE.Mesh(sGeo, sMat);
-    // Position sword between player and slash center
-    sword.position.set(x + cfg.ox * 0.6, -(y + cfg.oy * 0.6), z + 0.03);
-    sword.rotation.z = cfg.rot - 0.8;
+    // Sword starts at Emilia's hand (close to body) and swings outward
+    const startOx = cfg.ox * 0.2;
+    const startOy = cfg.oy * 0.2;
+    sword.position.set(x + startOx, -(y + startOy), z + 0.03);
+    sword.rotation.z = cfg.rot + cfg.startRot * 1.5;
     this.scene.add(sword);
 
     this.effects.push({
-      mesh: sword, age: 0, maxAge: 0.25,
+      mesh: sword, age: 0, maxAge: 0.3,
       update: (dt, e) => {
         e.age += dt;
         const t = Math.min(1, e.age / e.maxAge);
-        // Ease-out cubic for snappy sword swing
+        // Ease-out for snappy swing
         const eased = 1 - Math.pow(1 - t, 3);
-        sword.rotation.z = cfg.rot - 0.8 + 1.6 * eased;
-        // Fade out last 30%
-        sMat.opacity = t > 0.7 ? 1.0 - (t - 0.7) / 0.3 : 1.0;
+        // Sword moves outward from body during swing
+        const swingOx = startOx + (cfg.ox * 0.8) * eased;
+        const swingOy = startOy + (cfg.oy * 0.8) * eased;
+        sword.position.set(x + swingOx, -(y + swingOy), z + 0.03);
+        sword.rotation.z = cfg.rot + cfg.startRot * 1.5 - cfg.startRot * 3.0 * eased;
+        // Fade out last 25%
+        sMat.opacity = t > 0.75 ? 1.0 - (t - 0.75) / 0.25 : 1.0;
         if (sMat.opacity <= 0.01) sword.visible = false;
       }
     });
