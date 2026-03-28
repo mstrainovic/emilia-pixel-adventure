@@ -72,6 +72,7 @@ import { LightingSystem } from '../rendering/LightingSystem.js';
 import { EmotionBubbles } from '../rendering/EmotionBubbles.js';
 import { WaterRenderer } from '../rendering/WaterRenderer.js';
 import { QuestWaypoint } from '../ui/QuestWaypoint.js';
+import { Minimap } from '../ui/Minimap.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -238,6 +239,7 @@ export class Game {
     this.hud = new HUD();
     this.hud.onItemUse = (slotIdx) => this._useItemFromSlot(slotIdx);
     this.questWaypoint = new QuestWaypoint();
+    this.minimap = new Minimap();
     this.pickupPopup = new PickupPopup();
     this.gameOverScreen = new GameOverScreen();
     this.damageNumbers = null; // floating damage numbers, created per scene
@@ -659,6 +661,11 @@ export class Game {
     this.tileMap = new TileMap(mapData);
     this.camera.setMapBounds(mapData.width, mapData.height);
     this.camera.resetZoom(); // fresh zoom for new scene
+
+    // Update minimap terrain
+    if (this.minimap) {
+      this.minimap.setScene(sceneName, mapData.ground, mapData.width, mapData.height, mapData.exits);
+    }
 
     // Render ground
     this.tileMapRenderer = new TileMapRenderer(this.scene);
@@ -2397,6 +2404,11 @@ export class Game {
         this.sceneManager.currentScene,
         this.camera
       );
+    }
+
+    // Minimap update
+    if (this.minimap) {
+      this.minimap.update(dt, this.player.x, this.player.y, this.npcs);
     }
 
     // Dynamic lighting update
