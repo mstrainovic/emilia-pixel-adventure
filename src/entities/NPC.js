@@ -98,7 +98,7 @@ export class NPC extends Entity {
 
     // Idle breathing — subtle Y-scale oscillation
     this._breathTime += dt * this._breathSpeed;
-    const breathScale = 1.0 + Math.sin(this._breathTime * Math.PI * 2) * 0.015;
+    const breathScale = 1.0 + Math.sin(this._breathTime * Math.PI * 2) * 0.005;
     if (this.activeSprite?.mesh) {
       this.activeSprite.mesh.scale.y = Math.abs(this.activeSprite.mesh.scale.y) * breathScale;
     }
