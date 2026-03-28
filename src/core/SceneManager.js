@@ -99,6 +99,18 @@ export class SceneManager {
   }
 
   update(dt) {
+    // Scene name fade-out runs independently of transitions
+    if (this._nameTimer > 0) {
+      this._nameTimer -= dt;
+      if (this._nameTimer <= 0.5) {
+        this._nameOverlay.style.opacity = String(Math.max(0, this._nameTimer / 0.5));
+      }
+      if (this._nameTimer <= 0) {
+        this._nameTimer = 0;
+        this._nameOverlay.style.opacity = '0';
+      }
+    }
+
     if (!this.transitioning) return;
 
     this.fadeElapsed += dt;
@@ -139,16 +151,6 @@ export class SceneManager {
       }
     }
 
-    // Scene name fade out
-    if (this._nameTimer > 0) {
-      this._nameTimer -= dt;
-      if (this._nameTimer <= 0.5) {
-        this._nameOverlay.style.opacity = Math.max(0, this._nameTimer / 0.5);
-      }
-      if (this._nameTimer <= 0) {
-        this._nameOverlay.style.opacity = '0';
-      }
-    }
   }
 
   _showSceneName(sceneName) {

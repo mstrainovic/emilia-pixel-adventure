@@ -68,6 +68,8 @@ import { PickupPopup } from '../ui/PickupPopup.js';
 import { MapVignette } from '../rendering/MapVignette.js';
 import { GameOverScreen } from '../ui/GameOverScreen.js';
 import { TradeUI } from '../ui/TradeUI.js';
+import { LightingSystem } from '../rendering/LightingSystem.js';
+import { EmotionBubbles } from '../rendering/EmotionBubbles.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -865,10 +867,19 @@ export class Game {
     for (const bird of this.birds) bird.dispose();
     this.birds = createBirdsForScene(sceneName, this.scene, mapData.props);
 
-    // Ambient life (swaying trees, clouds, waves, constellations)
+    // Ambient life (swaying trees, clouds, waves, constellations, particles)
     if (this.ambientLife) this.ambientLife.dispose();
     this.ambientLife = new AmbientLife(this.scene, this.camera);
     this.ambientLife.init(sceneName, mapData.props, mapData.width, mapData.height, this.tileMapRenderer?.propMeshes || []);
+
+    // Dynamic lighting (torches, bonfires, crystals)
+    if (this.lighting) this.lighting.dispose();
+    this.lighting = new LightingSystem(this.scene);
+    this.lighting.init(sceneName, mapData.props);
+
+    // NPC emotion bubbles
+    if (this.emotionBubbles) this.emotionBubbles.dispose();
+    this.emotionBubbles = new EmotionBubbles(this.scene);
 
     // Teleport pet to new scene
     if (this.pet) {
@@ -992,6 +1003,8 @@ export class Game {
     for (const bird of this.birds) bird.dispose();
     this.birds = [];
     if (this.ambientLife) { this.ambientLife.dispose(); this.ambientLife = null; }
+    if (this.lighting) { this.lighting.dispose(); this.lighting = null; }
+    if (this.emotionBubbles) { this.emotionBubbles.dispose(); this.emotionBubbles = null; }
 
     // Clear fishing spots
     this.fishing.setSpots([]);
@@ -2352,6 +2365,15 @@ export class Game {
 
     // Ambient life update
     if (this.ambientLife) this.ambientLife.update(dt, this.camera.three);
+
+    // Dynamic lighting update
+    if (this.lighting) this.lighting.update(dt);
+
+    // Emotion bubbles
+    if (this.emotionBubbles) {
+      this.emotionBubbles.updateNPCs(dt, this.npcs, this.player, this.progression);
+      this.emotionBubbles.update(dt);
+    }
 
     // Day/Night cycle
     this.dayNight.update(dt);
