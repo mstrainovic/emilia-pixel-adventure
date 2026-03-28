@@ -73,6 +73,8 @@ import { EmotionBubbles } from '../rendering/EmotionBubbles.js';
 import { WaterRenderer } from '../rendering/WaterRenderer.js';
 import { QuestWaypoint } from '../ui/QuestWaypoint.js';
 import { Minimap } from '../ui/Minimap.js';
+import { TutorialTooltips } from '../ui/TutorialTooltips.js';
+import { HelpOverlay } from '../ui/HelpOverlay.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -240,6 +242,9 @@ export class Game {
     this.hud.onItemUse = (slotIdx) => this._useItemFromSlot(slotIdx);
     this.questWaypoint = new QuestWaypoint();
     this.minimap = new Minimap();
+    this.tutorialTooltips = new TutorialTooltips();
+    this.helpOverlay = new HelpOverlay();
+    this._isNewGame = false;
     this.pickupPopup = new PickupPopup();
     this.gameOverScreen = new GameOverScreen();
     this.damageNumbers = null; // floating damage numbers, created per scene
@@ -556,6 +561,7 @@ export class Game {
       this.audio.init();
       this.audio.playUIClick();
       this.progression.initNewGame();
+      this._isNewGame = true;
       menu.hide();
       await this._buildScene('hub', { x: 20, y: 15 });
       this.hud.updateHotbar(this.inventory);
@@ -609,6 +615,8 @@ export class Game {
         if (typeof save.distanceWalked === 'number') this._distanceWalked = save.distanceWalked;
         if (save.bossNoHitKill) this._bossNoHitKill = save.bossNoHitKill;
         if (save.collectedRareFinds) this._collectedRareFinds = new Set(save.collectedRareFinds);
+        if (this.tutorialTooltips) this.tutorialTooltips.loadState(save.seenTooltips || []);
+        this._isNewGame = false;
         const scene = save.player?.scene || 'hub';
         const x = save.player?.x || 20;
         const y = save.player?.y || 15;
@@ -2226,8 +2234,14 @@ export class Game {
       this.hud.toggleInventory(this.inventory);
     }
 
-    // Skip gameplay updates if dialog, crafting, trading, fishing, explorer book UI, or inventory is open
-    const uiBlocking = this.dialog.isActive || this.crafting.isActive || (this.tradeUI && this.tradeUI.isOpen) || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen();
+    // H key — toggle help overlay (BEFORE uiBlocking so it works from any state)
+    if (this.input.justPressed('KeyH') && this.helpOverlay) {
+      const activeQuest = this.progression.getActiveQuest();
+      this.helpOverlay.toggle(activeQuest, this.sceneManager.currentScene);
+    }
+
+    // Skip gameplay updates if dialog, crafting, trading, fishing, explorer book UI, inventory, or help is open
+    const uiBlocking = this.dialog.isActive || this.crafting.isActive || (this.tradeUI && this.tradeUI.isOpen) || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen() || (this.helpOverlay && this.helpOverlay.isOpen);
 
     // Dialog system — subtle zoom during conversations
     const wasDialogActive = this.dialog.isActive;
@@ -2363,6 +2377,7 @@ export class Game {
                           this.progression.resetQuests();
                           this._bossStates = {};
                           this._ngMobMultipliers = ngData;
+                          if (this.tutorialTooltips) this.tutorialTooltips.loadState([]);
                           this.hud.showNgPlus(this.newGamePlus.cycleCount);
                           this.hud.showInfo('Neues Abenteuer+ gestartet!');
                           this.sceneManager.transition('hub', 10, 10);
@@ -2404,6 +2419,17 @@ export class Game {
         this.sceneManager.currentScene,
         this.camera
       );
+    }
+
+    // Tutorial tooltips
+    if (this.tutorialTooltips) {
+      this.tutorialTooltips.update(dt, {
+        player: this.player, npcs: this.npcs, mobs: this.mobs,
+        tileMap: this.tileMap, inventory: this.inventory, input: this.input,
+        dialog: this.dialog, crafting: this.crafting, fishing: this.fishing,
+        combat: this.combat, itemDrops: this.itemDrops, hud: this.hud,
+        isNewGame: this._isNewGame,
+      });
     }
 
     // Minimap update
@@ -2641,6 +2667,7 @@ export class Game {
       distanceWalked: this._distanceWalked,
       bossNoHitKill: this._bossNoHitKill,
       collectedRareFinds: [...this._collectedRareFinds],
+      seenTooltips: this.tutorialTooltips?.getState() || [],
     }));
 
     // Input cleanup

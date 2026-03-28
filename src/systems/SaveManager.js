@@ -37,6 +37,7 @@ export class SaveManager {
     data.distanceWalked = gameState.distanceWalked || 0;
     data.bossNoHitKill = gameState.bossNoHitKill || false;
     data.collectedRareFinds = gameState.collectedRareFinds || [];
+    data.seenTooltips = gameState.seenTooltips || [];
 
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
