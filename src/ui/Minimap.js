@@ -31,7 +31,7 @@ const TILE_COLORS = {
   22: '#a0b0c8', // crystal floor
 };
 
-const MAP_SIZE = 140; // px
+const MAP_SIZE = 120; // px
 const PADDING = 10;
 
 export class Minimap {
@@ -40,7 +40,7 @@ export class Minimap {
     this._container = document.createElement('div');
     this._container.id = 'minimap-container';
     this._container.style.cssText = `
-      position: fixed; top: 10px; right: 10px;
+      position: fixed; bottom: 70px; left: 10px;
       width: ${MAP_SIZE + 4}px; height: ${MAP_SIZE + 4}px;
       border: 2px solid rgba(255,215,0,0.5);
       border-radius: 4px;
