@@ -217,7 +217,6 @@ export function generateHubMap() {
 
     // ── Maple trees from Farm RPG (complement existing trees) ──
     { type: 'maple_tree', x: 22, y: 8 },
-    { type: 'maple_tree', x: 17, y: 22 },
     { type: 'maple_tree', x: 22, y: 22 },
 
     // ── Bonfire (south side of park, communal gathering spot) ──
