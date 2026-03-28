@@ -110,12 +110,19 @@ export function generateHubMap() {
   fillRect(ground, 28, 16, 2, 5, 4);      // south-east branch
   fillRect(ground, 28, 20, 3, 1, 4);      // connects sawmill
 
-  // ── Village square — organic shape ──
-  fillRect(ground, 17, 12, 6, 6, 5);      // main square
-  fillRect(ground, 16, 13, 1, 4, 5);      // west nub
-  fillRect(ground, 23, 13, 1, 4, 5);      // east nub
-  fillRect(ground, 18, 11, 4, 1, 5);      // north nub
-  fillRect(ground, 18, 18, 4, 1, 5);      // south nub
+  // ── Village square — green park with flower border ──
+  fillRect(ground, 17, 12, 6, 6, 2);      // main square: light grass
+  fillRect(ground, 18, 13, 4, 4, 8);      // inner: flower grass
+  fillRect(ground, 19, 14, 2, 2, 2);      // very center: light grass clearing
+  fillRect(ground, 16, 13, 1, 4, 2);      // west edge: light grass
+  fillRect(ground, 23, 13, 1, 4, 2);      // east edge: light grass
+  fillRect(ground, 18, 11, 4, 1, 2);      // north edge: light grass
+  fillRect(ground, 18, 18, 4, 1, 2);      // south edge: light grass
+  // Dirt path ring around the park (so it connects naturally to roads)
+  fillRect(ground, 17, 12, 6, 1, 4);      // north path edge
+  fillRect(ground, 17, 17, 6, 1, 4);      // south path edge
+  fillRect(ground, 17, 12, 1, 6, 4);      // west path edge
+  fillRect(ground, 22, 12, 1, 6, 4);      // east path edge
 
   // ── Small dirt patches near buildings (lived-in look) ──
   fillRect(ground, 7, 9, 3, 2, 5);        // kitchen front yard
@@ -281,6 +288,12 @@ export function generateHubMap() {
     { type: 'bush', x: 14, y: 4 },
     { type: 'bush', x: 25, y: 4 },
 
+    // ── Village park flowers (spawn area) ──
+    { type: 'flower', x: 18, y: 13 },
+    { type: 'flower', x: 21, y: 13 },
+    { type: 'flower', x: 18, y: 16 },
+    { type: 'flower', x: 21, y: 16 },
+
     // ── Flowers — scattered naturally along paths and between buildings ──
     { type: 'flower', x: 17, y: 9 },
     { type: 'flower', x: 22, y: 9 },
@@ -355,6 +368,6 @@ export function generateHubMap() {
     ground, collision, props, exits,
     npcs: FAMILY_NPCS,
     tileDefs: null, // use GENERATED_TILE_DEFS (includes auto-tile IDs)
-    playerSpawn: { x: 19, y: 12 }
+    playerSpawn: { x: 19, y: 14 }
   };
 }
