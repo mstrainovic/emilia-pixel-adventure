@@ -464,6 +464,13 @@ export class Game {
       this.audio.playLevelUp();
       this.hud.showLevelUp(level, data.rewards);
       this.progression.applyToPlayer(this.player);
+      // Level-up particle celebration
+      if (this.ambientLife?._particles && this.player) {
+        this.ambientLife._particles.burst(this.player.x, this.player.y, 30, {
+          type: 'spark', color: [1, 0.9, 0.3], life: 1.8, size: 1.2,
+        });
+      }
+      if (this.juice) this.juice.whiteFlash();
       // Regenerate 25% HP on level up
       const healAmount = Math.ceil(this.player.maxHp * 0.25);
       this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
@@ -476,6 +483,16 @@ export class Game {
     this.progression.onQuestComplete = (def) => {
       this.audio.playChestOpen();
       this.hud.showQuestComplete(def.name);
+      // Celebration particle burst around player
+      if (this.ambientLife?._particles && this.player) {
+        this.ambientLife._particles.burst(this.player.x, this.player.y, 25, {
+          type: 'sparkle', color: [1, 0.85, 0.2], life: 2, size: 1.3,
+        });
+        this.ambientLife._particles.burst(this.player.x, this.player.y, 15, {
+          type: 'spark', color: [1, 1, 0.6], life: 1.5, size: 0.9,
+        });
+      }
+      if (this.juice) this.juice.whiteFlash();
       // Grant quest item rewards
       if (def.itemReward) {
         for (const r of def.itemReward) this.inventory.addItem(r.itemId, r.count);
@@ -636,6 +653,7 @@ export class Game {
     // Build tile map
     this.tileMap = new TileMap(mapData);
     this.camera.setMapBounds(mapData.width, mapData.height);
+    this.camera.resetZoom(); // fresh zoom for new scene
 
     // Render ground
     this.tileMapRenderer = new TileMapRenderer(this.scene);
@@ -799,6 +817,8 @@ export class Game {
       boss.createSprite(this.scene);
       this._activeBoss = boss;
       this.bossHealthBar.show(bossDef.name);
+      // Cinematic zoom for boss encounter
+      this.camera.zoomTo(1.15, 1.5);
     }
 
     // Fishing spots
@@ -2167,8 +2187,14 @@ export class Game {
     // Skip gameplay updates if dialog, crafting, trading, fishing, explorer book UI, or inventory is open
     const uiBlocking = this.dialog.isActive || this.crafting.isActive || (this.tradeUI && this.tradeUI.isOpen) || this.fishing.isActive || this.explorerBookUI.isOpen || this.hud.isInventoryOpen();
 
-    // Dialog system
+    // Dialog system — subtle zoom during conversations
+    const wasDialogActive = this.dialog.isActive;
     this.dialog.update(dt, this.player, this.npcs, this.input);
+    if (this.dialog.isActive && !wasDialogActive) {
+      this.camera.zoomTo(1.1, 2.0); // gentle zoom in on dialog start
+    } else if (!this.dialog.isActive && wasDialogActive && !this._activeBoss) {
+      this.camera.zoomTo(1.0, 2.0); // zoom back out when dialog ends
+    }
 
     // Crafting system — skip if dialog is active or just finished (cooldown prevents overlap)
     if (!this.dialog.isActive && this.dialog.cooldown <= 0) {
@@ -2262,6 +2288,8 @@ export class Game {
         this.progression.reportBossKill(boss.bossType);
         this.hud.showInfo(`Boss besiegt! +${boss.xp} XP`);
         this.bossHealthBar.hide();
+        // Reset camera zoom after boss defeat
+        this.camera.zoomTo(1.0, 1.0);
 
         // sword_gem_plus auto-upgrade after Leviathan
         if (boss.bossType === 'leviathan' && this.inventory.hasItem('sword_gem', 1)) {
@@ -2323,7 +2351,7 @@ export class Game {
     for (const bird of this.birds) bird.update(dt);
 
     // Ambient life update
-    if (this.ambientLife) this.ambientLife.update(dt);
+    if (this.ambientLife) this.ambientLife.update(dt, this.camera.three);
 
     // Day/Night cycle
     this.dayNight.update(dt);
@@ -2455,6 +2483,11 @@ export class Game {
         for (const drop of picked) {
           // Sparkle burst at pickup location
           if (this.vfx) this.vfx.pickupGlow(drop.x, drop.y);
+          if (this.ambientLife?._particles) {
+            this.ambientLife._particles.burst(drop.x, drop.y, 8, {
+              type: 'sparkle', color: [1, 1, 0.7], life: 1.0, size: 0.8,
+            });
+          }
           // Floating "+N Name" text popup
           if (this.pickupPopup) {
             this.pickupPopup.show(drop.itemId, drop.count, this.camera.three, drop.x, drop.y);

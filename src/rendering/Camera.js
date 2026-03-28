@@ -17,6 +17,12 @@ export class Camera {
     this.mapWidth = 50;
     this.mapHeight = 40;
 
+    // Zoom system
+    this._baseZoom = 1.0;
+    this._currentZoom = 1.0;
+    this._targetZoom = 1.0;
+    this._zoomSpeed = 2.0; // lerp speed
+
     window.addEventListener('resize', () => this._onResize());
   }
 
@@ -28,6 +34,12 @@ export class Camera {
   follow(targetX, targetY, dt) {
     this.targetX = targetX;
     this.targetY = targetY;
+
+    // Smooth zoom
+    if (Math.abs(this._currentZoom - this._targetZoom) > 0.001) {
+      this._currentZoom = lerp(this._currentZoom, this._targetZoom, this._zoomSpeed * dt);
+      this._applyZoom();
+    }
 
     const t = 1 - Math.pow(1 - CAMERA_LERP, dt * 60);
 
@@ -44,6 +56,35 @@ export class Camera {
 
     this.cam.position.x = camX;
     this.cam.position.y = camY;
+  }
+
+  /**
+   * Smooth zoom to a target level.
+   * @param {number} zoom — 1.0 = normal, 1.2 = 20% closer, 0.8 = zoomed out
+   * @param {number} [speed] — lerp speed (higher = faster)
+   */
+  zoomTo(zoom, speed) {
+    this._targetZoom = clamp(zoom, 0.5, 2.0);
+    if (speed !== undefined) this._zoomSpeed = speed;
+  }
+
+  /** Instant zoom reset to default. */
+  resetZoom() {
+    this._targetZoom = this._baseZoom;
+    this._currentZoom = this._baseZoom;
+    this._zoomSpeed = 2.0;
+    this._applyZoom();
+  }
+
+  _applyZoom() {
+    const aspect = window.innerWidth / window.innerHeight;
+    const halfH = (VISIBLE_TILES_Y / 2) / this._currentZoom;
+    const halfW = halfH * aspect;
+    this.cam.left = -halfW;
+    this.cam.right = halfW;
+    this.cam.top = halfH;
+    this.cam.bottom = -halfH;
+    this.cam.updateProjectionMatrix();
   }
 
   get three() {

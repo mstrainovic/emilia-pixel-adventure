@@ -12,3 +12,4 @@ temp_docx*/
 *.pem
 *.key
 credentials.*
+.superpowers/
