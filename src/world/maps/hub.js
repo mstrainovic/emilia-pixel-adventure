@@ -191,13 +191,11 @@ export function generateHubMap() {
     { x: 36, y: 19, v: 'oak_green' },
     { x: 36, y: 24, v: 'pine_med2' },
 
-    // Interior — 6 decorative trees, forming a pleasant village frame
+    // Interior — 4 decorative trees (removed center clipped ones)
     { x: 13, y: 6,  v: 'oak_green' },   // near kitchen path
     { x: 26, y: 6,  v: 'round_green' }, // near workshop path
     { x: 13, y: 24, v: 'pine_med' },    // near garden
     { x: 26, y: 24, v: 'oak_yellow' },  // near sawmill
-    { x: 20, y: 8,  v: 'round_dark' },  // center-north decorative
-    { x: 20, y: 24, v: 'oak_green' },   // center-south decorative
   ];
 
   // Tree trunk collision (1 tile at base)
@@ -218,7 +216,6 @@ export function generateHubMap() {
     { type: 'house', x: 32, y: 10 }, // Deda — alchemy lab
 
     // ── Maple trees from Farm RPG (complement existing trees) ──
-    { type: 'maple_tree', x: 17, y: 8 },
     { type: 'maple_tree', x: 22, y: 8 },
     { type: 'maple_tree', x: 17, y: 22 },
     { type: 'maple_tree', x: 22, y: 22 },
@@ -338,8 +335,8 @@ export function generateHubMap() {
     // ── Signposts near exits ──
     { type: 'signpost', x: 16, y: 3,  label: '🌲 Wald',   dir: 'north' },
     { type: 'signpost', x: 22, y: 3,  label: '🌲 Wald',   dir: 'north' },
-    { type: 'signpost', x: 16, y: 28, label: '🏖 See',    dir: 'south' },
-    { type: 'signpost', x: 22, y: 28, label: '🏖 See',    dir: 'south' },
+    { type: 'signpost', x: 17, y: 27, label: '🏖 See',    dir: 'south' },
+    { type: 'signpost', x: 22, y: 27, label: '🏖 See',    dir: 'south' },
     { type: 'signpost', x: 37, y: 14, label: '⚔ Dungeon', dir: 'east'  },
   ];
 
