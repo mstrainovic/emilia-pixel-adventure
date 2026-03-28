@@ -71,6 +71,7 @@ import { TradeUI } from '../ui/TradeUI.js';
 import { LightingSystem } from '../rendering/LightingSystem.js';
 import { EmotionBubbles } from '../rendering/EmotionBubbles.js';
 import { WaterRenderer } from '../rendering/WaterRenderer.js';
+import { QuestWaypoint } from '../ui/QuestWaypoint.js';
 
 function _createPalmSprite() {
   const c = document.createElement('canvas');
@@ -236,6 +237,7 @@ export class Game {
     this.combat = new CombatSystem();
     this.hud = new HUD();
     this.hud.onItemUse = (slotIdx) => this._useItemFromSlot(slotIdx);
+    this.questWaypoint = new QuestWaypoint();
     this.pickupPopup = new PickupPopup();
     this.gameOverScreen = new GameOverScreen();
     this.damageNumbers = null; // floating damage numbers, created per scene
@@ -2385,6 +2387,17 @@ export class Game {
 
     // Ambient life update
     if (this.ambientLife) this.ambientLife.update(dt, this.camera.three);
+
+    // Quest waypoint arrow update
+    if (this.questWaypoint) {
+      const activeQuest = this.progression.getActiveQuest();
+      this.questWaypoint.update(
+        activeQuest,
+        this.player.x, this.player.y,
+        this.sceneManager.currentScene,
+        this.camera
+      );
+    }
 
     // Dynamic lighting update
     if (this.lighting) this.lighting.update(dt);
