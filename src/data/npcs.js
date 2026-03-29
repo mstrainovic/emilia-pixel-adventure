@@ -162,8 +162,8 @@ export const FAMILY_NPCS = [
     hairStyle: 'bun',
     hairColor: 0xc0b8b0,   // Silbergraues Haar
     clothingColor: 0xaa77cc, // Lila Kleid
-    x: 8, y: 23,
-    direction: 'side',
+    x: 8, y: 20,
+    direction: 'down',
     favoriteGifts: ['vegetable', 'seed_carrot'],
     dialogs: [
       'Sonnenschein! Siehst du die welken Pflanzen? Drueck F!',
