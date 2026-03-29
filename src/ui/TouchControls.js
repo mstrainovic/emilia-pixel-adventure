@@ -56,20 +56,26 @@ export class TouchControls {
     this.btnGroup.appendChild(this.btnInteract);
     this.btnGroup.appendChild(this.btnAttack);
 
-    // Run toggle (left side, above joystick)
+    // Run toggle (above attack button, right side)
     this.btnRun = document.createElement('div');
     this.btnRun.id = 'touch-btn-run';
     this.btnRun.textContent = '🏃';
 
-    // Inventory button (left side, above run button)
+    // Inventory button (top-right utility area)
     this.btnInventory = document.createElement('div');
     this.btnInventory.id = 'touch-btn-inventory';
     this.btnInventory.textContent = '🎒';
+
+    // Help button (top-right, next to inventory)
+    this.btnHelp = document.createElement('div');
+    this.btnHelp.id = 'touch-btn-help';
+    this.btnHelp.textContent = '❓';
 
     this.container.appendChild(this.joyZone);
     this.container.appendChild(this.btnGroup);
     this.container.appendChild(this.btnRun);
     this.container.appendChild(this.btnInventory);
+    this.container.appendChild(this.btnHelp);
     document.body.appendChild(this.container);
     this._injectStyles();
   }
@@ -125,6 +131,17 @@ export class TouchControls {
       setTimeout(() => {
         this.input.simulateKeyUp('KeyI');
         this.btnInventory.classList.remove('active');
+      }, 80);
+    }, joyOpts);
+
+    // --- Help toggle ---
+    this.btnHelp.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      this.input.simulateKeyDown('KeyH');
+      this.btnHelp.classList.add('active');
+      setTimeout(() => {
+        this.input.simulateKeyUp('KeyH');
+        this.btnHelp.classList.remove('active');
       }, 80);
     }, joyOpts);
   }
@@ -206,13 +223,17 @@ export class TouchControls {
       }
       @media (hover: none) and (pointer: coarse) {
         #touch-controls { display: block !important; }
+        /* Hide minimap on touch devices — it conflicts with controls */
+        #minimap-container { display: none !important; }
       }
 
-      /* ── Joystick zone ── */
+      /* ── Joystick zone (left half, bottom — OUTSIDE button areas) ── */
       #touch-joy-zone {
         position: absolute;
-        left: 0; bottom: 0;
-        width: 45%; height: 55%;
+        left: 0;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        width: 40%;
+        height: 45%;
         pointer-events: auto;
         touch-action: none;
       }
@@ -230,7 +251,7 @@ export class TouchControls {
       #touch-joy-knob {
         position: absolute;
         left: 50%; top: 50%;
-        width: 44px; height: 44px;
+        width: 48px; height: 48px;
         border-radius: 50%;
         background: rgba(255,255,255,0.45);
         border: 2px solid rgba(255,255,255,0.65);
@@ -238,29 +259,32 @@ export class TouchControls {
         box-shadow: 0 0 8px rgba(255,255,255,0.2);
       }
 
-      /* ── Action buttons ── */
+      /* ── Action buttons (right side, diamond layout) ── */
       #touch-btn-group {
         position: fixed;
-        right: 12px; bottom: 72px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
+        right: calc(16px + env(safe-area-inset-right, 0px));
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        display: grid;
+        grid-template-columns: 56px 56px;
+        grid-template-rows: 56px 56px;
+        gap: 8px;
         pointer-events: auto;
         touch-action: none;
       }
 
       .touch-btn {
         border-radius: 50%;
-        background: rgba(0,0,0,0.35);
+        background: rgba(0,0,0,0.4);
         border: 2px solid rgba(255,255,255,0.35);
         color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
         font-family: 'Press Start 2P', monospace;
+        font-size: 18px;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
         transition: background 0.08s, border-color 0.08s;
+        width: 56px; height: 56px;
       }
       .touch-btn.pressed {
         background: rgba(255,255,255,0.25);
@@ -269,10 +293,11 @@ export class TouchControls {
       }
 
       .touch-btn-lg {
-        width: 72px; height: 72px;
-        font-size: 28px;
+        width: 56px; height: 56px;
+        font-size: 22px;
         background: rgba(160,40,40,0.4);
         border-color: rgba(255,90,90,0.45);
+        grid-column: 2; grid-row: 2;
       }
       .touch-btn-lg.pressed {
         background: rgba(255,80,80,0.45);
@@ -283,15 +308,11 @@ export class TouchControls {
         font-size: 18px;
       }
 
-      .touch-btn-sm {
-        width: 48px; height: 48px;
-        font-size: 20px;
-      }
-
-      /* ── Run toggle ── */
+      /* ── Run toggle (above action buttons, right side) ── */
       #touch-btn-run {
         position: fixed;
-        left: 16px; bottom: 72px;
+        right: calc(88px + env(safe-area-inset-right, 0px));
+        bottom: calc(152px + env(safe-area-inset-bottom, 0px));
         width: 48px; height: 48px;
         border-radius: 50%;
         background: rgba(0,0,0,0.35);
@@ -310,16 +331,17 @@ export class TouchControls {
         border-color: rgba(80,180,255,0.65);
       }
 
-      /* ── Inventory toggle ── */
+      /* ── Utility buttons (top-right) ── */
       #touch-btn-inventory {
         position: fixed;
-        left: 16px; bottom: 130px;
-        width: 48px; height: 48px;
+        right: calc(16px + env(safe-area-inset-right, 0px));
+        top: calc(60px + env(safe-area-inset-top, 0px));
+        width: 44px; height: 44px;
         border-radius: 50%;
         background: rgba(20,15,10,0.5);
         border: 2px solid rgba(139,105,20,0.6);
         color: #fff;
-        font-size: 22px;
+        font-size: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -331,6 +353,28 @@ export class TouchControls {
         background: rgba(139,105,20,0.5);
         border-color: rgba(255,215,0,0.7);
         transform: scale(0.92);
+      }
+
+      #touch-btn-help {
+        position: fixed;
+        right: calc(68px + env(safe-area-inset-right, 0px));
+        top: calc(60px + env(safe-area-inset-top, 0px));
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: rgba(20,15,40,0.5);
+        border: 2px solid rgba(100,100,200,0.6);
+        color: #fff;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        touch-action: none;
+        transition: background 0.1s;
+      }
+      #touch-btn-help.active {
+        background: rgba(100,100,200,0.5);
+        border-color: rgba(150,150,255,0.7);
       }
     `;
     document.head.appendChild(style);
