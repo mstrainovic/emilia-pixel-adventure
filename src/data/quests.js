@@ -35,7 +35,7 @@ export const QUESTS = {
     target: 'plant',
     count: 3,
     xpReward: 40,
-    itemReward: [{ itemId: 'magic_herb', count: 2 }],
+    itemReward: [{ itemId: 'magic_herb', count: 2 }, { itemId: 'seed_carrot', count: 3 }, { itemId: 'seed_tomato', count: 2 }],
   },
   slime_hunter: {
     id: 'slime_hunter',

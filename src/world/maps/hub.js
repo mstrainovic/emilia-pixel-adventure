@@ -264,6 +264,9 @@ export function generateHubMap() {
     { type: 'resource', resourceType: 'herb', itemId: 'vegetable', x: 11, y: 23, id: 'veggie1', hitsNeeded: 1, respawnTime: 45 },
     { type: 'resource', resourceType: 'herb', itemId: 'vegetable', x: 11, y: 24, id: 'veggie2', hitsNeeded: 1, respawnTime: 45 },
     { type: 'resource', resourceType: 'herb', itemId: 'vegetable', x: 5,  y: 23, id: 'veggie3', hitsNeeded: 1, respawnTime: 45 },
+    // ── Seed pickup near Oma's garden ──
+    { type: 'resource', resourceType: 'herb', itemId: 'seed_carrot', x: 12, y: 23, id: 'seed1', hitsNeeded: 1, respawnTime: 120 },
+    { type: 'resource', resourceType: 'herb', itemId: 'seed_tomato', x: 12, y: 24, id: 'seed2', hitsNeeded: 1, respawnTime: 120 },
 
     // ── Treasure chests ──
     { type: 'chest', x: 9,  y: 9 },  // inside kitchen
