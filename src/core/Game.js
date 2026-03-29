@@ -2598,6 +2598,11 @@ export class Game {
       this.explorerBookUI.toggle(this.explorerBook);
     }
 
+    // Garden system (F key for watering) — BEFORE plantHealing so it gets F in garden area
+    if (this._garden && !uiBlocking) {
+      this._garden.update(dt, this.player, this.input, this.inventory, this.itemDrops);
+    }
+
     // Plant healing (F key) — gets priority over fishing
     this.plantHealing.update(dt, this.player, this.input, this.hud);
 
@@ -2661,12 +2666,7 @@ export class Game {
       this.resources.update(dt, this.player, this.input, this.itemDrops);
     }
 
-    // Garden system (only active in hub)
-    if (this._garden && !uiBlocking) {
-      this._garden.update(dt, this.player, this.input, this.inventory, this.itemDrops);
-    }
-
-    // (Plant healing already called above, before water spray)
+    // (Garden system already called above, before plant healing)
 
     // Unicorns
     for (const unicorn of this.unicorns) {
