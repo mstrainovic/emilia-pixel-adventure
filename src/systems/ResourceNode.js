@@ -39,7 +39,7 @@ export class ResourceNode {
     this.interactRange = 2.0;
 
     // Visual indicator — canvas-drawn pixel art
-    const size = this.type === 'mushroom' || this.type === 'earth' || this.type === 'herb' ? 0.8 : 1.0;
+    const size = this.type === 'mushroom' || this.type === 'earth' || this.type === 'herb' ? 0.8 : this.type === 'tree' ? 1.3 : 1.0;
     const tex = ResourceNode._drawSprite(this.type, def.color);
     const geo = new THREE.PlaneGeometry(size, size);
     const mat = new THREE.MeshBasicMaterial({
@@ -177,10 +177,22 @@ export class ResourceNode {
 
     switch (type) {
       case 'tree':
-        // Small stump with green top
-        fill(6, 8, 4, 6, '#5a3a1a'); // trunk
-        fill(4, 4, 8, 5, '#2d8a3e'); // leaves
-        fill(5, 3, 6, 2, '#3aaa4e'); // top
+        // Chopping stump with wood logs
+        // Stump base
+        fill(5, 9, 6, 5, '#6a4a2a'); // main stump
+        fill(4, 10, 8, 4, '#5a3a1a'); // wider base
+        fill(6, 8, 4, 2, '#7a5a3a'); // top ring
+        // Tree rings on top
+        px(7, 8, '#8a6a4a'); px(8, 9, '#8a6a4a');
+        // Stacked logs beside stump
+        fill(1, 11, 4, 2, '#7a5530'); // log 1
+        fill(1, 12, 4, 2, '#6a4520'); // log 2
+        fill(2, 10, 3, 1, '#8a6540'); // log 1 top
+        // Bark texture
+        px(2, 11, '#5a3510'); px(3, 12, '#5a3510');
+        // Small green sprout on stump
+        fill(7, 6, 2, 2, '#3aaa4e');
+        px(7, 5, '#44cc55'); px(8, 5, '#44cc55');
         break;
       case 'rock':
         // Grey boulder

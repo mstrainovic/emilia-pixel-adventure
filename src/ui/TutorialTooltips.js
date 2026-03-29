@@ -22,7 +22,7 @@ export class TutorialTooltips {
     this._el = document.createElement('div');
     this._el.id = 'tutorial-tooltip';
     this._el.style.cssText = `
-      position:fixed; bottom:120px; left:50%; transform:translateX(-50%);
+      position:fixed; top:50px; left:50%; transform:translateX(-50%);
       background:rgba(40,30,15,0.92); border:2px solid #8B7355;
       border-radius:6px; padding:10px 18px;
       color:#FFD700; font-family:'Press Start 2P',monospace; font-size:10px;
