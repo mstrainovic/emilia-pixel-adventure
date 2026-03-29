@@ -13,3 +13,4 @@ temp_docx*/
 *.key
 credentials.*
 .superpowers/
+.claude-flow/
