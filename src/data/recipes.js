@@ -10,6 +10,7 @@ export const RECIPES = {
   ],
   anvil: [
     { id: 'r_sword_bone', name: 'Knochenkeule', ingredients: [{ itemId: 'bone', count: 5 }], result: { itemId: 'sword_bone', count: 1 } },
+    { id: 'r_sword_coral', name: 'Korallenschwert', ingredients: [{ itemId: 'coral_piece', count: 3 }, { itemId: 'starfish_shell', count: 2 }, { itemId: 'wood', count: 2 }], result: { itemId: 'sword_coral', count: 1 } },
     { id: 'r_sword_gem', name: 'Edelstein-Schwert', ingredients: [{ itemId: 'sapphire', count: 2 }, { itemId: 'ruby', count: 2 }, { itemId: 'emerald', count: 1 }], result: { itemId: 'sword_gem', count: 1 } },
   ],
   cooking: [

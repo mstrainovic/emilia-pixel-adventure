@@ -388,8 +388,12 @@ export class HUD {
       el.addEventListener('mousemove', (e) => {
         const tooltip = document.getElementById('hud-tooltip');
         if (tooltip && tooltip.style.display !== 'none') {
-          tooltip.style.left = (e.clientX + 12) + 'px';
-          tooltip.style.top = (e.clientY - 40) + 'px';
+          let tx = e.clientX + 12;
+          let ty = e.clientY - 40;
+          if (tx + 160 > window.innerWidth) tx = e.clientX - 170;
+          if (ty < 0) ty = e.clientY + 12;
+          tooltip.style.left = tx + 'px';
+          tooltip.style.top = ty + 'px';
         }
       });
       // Click: if inventory is open, use unified select-and-swap; otherwise hotbar reorder
@@ -481,8 +485,12 @@ export class HUD {
       el.addEventListener('mousemove', (e) => {
         const tooltip = document.getElementById('hud-tooltip');
         if (tooltip && tooltip.style.display !== 'none') {
-          tooltip.style.left = (e.clientX + 12) + 'px';
-          tooltip.style.top = (e.clientY - 40) + 'px';
+          let tx = e.clientX + 12;
+          let ty = e.clientY - 40;
+          if (tx + 160 > window.innerWidth) tx = e.clientX - 170;
+          if (ty < 0) ty = e.clientY + 12;
+          tooltip.style.left = tx + 'px';
+          tooltip.style.top = ty + 'px';
         }
       });
       el.addEventListener('click', () => {
@@ -711,6 +719,20 @@ export class HUD {
     }
     el.textContent = `NG+${cycleCount}`;
     el.style.display = 'block';
+  }
+
+  /**
+   * "A new day" banner at dawn — slides in, holds, fades out.
+   */
+  showDayBanner() {
+    let el = document.getElementById('hud-day-banner');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'hud-day-banner';
+    el.innerHTML = '<span class="day-banner-sun">\u2600</span> Ein neuer Tag bricht an! <span class="day-banner-sun">\u2600</span>';
+    document.body.appendChild(el);
+    // Remove after the animation finishes
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 4200);
   }
 
   _addStyles() {
@@ -1158,6 +1180,43 @@ export class HUD {
       .hud-inv-slot-num {
         position: absolute; top: 1px; right: 3px;
         color: rgba(255,215,0,0.5); font-size: 7px;
+      }
+
+      /* ── New day banner ── */
+      #hud-day-banner {
+        position: fixed;
+        top: 18%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Press Start 2P', monospace;
+        font-size: 16px;
+        color: #fff2c8;
+        background: linear-gradient(135deg, rgba(255,170,60,0.92), rgba(255,120,80,0.92));
+        border: 3px solid #ffd700;
+        border-radius: 6px;
+        padding: 14px 26px;
+        z-index: 260;
+        pointer-events: none;
+        text-shadow: 2px 2px 0 rgba(120,60,0,0.6);
+        box-shadow: 0 4px 18px rgba(255,150,50,0.35);
+        animation: day-banner-anim 4s ease-out forwards;
+        white-space: nowrap;
+      }
+      .day-banner-sun {
+        color: #ffe95e;
+        display: inline-block;
+        animation: day-banner-spin 4s linear;
+      }
+      @keyframes day-banner-anim {
+        0%   { opacity: 0; transform: translateX(-50%) translateY(-24px) scale(0.8); }
+        10%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.05); }
+        15%  { transform: translateX(-50%) translateY(0) scale(1.0); }
+        80%  { opacity: 1; }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.95); }
+      }
+      @keyframes day-banner-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(style);

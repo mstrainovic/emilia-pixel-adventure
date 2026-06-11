@@ -15,7 +15,7 @@ export const FAMILY_NPCS = [
     favoriteGifts: ['fish_generic', 'cooked_meat'],
     dialogs: [
       'Hallo Schatz! Die Welt wartet — aber iss erstmal was!',
-      'Bring Fisch mit, ich koch mein Geheimrezept! Geh zum See!',
+      'Bring Fisch vom See — am Kochtopf wird daraus Meeres-Suppe!',
       'Du wirst jeden Tag mutiger! Ich bin so stolz!',
       'Besuch mal Opa — er braucht Holz!',
       'Ich hab Kuchen gebacken! Magst du ein Stueck?',
@@ -93,9 +93,9 @@ export const FAMILY_NPCS = [
       'Im Wald gibt es lustige Schleime! Komm mit!',
       'Psst! Im Wald hab ich was Magisches gesehen...',
       'Die leuchtenden Pilze in der Hoehle sind so cool!',
-      'Heile genug Pflanzen — dann oeffnet sich ein Geheimweg!',
+      'Pflanzen heilen gibt dir Kraft — und die ganze Wiese freut sich!',
       'Ob Einhoerner Blumen moegen? Ich hab welche!',
-      'Im See gibt es einen geheimen Schatz!',
+      'Nachts tanzen Gluehwuermchen am See — so schoen!',
       'Du bist meine beste Freundin! Wir sind unschlagbar!',
       'Stell dir vor, wir haetten ein Einhorn! Sooo toll!'
     ],
@@ -134,7 +134,7 @@ export const FAMILY_NPCS = [
       'Ich hab ein Monster gesehen! ...oder doch nur ein Busch.',
       'Wenn ich gross bin, werd ich Ritter! Oder Astronaut!',
       'Die Hoehle ist gruselig — aber auch spannend!',
-      'Am See hab ich einen riesigen Fisch gesehen!',
+      'Morgens und abends beisst am See die Regenbogenforelle!',
       'Wir sollten ein Baumhaus bauen! Das waer cool!'
     ],
     friendshipDialogs: {
@@ -318,7 +318,7 @@ export const FAMILY_NPCS = [
     favoriteGifts: ['pearl', 'sapphire'],
     dialogs: [
       'Hey! Willst du was verkaufen? Ich kauf alles!',
-      'Wenzl musste Hausaufgaben machen. Ich nicht! Hehe!',
+      'Liam wollte mit mir tauschen — aber er hat nur Fische! Hehe!',
       'Zeig mal was du hast! Ich sammle alles!',
       'Ich bin der beste Haendler! Naja, der einzige.',
       'Fuer Kristalle zahle ich extra viel!',

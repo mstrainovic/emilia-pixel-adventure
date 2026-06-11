@@ -78,9 +78,11 @@ const WaterShader = {
       float edgeFade = smoothstep(0.0, 0.08, vUv.x) * smoothstep(0.0, 0.08, 1.0 - vUv.x)
                      * smoothstep(0.0, 0.08, vUv.y) * smoothstep(0.0, 0.08, 1.0 - vUv.y);
 
-      float alpha = opacity * edgeFade * (0.7 + wave * 0.3);
+      // Clamp both color and alpha — negative alpha / out-of-range values
+      // cause black flickering on some GPUs (especially with bloom enabled)
+      float alpha = clamp(opacity * edgeFade * (0.7 + wave * 0.3), 0.0, 1.0);
 
-      gl_FragColor = vec4(color, alpha);
+      gl_FragColor = vec4(clamp(color, 0.0, 1.0), alpha);
     }
   `,
 };
@@ -110,7 +112,7 @@ const WATER_PRESETS = {
   },
 };
 
-const WATER_TILE_IDS = new Set([10, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]);
+const WATER_TILE_IDS = new Set([10, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58]);
 
 export class WaterRenderer {
   constructor(scene) {
@@ -156,7 +158,7 @@ export class WaterRenderer {
       const mesh = new THREE.Mesh(geo, mat);
       const cx = region.minC + w / 2;
       const cy = region.minR + h / 2;
-      mesh.position.set(cx, -cy, 0.03); // just above ground tiles
+      mesh.position.set(cx, -cy, 0.06); // clearly above ground/deco (z-fighting safety margin)
       mesh.renderOrder = 0;
       this._scene.add(mesh);
       this._meshes.push(mesh);

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Entity } from './Entity.js';
 import { distance } from '../utils/MathUtils.js';
 import { ANIM_SPEED_IDLE } from '../utils/Constants.js';
-import { loadCuteFantasyEnemy } from '../utils/SpriteSheetLoader.js';
+import { loadCuteFantasyEnemy, loadSlimeAnims } from '../utils/SpriteSheetLoader.js';
 
 /**
  * Enemy mob with simple AI: Idle → Chase → Attack → Death.
@@ -61,33 +61,11 @@ export class Mob extends Entity {
       // Slime — 512x192, 64x64 frames
       // Row 0: Idle (4 frames), Row 1: Move (8 frames), Row 2: Attack+Hurt+Death
       try {
-        const img = await new Promise((resolve, reject) => {
-          const i = new Image();
-          i.onload = () => resolve(i);
-          i.onerror = reject;
-          const slimeBase = import.meta.env.BASE_URL || '/';
-          i.src = `${slimeBase}Cute_Fantasy_Free/Enemies/Slime_Green.png`;
-        });
-
-        // Extract rows as horizontal strips
-        const extractSlimeRow = (row, cols, fw, fh) => {
-          const canvas = document.createElement('canvas');
-          canvas.width = cols * fw;
-          canvas.height = fh;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, row * fh, cols * fw, fh, 0, 0, cols * fw, fh);
-          const texture = new THREE.CanvasTexture(canvas);
-          texture.magFilter = THREE.NearestFilter;
-          texture.minFilter = THREE.NearestFilter;
-          texture.generateMipmaps = false;
-          texture.colorSpace = THREE.SRGBColorSpace;
-          return { texture, frameWidth: fw, frameHeight: fh, frameCount: cols, sheetWidth: cols * fw, sheetHeight: fh };
-        };
-
-        this.addAnimation('idle', extractSlimeRow(0, 4, 64, 64), ANIM_SPEED_IDLE + 40, tintColor);
-        this.addAnimation('run', extractSlimeRow(1, 8, 64, 64), 100, tintColor);
+        const anims = await loadSlimeAnims(); // cached image + cached row extraction
+        this.addAnimation('idle', anims.idle, ANIM_SPEED_IDLE + 40, tintColor);
+        this.addAnimation('run', anims.run, 100, tintColor);
         // Row 2 has mixed: first 4 = attack, rest = hurt/death
-        this.addAnimation('death', extractSlimeRow(2, 8, 64, 64), 150, tintColor);
+        this.addAnimation('death', anims.death, 150, tintColor);
         this.setAnimation('idle');
       } catch (e) {
         console.warn(`Slime mob failed to load:`, e);
@@ -191,6 +169,16 @@ export class Mob extends Entity {
 
   _doIdle(dt, distToPlayer) {
     this.setAnimation('idle');
+
+    // Gentle idle hop: squash-and-stretch bounce (slimes feel alive)
+    this._idleHopT = (this._idleHopT ?? Math.random() * Math.PI * 2) + dt * 2.6;
+    if (this.activeSprite?.mesh) {
+      const hop = Math.abs(Math.sin(this._idleHopT));
+      const m = this.activeSprite.mesh;
+      const signX = m.scale.x < 0 ? -1 : 1;
+      m.scale.y = 1 + hop * 0.07;
+      m.scale.x = signX * (1 - hop * 0.05);
+    }
     if (distToPlayer < this.detectionRange) {
       this.aiState = 'chase';
       if (window.__game?.audio) window.__game.audio.playMobAlert();
@@ -214,7 +202,17 @@ export class Mob extends Entity {
     }
   }
 
+  _resetIdleHop() {
+    if (this.activeSprite?.mesh) {
+      const m = this.activeSprite.mesh;
+      const signX = m.scale.x < 0 ? -1 : 1;
+      m.scale.y = 1;
+      m.scale.x = signX;
+    }
+  }
+
   _doChase(dt, player, distToPlayer, tileMap) {
+    this._resetIdleHop();
     if (distToPlayer > this.detectionRange * 1.5) {
       this.aiState = 'idle';
       return;
@@ -243,6 +241,7 @@ export class Mob extends Entity {
   }
 
   _doAttack(dt, player, distToPlayer) {
+    this._resetIdleHop();
     if (distToPlayer > 2) {
       this.aiState = 'chase';
       return;

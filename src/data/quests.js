@@ -218,7 +218,7 @@ export const QUESTS = {
   },
   star_collector: {
     id: 'star_collector', name: 'Sternensammlerin',
-    description: 'Sammle 15 goldene Sterne fuer deine Abenteuer',
+    description: 'Schalte 15 Erfolge frei (P-Taste zeigt sie)',
     type: 'achieve', target: 'achievements', count: 15, xpReward: 120,
     itemReward: [{ itemId: 'star_fragment', count: 5 }],
   },

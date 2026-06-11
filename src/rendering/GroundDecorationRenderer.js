@@ -38,38 +38,38 @@ const MUSHROOM_SPRITES = [
 const SCENE_CONFIGS = {
   hub: {
     seed: 12345,
-    density: 0.35,
+    density: 0.20,
     types: [
-      { kind: 'tuft', weight: 40, sizeMin: 0.45, sizeMax: 0.7 },
-      { kind: 'flower', weight: 35, sizeMin: 0.4, sizeMax: 0.6 },
-      { kind: 'pebble', weight: 25, sizeMin: 0.3, sizeMax: 0.45 },
+      { kind: 'tuft', weight: 60, sizeMin: 0.45, sizeMax: 0.7 },
+      { kind: 'flower', weight: 22, sizeMin: 0.4, sizeMax: 0.55 },
+      { kind: 'pebble', weight: 18, sizeMin: 0.3, sizeMax: 0.45 },
     ],
   },
   forest: {
     seed: 67890,
-    density: 0.38,
+    density: 0.25,
     types: [
-      { kind: 'tuft', weight: 35, sizeMin: 0.45, sizeMax: 0.7 },
-      { kind: 'mushroom', weight: 25, sizeMin: 0.4, sizeMax: 0.55 },
+      { kind: 'tuft', weight: 50, sizeMin: 0.45, sizeMax: 0.7 },
+      { kind: 'mushroom', weight: 20, sizeMin: 0.4, sizeMax: 0.55 },
       { kind: 'pebble', weight: 25, sizeMin: 0.3, sizeMax: 0.45 },
       { kind: 'flower', weight: 15, sizeMin: 0.35, sizeMax: 0.5 },
     ],
   },
   lake: {
     seed: 11111,
-    density: 0.32,
+    density: 0.20,
     types: [
-      { kind: 'tuft', weight: 38, sizeMin: 0.45, sizeMax: 0.65 },
-      { kind: 'flower', weight: 42, sizeMin: 0.45, sizeMax: 0.6 },
-      { kind: 'pebble', weight: 20, sizeMin: 0.3, sizeMax: 0.4 },
+      { kind: 'tuft', weight: 55, sizeMin: 0.45, sizeMax: 0.65 },
+      { kind: 'flower', weight: 27, sizeMin: 0.4, sizeMax: 0.55 },
+      { kind: 'pebble', weight: 18, sizeMin: 0.3, sizeMax: 0.4 },
     ],
   },
   unicorn_meadow: {
     seed: 99999,
-    density: 0.45,
+    density: 0.32,
     types: [
-      { kind: 'flower', weight: 55, sizeMin: 0.5, sizeMax: 0.7 },
-      { kind: 'tuft', weight: 35, sizeMin: 0.4, sizeMax: 0.6 },
+      { kind: 'flower', weight: 45, sizeMin: 0.45, sizeMax: 0.65 },
+      { kind: 'tuft', weight: 45, sizeMin: 0.4, sizeMax: 0.6 },
       { kind: 'pebble', weight: 10, sizeMin: 0.25, sizeMax: 0.35 },
     ],
   },
@@ -207,7 +207,7 @@ export class GroundDecorationRenderer {
         placements[key].push({ x: c + ox, y: r + oy, size });
 
         // 20% chance of a second, smaller decoration on the same tile
-        if (rng() < 0.10) {
+        if (rng() < 0.05) {
           const key2 = pickSpriteKey(chosen.kind, rng);
           if (key2) {
             const ox2 = margin + rng() * (1 - 2 * margin);

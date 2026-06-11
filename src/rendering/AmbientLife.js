@@ -17,6 +17,8 @@ export class AmbientLife {
     this._waveMeshes = [];     // wave overlay meshes on water tiles
     this._constellationMeshes = []; // star pattern meshes (starsky)
     this._particles = null;    // particle system for ambient effects
+    this._fireflies = [];      // night-time glowing fireflies
+    this._fireflyAlpha = 0;    // smooth fade factor (0 day .. 1 night)
     this._time = 0;
     this._mapWidth = 0;
     this._mapHeight = 0;
@@ -57,6 +59,12 @@ export class AmbientLife {
     // Cloud drift — semi-transparent clouds on outdoor maps
     if (outdoorScenes.includes(sceneName)) {
       this._createDriftClouds(3 + Math.floor(Math.random() * 3));
+    }
+
+    // Fireflies — appear at night on grassy outdoor maps
+    const fireflyScenes = ['hub', 'forest', 'lake', 'unicorn_meadow'];
+    if (fireflyScenes.includes(sceneName)) {
+      this._createFireflies(14, mapWidth, mapHeight);
     }
 
     // Wave animation — on scenes with water tiles
@@ -395,6 +403,45 @@ export class AmbientLife {
     }
   }
 
+  _createFireflies(count, mapWidth, mapHeight) {
+    // Soft round glow texture (radial gradient), additive blending
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 16;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+    grad.addColorStop(0, 'rgba(230, 255, 140, 1)');
+    grad.addColorStop(0.35, 'rgba(200, 240, 90, 0.7)');
+    grad.addColorStop(1, 'rgba(160, 220, 60, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 16, 16);
+    const tex = new THREE.CanvasTexture(c);
+
+    for (let i = 0; i < count; i++) {
+      const size = 0.28 + Math.random() * 0.18;
+      const geo = new THREE.PlaneGeometry(size, size);
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      const cx = 2 + Math.random() * (mapWidth - 4);
+      const cy = 2 + Math.random() * (mapHeight - 4);
+      mesh.position.set(cx, -cy, 0.32);
+      mesh.visible = false;
+      this._scene.add(mesh);
+      this._fireflies.push({
+        mesh, mat, cx, cy,
+        rx: 1.2 + Math.random() * 2.2,      // wander radius x
+        ry: 0.8 + Math.random() * 1.6,      // wander radius y
+        speedA: 0.25 + Math.random() * 0.35, // orbit speed
+        speedB: 0.18 + Math.random() * 0.3,
+        phase: Math.random() * Math.PI * 2,
+        pulse: 1.6 + Math.random() * 1.8,    // glow pulse speed
+        pulsePhase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
   update(dt, camera) {
     this._time += dt;
 
@@ -430,6 +477,26 @@ export class AmbientLife {
       star.mesh.material.opacity = star.baseOpacity * twinkle;
     }
 
+    // Fireflies — fade in at night, drift in soft figure-eight paths
+    if (this._fireflies.length > 0) {
+      const isNight = (typeof window !== 'undefined' && window.__game?.dayNight?.isNight?.()) || false;
+      const target = isNight ? 1 : 0;
+      this._fireflyAlpha += (target - this._fireflyAlpha) * Math.min(1, dt * 1.2);
+      const a = this._fireflyAlpha;
+      if (a > 0.02) {
+        for (const ff of this._fireflies) {
+          ff.mesh.visible = true;
+          const t = this._time;
+          ff.mesh.position.x = ff.cx + Math.sin(t * ff.speedA + ff.phase) * ff.rx;
+          ff.mesh.position.y = -(ff.cy + Math.sin(t * ff.speedB + ff.phase * 1.7) * ff.ry);
+          const pulse = 0.45 + 0.55 * (0.5 + Math.sin(t * ff.pulse + ff.pulsePhase) * 0.5);
+          ff.mat.opacity = a * pulse;
+        }
+      } else {
+        for (const ff of this._fireflies) ff.mesh.visible = false;
+      }
+    }
+
     // Particle system
     if (this._particles) {
       this._particles.update(dt, camera);
@@ -437,6 +504,15 @@ export class AmbientLife {
   }
 
   dispose() {
+    for (const ff of this._fireflies) {
+      if (ff.mesh.parent) this._scene.remove(ff.mesh);
+      ff.mesh.geometry.dispose();
+      if (ff.mat.map) ff.mat.map.dispose();
+      ff.mat.dispose();
+    }
+    this._fireflies = [];
+    this._fireflyAlpha = 0;
+
     for (const tree of this._swayingProps) {
       tree.mesh.position.x = tree.baseX;
     }

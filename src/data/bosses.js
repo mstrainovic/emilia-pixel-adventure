@@ -13,7 +13,7 @@ export const BOSS_TYPES = {
     spriteType: 'coconut_king',
     scene: 'beach',
     hp: 120,
-    xp: 150,
+    xp: 300,
     speed: 1.0,
     unlockCondition: 'all_m4_quests',
     phases: [
@@ -49,7 +49,7 @@ export const BOSS_TYPES = {
     spriteType: 'leviathan',
     scene: 'grotto',
     hp: 180,
-    xp: 250,
+    xp: 600,
     speed: 0.8,
     unlockCondition: 'all_m5_quests',
     phases: [
@@ -84,7 +84,7 @@ export const BOSS_TYPES = {
     spriteType: 'shadow_knight',
     scene: 'cloud_castle',
     hp: 250,
-    xp: 400,
+    xp: 1000,
     speed: 1.8,
     unlockCondition: 'cloud_castle_access',
     phases: [

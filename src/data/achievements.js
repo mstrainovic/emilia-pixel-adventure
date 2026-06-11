@@ -41,7 +41,7 @@ export const ACHIEVEMENTS = {
   // ── Master (4) ──
   level_15: { id: 'level_15', name: 'Level 15', description: 'Erreiche Level 15', category: 'master', condition: { type: 'reach_level', level: 15 } },
   level_30: { id: 'level_30', name: 'Level 30', description: 'Erreiche Level 30', category: 'master', condition: { type: 'reach_level', level: 30 } },
-  quest_queen: { id: 'quest_queen', name: 'Quest-Koenigin', description: 'Schliesse alle 24 Quests ab', category: 'master', condition: { type: 'complete_all_quests' } },
+  quest_queen: { id: 'quest_queen', name: 'Quest-Koenigin', description: 'Schliesse alle 25 Quests ab', category: 'master', condition: { type: 'complete_all_quests' } },
   legendary_heroine: { id: 'legendary_heroine', name: 'Legendaere Heldin', description: 'Erreiche 25 andere Achievements', category: 'master', condition: { type: 'achievement_count', count: 25 } },
 };
 

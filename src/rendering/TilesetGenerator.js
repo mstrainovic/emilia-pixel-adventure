@@ -22,10 +22,11 @@ import * as THREE from 'three';
  *  19-22 = cloud/crystal variants
  *  23-34 = water auto-tile edges (from Water_Tile.png)
  *  35-46 = path auto-tile edges (from Path_Tile.png)
+ *  47-58 = water auto-tile edges on SAND (for beach — baked-in grass replaced)
  */
 
 const T = 16;
-const TILE_COUNT = 47;
+const TILE_COUNT = 59;
 
 /**
  * Loads an image and returns a promise.
@@ -58,14 +59,11 @@ function tintRegion(ctx, ox, oy, rMul, gMul, bMul) {
  * Uses cross-shaped petals with stems and bright centers.
  */
 function addFlowers(ctx, ox, oy) {
+  // Calm, harmonious palette
   const flowers = [
-    { x: 3,  y: 3,  c: '#ff6080' },  // pink
-    { x: 10, y: 2,  c: '#ffc040' },  // yellow
-    { x: 6,  y: 7,  c: '#ff60ff' },  // magenta
-    { x: 13, y: 5,  c: '#80a0ff' },  // blue
-    { x: 2,  y: 11, c: '#ff9050' },  // orange
-    { x: 8,  y: 12, c: '#c080ff' },  // purple
-    { x: 12, y: 10, c: '#ffff60' },  // bright yellow
+    { x: 4,  y: 4,  c: '#ff9ab5' },  // soft pink
+    { x: 11, y: 7,  c: '#ffd966' },  // warm yellow
+    { x: 6,  y: 11, c: '#f2f2e8' },  // white
   ];
 
   for (const f of flowers) {
@@ -210,6 +208,36 @@ function _addWoodGrain(ctx, offsetX) {
   ctx.fillRect(offsetX + 11, 0, 1, 16);
 }
 
+
+/**
+ * Composite an auto-tile edge onto a real base tile (grass or sand).
+ * The Cute_Fantasy auto-tile sheets have a flat grass green (62,137,72)
+ * baked in as background. We draw the base tile first, then copy only the
+ * non-background pixels of the edge tile on top (optionally tinted).
+ * This makes path and water edges blend seamlessly with the actual terrain.
+ */
+function compositeAutotileOnBase(ctx, destX, srcImg, sx, sy, baseImg, baseSx, baseSy, tint) {
+  ctx.drawImage(baseImg, baseSx, baseSy, T, T, destX, 0, T, T);
+  const tmp = document.createElement('canvas');
+  tmp.width = T; tmp.height = T;
+  const tctx = tmp.getContext('2d', { willReadFrequently: true });
+  tctx.drawImage(srcImg, sx, sy, T, T, 0, 0, T, T);
+  const src = tctx.getImageData(0, 0, T, T).data;
+  const dst = ctx.getImageData(destX, 0, T, T);
+  const dd = dst.data;
+  for (let i = 0; i < src.length; i += 4) {
+    const r = src[i], g = src[i + 1], b = src[i + 2], a = src[i + 3];
+    if (a < 10) continue;
+    // Baked-in background grass → keep the base tile pixel
+    if (Math.abs(r - 62) + Math.abs(g - 137) + Math.abs(b - 72) < 36) continue;
+    dd[i]     = Math.min(255, Math.round(r * (tint ? tint[0] : 1)));
+    dd[i + 1] = Math.min(255, Math.round(g * (tint ? tint[1] : 1)));
+    dd[i + 2] = Math.min(255, Math.round(b * (tint ? tint[2] : 1)));
+    dd[i + 3] = 255;
+  }
+  ctx.putImageData(dst, destX, 0);
+}
+
 /**
  * Async: Load real tiles from asset packs and composite into a strip.
  */
@@ -237,26 +265,27 @@ export async function generateTilesetAsync() {
 
     // Tile 0: grass dark (very subtly darker for gentle variation)
     ctx.drawImage(grassImg, 0, 0, T, T, 0 * T, 0, T, T);
-    tintRegion(ctx, 0, 0, 0.95, 0.96, 0.94);
+    tintRegion(ctx, 0, 0, 0.985, 0.99, 0.98);
     addGrassDetail(ctx, 0 * T, 0, 100);
 
     // Tile 2: grass light (very subtly brighter for gentle variation)
     ctx.drawImage(grassImg, 0, 0, T, T, 2 * T, 0, T, T);
-    tintRegion(ctx, 2 * T, 0, 1.03, 1.03, 1.01);
+    tintRegion(ctx, 2 * T, 0, 1.012, 1.012, 1.005);
     addGrassDetail(ctx, 2 * T, 0, 300);
 
     // Tile 3: grass variant (very subtle hue shift for gentle variation)
     ctx.drawImage(grassImg, 0, 0, T, T, 3 * T, 0, T, T);
-    tintRegion(ctx, 3 * T, 0, 0.99, 1.02, 0.97);
+    tintRegion(ctx, 3 * T, 0, 0.995, 1.008, 0.99);
     addGrassDetail(ctx, 3 * T, 0, 400);
 
     // Tile 4: dirt path — center tile from Path_Tile.png auto-tile set (16,16)
     // provides cobblestone texture with real depth vs. the flat Path_Middle.png
     ctx.drawImage(pathTileImg, T, T, T, T, 4 * T, 0, T, T);
+    tintRegion(ctx, 4 * T, 0, 0.94, 0.90, 0.86);
 
     // Tile 5: dirt dark — same center tile, darkened
     ctx.drawImage(pathTileImg, T, T, T, T, 5 * T, 0, T, T);
-    tintRegion(ctx, 5 * T, 0, 0.8, 0.78, 0.75);
+    tintRegion(ctx, 5 * T, 0, 0.78, 0.73, 0.68);
 
     // Tile 6: wood floor (canvas-drawn to match style)
     drawWoodTile(ctx, 6 * T, 0, false);
@@ -266,7 +295,7 @@ export async function generateTilesetAsync() {
 
     // Tile 8: flower grass (grass + hand-placed flowers)
     ctx.drawImage(grassImg, 0, 0, T, T, 8 * T, 0, T, T);
-    tintRegion(ctx, 8 * T, 0, 1.05, 1.1, 0.95);
+    tintRegion(ctx, 8 * T, 0, 1.01, 1.03, 0.98);
     addFlowers(ctx, 8 * T, 0);
 
     // Tile 9: stone floor (for dungeon)
@@ -471,16 +500,23 @@ export async function generateTilesetAsync() {
       { sx: 0, sy: 4 * T },   { sx: T, sy: 4 * T },
     ];
 
-    // Tiles 23-34: Water auto-tile edges (from Water_Tile.png)
+    // Tiles 23-34: Water auto-tile edges on grass (lake, forest ponds)
     for (let i = 0; i < 12; i++) {
       const p = autoPositions[i];
-      ctx.drawImage(waterTileImg, p.sx, p.sy, T, T, (23 + i) * T, 0, T, T);
+      compositeAutotileOnBase(ctx, (23 + i) * T, waterTileImg, p.sx, p.sy, grassImg, 0, 0, null);
     }
 
-    // Tiles 35-46: Path auto-tile edges (from Path_Tile.png)
+    // Tiles 35-46: Path auto-tile edges on grass — only the dirt pixels are
+    // tinted; the baked-in grass background is replaced by the real grass tile
     for (let i = 0; i < 12; i++) {
       const p = autoPositions[i];
-      ctx.drawImage(pathTileImg, p.sx, p.sy, T, T, (35 + i) * T, 0, T, T);
+      compositeAutotileOnBase(ctx, (35 + i) * T, pathTileImg, p.sx, p.sy, grassImg, 0, 0, [0.94, 0.90, 0.86]);
+    }
+
+    // Tiles 47-58: Water auto-tile edges on SAND (beach shoreline)
+    for (let i = 0; i < 12; i++) {
+      const p = autoPositions[i];
+      compositeAutotileOnBase(ctx, (47 + i) * T, waterTileImg, p.sx, p.sy, beachTileImg, T, T, null);
     }
 
   } catch (e) {
@@ -501,6 +537,10 @@ export async function generateTilesetAsync() {
       '#b09070', '#b09070', '#b09070', '#b09070',
       '#c0a080', '#c0a080', '#c0a080', '#c0a080',
       '#be9e76', '#be9e76', '#be9e76', '#be9e76',
+      // Water-on-sand auto-tiles fallback
+      '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',
+      '#6aaad0', '#6aaad0', '#6aaad0', '#6aaad0',
+      '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',
     ];
     for (let i = 0; i < TILE_COUNT; i++) {
       ctx.fillStyle = fallbackColors[i];
@@ -541,6 +581,10 @@ export function generateTileset() {
     '#b09070', '#b09070', '#b09070', '#b09070',
     '#c0a080', '#c0a080', '#c0a080', '#c0a080',
     '#be9e76', '#be9e76', '#be9e76', '#be9e76',
+    // Water-on-sand auto-tiles
+    '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',
+    '#6aaad0', '#6aaad0', '#6aaad0', '#6aaad0',
+    '#5a9ac0', '#5a9ac0', '#5a9ac0', '#5a9ac0',
   ];
   for (let i = 0; i < TILE_COUNT; i++) {
     ctx.fillStyle = colors[i];

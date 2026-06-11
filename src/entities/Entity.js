@@ -55,13 +55,13 @@ export class Entity {
     this.scene = null;
   }
 
-  _createShadow(scene) {
+  _createShadow(scene, radius = 0.6, opacity = 0.2) {
     // Flat elliptical shadow using a scaled circle
-    const geo = new THREE.CircleGeometry(0.6, 12);
+    const geo = new THREE.CircleGeometry(radius, 12);
     const mat = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
-      opacity: 0.2,
+      opacity,
       depthWrite: false,
     });
     this.shadow = new THREE.Mesh(geo, mat);

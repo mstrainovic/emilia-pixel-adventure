@@ -223,9 +223,11 @@ export class Progression {
   }
 
   reportPuzzleSolved(puzzleId) {
+    // Stat-Tracking only — the crystal_puzzle quest is type 'collect'
+    // (target rainbow_shard) and is advanced via reportCollect; incrementing
+    // here as well would double-count progress.
     if (!this.stats.puzzlesSolved[puzzleId]) {
       this.stats.puzzlesSolved[puzzleId] = true;
-      this._incrementQuest('crystal_puzzle', 1);
     }
   }
 
@@ -357,6 +359,13 @@ export class Progression {
       existing = this.stats.scenesVisited[def.target] ? 1 : 0;
     } else if (def.type === 'talk') {
       existing = this.stats.npcsSpoken[def.target] ? 1 : 0;
+    } else if (def.type === 'boss') {
+      // Boss kills that happened BEFORE the quest became active still count
+      // (bosses never respawn — without this the quest could deadlock)
+      const killed = this.stats.bossesKilled || {};
+      existing = (def.target === 'any')
+        ? Object.keys(killed).length
+        : (killed[def.target] ? def.count : 0);
     } else if (def.type === 'collect_unique') {
       // Check stats first
       const uniqueSet = this.stats.uniqueCollected?.[def.target];
@@ -386,6 +395,8 @@ export class Progression {
       existing = this.stats.grottoZones ? this.stats.grottoZones.size : 0;
     } else if (def.type === 'heal' && def.target === 'coral') {
       existing = this.stats.coralHealed || 0;
+    } else if (def.type === 'achieve') {
+      existing = this.stats.achievementCount || 0;
     }
     // sunken_treasure: triggered by visiting treasure zone, but uses _incrementQuest by ID
     if (questId === 'sunken_treasure' && this.stats.grottoZones && this.stats.grottoZones.has('treasure')) {

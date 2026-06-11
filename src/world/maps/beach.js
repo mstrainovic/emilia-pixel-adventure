@@ -1,4 +1,4 @@
-import { resolveAutoTiles, WATER_EDGES } from '../../utils/AutoTiler.js';
+import { resolveAutoTiles, WATER_EDGES_SAND } from '../../utils/AutoTiler.js';
 
 const W = 55;
 const H = 35;
@@ -386,17 +386,41 @@ export function generateBeachMap() {
   props.push({ type: 'mob_spawn', mobType: 'crab_coconut', x: 16, y: 28, respawnTime: 20 });
   props.push({ type: 'mob_spawn', mobType: 'crab_coconut', x: 38, y: 30, respawnTime: 20 });
 
-  // Shell resource nodes — each unique type appears once, fast respawn for kid-friendly gameplay
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'shell_common',    x: 7,  y: 14, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'shell_common',    x: 35, y: 16, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'sand_dollar',     x: 15, y: 18, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'sand_dollar',     x: 43, y: 19, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'starfish_shell',  x: 20, y: 22, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'starfish_shell',  x: 32, y: 27, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'coral_piece',     x: 11, y: 26, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'coral_piece',     x: 48, y: 24, hitsNeeded: 1, respawnTime: 30 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'pearl',           x: 26, y: 20, hitsNeeded: 1, respawnTime: 45 });
-  props.push({ type: 'resource', resourceType: 'shell', itemId: 'rainbow_shell',   x: 40, y: 28, hitsNeeded: 1, respawnTime: 60 });
+  // ── Shell journal: shells wash up at RANDOM sand spots on every visit ──
+  // Common shells are frequent; the pearl is uncommon; the rainbow shell
+  // only appears at night (see data/shells.js nightOnly).
+  const isNight = (typeof window !== 'undefined' && window.__game?.dayNight?.isNight?.()) || false;
+  const shellPool = [
+    { itemId: 'shell_common',   w: 34, respawn: 30 },
+    { itemId: 'sand_dollar',    w: 24, respawn: 30 },
+    { itemId: 'starfish_shell', w: 16, respawn: 30 },
+    { itemId: 'coral_piece',    w: 14, respawn: 30 },
+    { itemId: 'pearl',          w: 8,  respawn: 45 },
+  ];
+  if (isNight) shellPool.push({ itemId: 'rainbow_shell', w: 10, respawn: 60 });
+  const shellTotalW = shellPool.reduce((a, p) => a + p.w, 0);
+  const usedSpots = new Set();
+  let shellsPlaced = 0, shellTries = 0;
+  const shellTarget = 6 + Math.floor(Math.random() * 3); // 6-8 per visit
+  while (shellsPlaced < shellTarget && shellTries < 200) {
+    shellTries++;
+    const sx = 4 + Math.floor(Math.random() * (W - 8));
+    const sy = 10 + Math.floor(Math.random() * (H - 14));
+    const tile = ground[sy]?.[sx];
+    if (tile !== 11 && tile !== 12 && tile !== 13) continue; // sand only
+    if (collision[sy]?.[sx]) continue;
+    const spotKey = sx + ',' + sy;
+    if (usedSpots.has(spotKey)) continue;
+    usedSpots.add(spotKey);
+    let roll = Math.random() * shellTotalW;
+    let chosen = shellPool[0];
+    for (const pl of shellPool) { roll -= pl.w; if (roll <= 0) { chosen = pl; break; } }
+    props.push({
+      type: 'resource', resourceType: 'shell', itemId: chosen.itemId,
+      x: sx, y: sy, hitsNeeded: 1, respawnTime: chosen.respawn,
+    });
+    shellsPlaced++;
+  }
 
   // --- Beach bonfire (campfire near pier for cozy sunset vibes) ---
   props.push({ type: 'bonfire', x: 30, y: 18 });
@@ -418,7 +442,7 @@ export function generateBeachMap() {
   collision[18][30] = 1;
 
   // ── Auto-tile water edges (smooth ocean-sand transitions) ──
-  resolveAutoTiles(ground, 10, WATER_EDGES);
+  resolveAutoTiles(ground, 10, WATER_EDGES_SAND);
 
   return {
     width: W,

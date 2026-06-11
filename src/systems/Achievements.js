@@ -108,7 +108,7 @@ export class AchievementSystem {
         return (s.level || 1) >= cond.level;
 
       case 'complete_all_quests':
-        return Object.keys(s.completedQuests || {}).length >= 24;
+        return Object.keys(s.completedQuests || {}).length >= 25;
 
       case 'achievement_count':
         return this.unlocked.size >= cond.count;

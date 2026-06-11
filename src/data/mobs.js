@@ -91,7 +91,7 @@ export const MOB_TYPES = {
       { itemId: 'iron_ore', chance: 0.3, min: 1, max: 2 },
       { itemId: 'sword_bone', chance: 0.1, min: 1, max: 1 },
     ],
-    xp: 30,
+    xp: 50,
   },
   skeleton_mage: {
     name: 'Skelett-Magier',
@@ -106,7 +106,7 @@ export const MOB_TYPES = {
       { itemId: 'crystal', chance: 0.4, min: 1, max: 2 },
       { itemId: 'magic_herb', chance: 0.15, min: 1, max: 1 },
     ],
-    xp: 25,
+    xp: 42,
   },
   crab_beach: {
     name: 'Strand-Krabbe',
@@ -135,7 +135,7 @@ export const MOB_TYPES = {
       { itemId: 'shell_common', chance: 0.3, min: 1, max: 1 },
       { itemId: 'pearl', chance: 0.1, min: 1, max: 1 },
     ],
-    xp: 20,
+    xp: 32,
   },
   jellyfish_glow: {
     name: 'Leucht-Qualle',
@@ -149,7 +149,7 @@ export const MOB_TYPES = {
       { itemId: 'jelly_essence', chance: 0.7, min: 1, max: 1 },
       { itemId: 'glow_orb', chance: 0.2, min: 1, max: 1 },
     ],
-    xp: 15,
+    xp: 28,
   },
   octopus: {
     name: 'Tintenfisch',
@@ -163,7 +163,7 @@ export const MOB_TYPES = {
       { itemId: 'ink_sac', chance: 0.6, min: 1, max: 1 },
       { itemId: 'tentacle', chance: 0.3, min: 1, max: 1 },
     ],
-    xp: 25,
+    xp: 45,
   },
   ghost_crab: {
     name: 'Geister-Krabbe',
@@ -178,6 +178,6 @@ export const MOB_TYPES = {
       { itemId: 'bone', chance: 0.5, min: 1, max: 2 },
       { itemId: 'crystal', chance: 0.25, min: 1, max: 1 },
     ],
-    xp: 35,
+    xp: 60,
   },
 };

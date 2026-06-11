@@ -47,25 +47,25 @@ export const LEVEL_TABLE = [
   // Level 20
   { level: 20, xpRequired: 3000, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: null },
   // Level 21
-  { level: 21, xpRequired: 5800, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: 'coral_healer' },
+  { level: 21, xpRequired: 2000, statBonus: { maxHp: 15 }, rewards: [], unlockQuest: 'coral_healer' },
   // Level 22
-  { level: 22, xpRequired: 7000, statBonus: { damagePct: 10 }, rewards: [], unlockQuest: 'deep_explorer' },
+  { level: 22, xpRequired: 2200, statBonus: { damagePct: 10 }, rewards: [], unlockQuest: 'deep_explorer' },
   // Level 23
-  { level: 23, xpRequired: 8400, statBonus: { maxHp: 15, speedPct: 5 }, rewards: [], unlockQuest: 'best_friend' },
+  { level: 23, xpRequired: 2400, statBonus: { maxHp: 15, speedPct: 5 }, rewards: [], unlockQuest: 'best_friend' },
   // Level 24
-  { level: 24, xpRequired: 10000, statBonus: { damagePct: 10 }, rewards: [], unlockQuest: 'collector_page1' },
+  { level: 24, xpRequired: 2600, statBonus: { damagePct: 10 }, rewards: [], unlockQuest: 'collector_page1' },
   // Level 25 — M5 MAX
-  { level: 25, xpRequired: 12000, statBonus: { maxHp: 20 }, rewards: [{ itemId: 'ghost_pearl', count: 5 }], unlockQuest: 'sunken_treasure' },
+  { level: 25, xpRequired: 2800, statBonus: { maxHp: 20 }, rewards: [{ itemId: 'ghost_pearl', count: 5 }], unlockQuest: 'sunken_treasure' },
   // Level 26
-  { level: 26, xpRequired: 14500, statBonus: { maxHp: 20, damagePct: 5 }, rewards: [], unlockQuest: 'cloud_jumper' },
+  { level: 26, xpRequired: 3000, statBonus: { maxHp: 20, damagePct: 5 }, rewards: [], unlockQuest: 'cloud_jumper' },
   // Level 27
-  { level: 27, xpRequired: 17500, statBonus: { maxHp: 15, speedPct: 5 }, rewards: [], unlockQuest: 'crystal_puzzle' },
+  { level: 27, xpRequired: 3200, statBonus: { maxHp: 15, speedPct: 5 }, rewards: [], unlockQuest: 'crystal_puzzle' },
   // Level 28
-  { level: 28, xpRequired: 21000, statBonus: { maxHp: 20, damagePct: 10 }, rewards: [{ itemId: 'heal_potion', count: 5 }], unlockQuest: 'shadow_slayer' },
+  { level: 28, xpRequired: 3400, statBonus: { maxHp: 20, damagePct: 10 }, rewards: [{ itemId: 'heal_potion', count: 5 }], unlockQuest: 'shadow_slayer' },
   // Level 29
-  { level: 29, xpRequired: 25000, statBonus: { maxHp: 15, speedPct: 5 }, rewards: [], unlockQuest: 'star_collector' },
+  { level: 29, xpRequired: 3600, statBonus: { maxHp: 15, speedPct: 5 }, rewards: [], unlockQuest: 'star_collector' },
   // Level 30 — M6 MAX
-  { level: 30, xpRequired: 30000, statBonus: { maxHp: 30, damagePct: 10 }, rewards: [{ itemId: 'star_fragment', count: 5 }], unlockQuest: 'emilia_legend' },
+  { level: 30, xpRequired: 3800, statBonus: { maxHp: 30, damagePct: 10 }, rewards: [{ itemId: 'star_fragment', count: 5 }], unlockQuest: 'emilia_legend' },
 ];
 
 export const MAX_LEVEL = 30;

@@ -69,6 +69,13 @@ export const WATER_EDGES = {
   innerTL: 31, innerTR: 32, innerBL: 33, innerBR: 34,
 };
 
+/** Water auto-tile edge IDs on SAND (tiles 47-58) — for the beach. */
+export const WATER_EDGES_SAND = {
+  N: 47, S: 48, W: 49, E: 50,
+  outerTL: 51, outerTR: 52, outerBL: 53, outerBR: 54,
+  innerTL: 55, innerTR: 56, innerBL: 57, innerBR: 58,
+};
+
 /** Path auto-tile edge IDs (tiles 35-46 in tileset strip). */
 export const PATH_EDGES = {
   N: 35, S: 36, W: 37, E: 38,

@@ -37,6 +37,7 @@ export class SaveManager {
     data.distanceWalked = gameState.distanceWalked || 0;
     data.bossNoHitKill = gameState.bossNoHitKill || false;
     data.collectedRareFinds = gameState.collectedRareFinds || [];
+    data.openedChests = gameState.openedChests || [];
     data.seenTooltips = gameState.seenTooltips || [];
     data.friendship = gameState.friendship || {};
     data.garden = gameState.garden || [];

@@ -189,9 +189,9 @@ export function generateDungeonMap() {
     // ══════════════════════════════════
     //  MOB SPAWNS
     // ══════════════════════════════════
-    // Entry hall area — weaker skeletons (skel1 moved deeper so player has safe entry zone)
-    { type: 'mob_spawn', mobType: 'skeleton_base', x: 8, y: 13, id: 'skel1' },
-    { type: 'mob_spawn', mobType: 'skeleton_base', x: 9, y: 15, id: 'skel2' },
+    // Entry corridors — weaker skeletons (moved >=7 tiles from playerSpawn 4,14 for a safe entry zone)
+    { type: 'mob_spawn', mobType: 'skeleton_base', x: 12, y: 13, id: 'skel1' },
+    { type: 'mob_spawn', mobType: 'skeleton_base', x: 9, y: 20, id: 'skel2' },
 
     // North corridor / treasure room — medium
     { type: 'mob_spawn', mobType: 'skeleton_base', x: 8, y: 7, id: 'skel3' },

@@ -34,9 +34,10 @@ export class CraftingUI {
     this.container.addEventListener('click', (e) => {
       if (e.target === this.container && !this._isCrafting) this.hide();
     });
-    window.addEventListener('keydown', (e) => {
+    this._escHandler = (e) => {
       if (e.code === 'Escape' && this.isOpen && !this._isCrafting) this.hide();
-    });
+    };
+    window.addEventListener('keydown', this._escHandler);
   }
 
   show(stationId, stationLabel, recipes, inventory) {
@@ -477,6 +478,7 @@ export class CraftingUI {
   }
 
   dispose() {
+    window.removeEventListener('keydown', this._escHandler);
     if (this.container.parentNode) this.container.remove();
     const s = document.getElementById('crafting-styles');
     if (s) s.remove();

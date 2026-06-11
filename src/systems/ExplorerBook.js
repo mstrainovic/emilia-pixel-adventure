@@ -15,7 +15,7 @@ export const BOOK_CATEGORIES = {
   shells: {
     name: 'Muscheln & Korallen',
     icon: '🐚',
-    entries: ['shell_common','sand_dollar','pearl','rainbow_shell','fire_coral','brain_coral','fan_coral','glow_coral'],
+    entries: ['shell_common','sand_dollar','pearl','starfish_shell','coral_piece','rainbow_shell','spiral_snail','deep_crown','fire_coral','brain_coral','fan_coral','glow_coral'],
   },
   fish: {
     name: 'Fische',

@@ -121,6 +121,14 @@ function drawItemIcon(ctx, itemId) {
       rect(ctx, 5, 10, 6, 2, 180, 130, 90);
       rect(ctx, 7, 12, 2, 2, 160, 110, 70);
     },
+    sword_coral: () => {
+      rect(ctx, 7, 2, 2, 8, 255, 127, 102);   // coral blade
+      rect(ctx, 6, 1, 4, 1, 255, 160, 140);   // tip highlight
+      px(ctx, 8, 4, 255, 190, 170);           // shine
+      px(ctx, 7, 6, 235, 100, 80);            // coral texture dot
+      rect(ctx, 5, 10, 6, 2, 110, 75, 40);    // guard
+      rect(ctx, 7, 12, 2, 2, 90, 60, 35);     // grip
+    },
     cooked_fish: () => {
       rect(ctx, 3, 6, 10, 4, 210, 170, 70);
       rect(ctx, 5, 5, 6, 1, 220, 180, 80);

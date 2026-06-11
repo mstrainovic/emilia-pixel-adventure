@@ -32,6 +32,12 @@ const FRAME_H = 32;
  * Load an image as a promise (with caching).
  */
 const _imageCache = {};
+
+// Extracted-canvas cache: palette-swapped row extraction is expensive
+// (per-pixel loops). Canvases are cached and reused across entities and
+// scene switches; each caller still gets its OWN CanvasTexture, so
+// entity dispose() stays safe.
+const _canvasCache = new Map();
 function loadImage(src) {
   if (_imageCache[src]) return Promise.resolve(_imageCache[src]);
   return new Promise((resolve, reject) => {
@@ -53,7 +59,11 @@ function loadImage(src) {
  * @param {object|null} paletteSwap - { swaps: [{from:[r,g,b,tolerance], to:[r,g,b]}] }
  * @returns {object} sheetData compatible with SpriteRenderer
  */
-function extractRow(img, row, cols, frameW, frameH, paletteSwap = null) {
+function extractRow(img, row, cols, frameW, frameH, paletteSwap = null, hairBow = false) {
+  const cacheKey = `${img.src}|r${row}|c${cols}|${frameW}x${frameH}|${JSON.stringify(paletteSwap)}|bow${hairBow ? 1 : 0}`;
+  const cached = _canvasCache.get(cacheKey);
+  if (cached) return _makeSheetData(cached, frameW, frameH, cols);
+
   const canvas = document.createElement('canvas');
   canvas.width = cols * frameW;
   canvas.height = frameH;
@@ -92,6 +102,67 @@ function extractRow(img, row, cols, frameW, frameH, paletteSwap = null) {
     ctx.putImageData(imgData, 0, 0);
   }
 
+  if (hairBow) _drawHairBow(ctx, cols, frameW, frameH);
+
+  _canvasCache.set(cacheKey, canvas);
+  return _makeSheetData(canvas, frameW, frameH, cols);
+}
+
+/**
+ * Draw a tiny pink hair bow on every frame of a character strip.
+ * The bow sits on the upper-right of the hair: per frame we find the
+ * top-most opaque pixel and the head's x-range, then stamp a 5x2 bow.
+ */
+function _drawHairBow(ctx, cols, frameW, frameH) {
+  const W = cols * frameW;
+  const data = ctx.getImageData(0, 0, W, frameH);
+  const d = data.data;
+  const P = [242, 96, 152];  // pink wings
+  const K = [198, 56, 116];  // darker knot
+  const H = [255, 196, 220]; // highlight
+
+  for (let f = 0; f < cols; f++) {
+    const x0 = f * frameW;
+
+    // Top-most opaque pixel of this frame
+    let topY = -1;
+    for (let y = 0; y < frameH && topY < 0; y++) {
+      for (let x = 0; x < frameW; x++) {
+        if (d[((y * W) + x0 + x) * 4 + 3] > 60) { topY = y; break; }
+      }
+    }
+    if (topY < 0) continue; // empty frame (e.g. unused hurt slots)
+
+    // Head x-range in the top rows
+    let minX = frameW, maxX = -1;
+    for (let y = topY; y < Math.min(frameH, topY + 3); y++) {
+      for (let x = 0; x < frameW; x++) {
+        if (d[((y * W) + x0 + x) * 4 + 3] > 60) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+        }
+      }
+    }
+    if (maxX - minX < 5) continue; // too narrow (lying down frames etc.)
+
+    const bx = x0 + maxX - 5;          // upper-right of the hair
+    const by = Math.max(0, topY);
+    const set = (x, y, c) => {
+      if (x < x0 || x >= x0 + frameW || y < 0 || y >= frameH) return;
+      const i = ((y * W) + x) * 4;
+      d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255;
+    };
+
+    // 5x2 bow: two wings + knot
+    set(bx,     by + 1, P); set(bx + 1, by,     P); set(bx + 1, by + 1, P);
+    set(bx + 2, by + 1, K);
+    set(bx + 3, by,     H); set(bx + 3, by + 1, P); set(bx + 4, by + 1, P);
+  }
+  ctx.putImageData(data, 0, 0);
+}
+
+/** Build sheetData with a fresh CanvasTexture from an (often cached) canvas. */
+function _makeSheetData(canvas, frameW, frameH, frameCount) {
   const texture = new THREE.CanvasTexture(canvas);
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;
@@ -102,7 +173,7 @@ function extractRow(img, row, cols, frameW, frameH, paletteSwap = null) {
     texture,
     frameWidth: frameW,
     frameHeight: frameH,
-    frameCount: cols,
+    frameCount,
     sheetWidth: canvas.width,
     sheetHeight: canvas.height,
   };
@@ -114,6 +185,9 @@ function extractRow(img, row, cols, frameW, frameH, paletteSwap = null) {
  */
 function extractActionRows(img, startRow, rowCount, colsPerRow, frameW, frameH, paletteSwap = null) {
   const totalFrames = rowCount * colsPerRow;
+  const cacheKey = `${img.src}|a${startRow}-${rowCount}-${colsPerRow}|${frameW}x${frameH}|${JSON.stringify(paletteSwap)}`;
+  const cachedA = _canvasCache.get(cacheKey);
+  if (cachedA) return _makeSheetData(cachedA, frameW, frameH, totalFrames);
   const canvas = document.createElement('canvas');
   canvas.width = totalFrames * frameW;
   canvas.height = frameH;
@@ -149,20 +223,8 @@ function extractActionRows(img, startRow, rowCount, colsPerRow, frameW, frameH, 
     ctx.putImageData(imgData, 0, 0);
   }
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestFilter;
-  texture.generateMipmaps = false;
-  texture.colorSpace = THREE.SRGBColorSpace;
-
-  return {
-    texture,
-    frameWidth: frameW,
-    frameHeight: frameH,
-    frameCount: totalFrames,
-    sheetWidth: canvas.width,
-    sheetHeight: canvas.height,
-  };
+  _canvasCache.set(cacheKey, canvas);
+  return _makeSheetData(canvas, frameW, frameH, totalFrames);
 }
 
 /**
@@ -170,17 +232,23 @@ function extractActionRows(img, startRow, rowCount, colsPerRow, frameW, frameH, 
  * The original player has brown hair and blue shirt.
  * We define color ranges to swap.
  */
-function buildPaletteSwap(hairColor, clothColor) {
+function darken(c, d) {
+  return [Math.max(0, c[0] - d), Math.max(0, c[1] - d), Math.max(0, c[2] - d)];
+}
+
+function buildPaletteSwap(hairColor, clothColor, pantsColor) {
   const swaps = [];
-  // Original hair: browns around [100,65,35] to [70,40,20]
   if (hairColor) {
-    swaps.push({ from: [100, 65, 35, 40], to: hairColor });
-    swaps.push({ from: [70, 40, 20, 30], to: [Math.max(0, hairColor[0] - 25), Math.max(0, hairColor[1] - 20), Math.max(0, hairColor[2] - 15)] });
+    swaps.push({ from: [112, 70, 67, 14], to: hairColor });
+    swaps.push({ from: [93, 44, 40, 12], to: darken(hairColor, 28) });
   }
-  // Original shirt/clothes: blues around [80,130,190] to [50,90,145]
   if (clothColor) {
-    swaps.push({ from: [80, 130, 190, 50], to: clothColor });
-    swaps.push({ from: [50, 90, 145, 40], to: [Math.max(0, clothColor[0] - 30), Math.max(0, clothColor[1] - 30), Math.max(0, clothColor[2] - 30)] });
+    swaps.push({ from: [51, 152, 75, 26], to: clothColor });
+    swaps.push({ from: [30, 111, 80, 22], to: darken(clothColor, 40) });
+  }
+  if (pantsColor) {
+    swaps.push({ from: [0, 152, 220, 26], to: pantsColor });
+    swaps.push({ from: [0, 105, 170, 22], to: darken(pantsColor, 40) });
   }
   return swaps.length > 0 ? { swaps } : null;
 }
@@ -195,8 +263,8 @@ function buildPaletteSwap(hairColor, clothColor) {
  * @returns {Promise<object>} map of animName -> sheetData
  */
 export async function loadCuteFantasyPlayer(options = {}) {
-  const { hairColor = null, clothColor = null } = options;
-  const paletteSwap = buildPaletteSwap(hairColor, clothColor);
+  const { hairColor = null, clothColor = null, pantsColor = null, hairBow = false } = options;
+  const paletteSwap = buildPaletteSwap(hairColor, clothColor, pantsColor);
   const base = import.meta.env.BASE_URL || '/';
 
   const [playerImg, actionsImg] = await Promise.all([
@@ -207,16 +275,16 @@ export async function loadCuteFantasyPlayer(options = {}) {
   const anims = {};
 
   // Movement animations from Player.png (6 cols x 10 rows)
-  anims.idle_down  = extractRow(playerImg, 0, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.idle_side  = extractRow(playerImg, 1, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.idle_up    = extractRow(playerImg, 2, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.walk_down  = extractRow(playerImg, 3, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.walk_side  = extractRow(playerImg, 4, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.walk_up    = extractRow(playerImg, 5, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.hurt_down  = extractRow(playerImg, 6, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.hurt_side  = extractRow(playerImg, 7, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.hurt_up    = extractRow(playerImg, 8, 6, FRAME_W, FRAME_H, paletteSwap);
-  anims.death      = extractRow(playerImg, 9, 6, FRAME_W, FRAME_H, paletteSwap);
+  anims.idle_down  = extractRow(playerImg, 0, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.idle_side  = extractRow(playerImg, 1, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.idle_up    = extractRow(playerImg, 2, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.walk_down  = extractRow(playerImg, 3, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.walk_side  = extractRow(playerImg, 4, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.walk_up    = extractRow(playerImg, 5, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.hurt_down  = extractRow(playerImg, 6, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.hurt_side  = extractRow(playerImg, 7, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.hurt_up    = extractRow(playerImg, 8, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.death      = extractRow(playerImg, 9, 6, FRAME_W, FRAME_H, paletteSwap, hairBow);
 
   // Run = walk (reuse, slightly faster animation speed applied elsewhere)
   anims.run_down = anims.walk_down;
@@ -225,14 +293,14 @@ export async function loadCuteFantasyPlayer(options = {}) {
 
   // Attack animations from Player_Actions.png (3 cols x 18 rows)
   // Use only the swing row (middle row of each 3-row set) for a snappy 3-frame attack
-  anims.slice_down = extractRow(actionsImg, 1, 3, FRAME_W, FRAME_H, paletteSwap);
-  anims.slice_side = extractRow(actionsImg, 4, 3, FRAME_W, FRAME_H, paletteSwap);
-  anims.slice_up   = extractRow(actionsImg, 7, 3, FRAME_W, FRAME_H, paletteSwap);
+  anims.slice_down = extractRow(actionsImg, 1, 3, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.slice_side = extractRow(actionsImg, 4, 3, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.slice_up   = extractRow(actionsImg, 7, 3, FRAME_W, FRAME_H, paletteSwap, hairBow);
 
   // Tool actions — use the swing row of tool animations
-  anims.collect_down = extractRow(actionsImg, 10, 3, FRAME_W, FRAME_H, paletteSwap);
-  anims.collect_side = extractRow(actionsImg, 13, 3, FRAME_W, FRAME_H, paletteSwap);
-  anims.collect_up   = extractRow(actionsImg, 16, 3, FRAME_W, FRAME_H, paletteSwap);
+  anims.collect_down = extractRow(actionsImg, 10, 3, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.collect_side = extractRow(actionsImg, 13, 3, FRAME_W, FRAME_H, paletteSwap, hairBow);
+  anims.collect_up   = extractRow(actionsImg, 16, 3, FRAME_W, FRAME_H, paletteSwap, hairBow);
   anims.crush_down = anims.collect_down;
   anims.crush_side = anims.collect_side;
   anims.crush_up   = anims.collect_up;
@@ -268,22 +336,38 @@ export async function loadCuteFantasyEnemy(spritePath) {
 }
 
 /**
- * Load the Cute_Fantasy NPC (same sprite as player but with different colors).
+ * Load the Cute_Fantasy slime spritesheet (512x192, 64x64 frames).
+ * Image AND extracted rows are cached — previously every slime instance
+ * re-loaded and re-decoded the sheet (~0.5-1s per mob per scene switch).
  */
-export async function loadCuteFantasyNPC(hairColor, clothColor) {
-  return loadCuteFantasyPlayer({ hairColor, clothColor });
+export async function loadSlimeAnims() {
+  const base = import.meta.env.BASE_URL || '/';
+  const img = await loadImage(`${base}Cute_Fantasy_Free/Enemies/Slime_Green.png`);
+  return {
+    idle:  extractRow(img, 0, 4, 64, 64),
+    run:   extractRow(img, 1, 8, 64, 64),
+    death: extractRow(img, 2, 8, 64, 64),
+  };
 }
 
-// NPC color configs for Emilia's family
+/**
+ * Load the Cute_Fantasy NPC (same sprite as player but with different colors).
+ */
+export async function loadCuteFantasyNPC(hairColor, clothColor, pantsColor, hairBow = false) {
+  return loadCuteFantasyPlayer({ hairColor, clothColor, pantsColor, hairBow });
+}
+
+// NPC color configs for Emilia's family.
+// clothColor = top, pantsColor = bottom. Matching top+bottom reads as a dress.
 export const NPC_PALETTE_CONFIGS = {
-  emilia:      { hairColor: [61, 43, 31],    clothColor: [235, 150, 185] },  // Dark brown hair, bright pink dress
-  mama_tanja:  { hairColor: [90, 55, 30],    clothColor: [230, 130, 160] },  // Brown hair, pink top
-  papa_milos:  { hairColor: [15, 12, 8],     clothColor: [70, 110, 180] },   // Black hair, blue shirt
-  marie:       { hairColor: [180, 140, 60],  clothColor: [255, 180, 50] },   // Blonde, yellow dress
-  liam:        { hairColor: [50, 30, 15],    clothColor: [60, 160, 80] },    // Dark brown, green shirt
-  oma:         { hairColor: [25, 25, 30],    clothColor: [160, 100, 140] },  // Black hair, mauve
-  opa:         { hairColor: [235, 200, 160], clothColor: [100, 130, 100] },  // Bald (hair=skin tone), olive shirt
-  baba:        { hairColor: [100, 50, 25],   clothColor: [190, 70, 60] },    // Auburn, red blouse
-  deda:        { hairColor: [130, 125, 115], clothColor: [60, 80, 130] },    // Grey, navy
-  ferdinand:   { hairColor: [210, 180, 80],  clothColor: [60, 160, 130] },  // Blonde hair, teal trader shirt
+  emilia:      { hairColor: [61, 43, 31],    clothColor: [240, 130, 175], pantsColor: [225, 105, 160], hairBow: true },  // Dark brown hair, pink dress + bow
+  mama_tanja:  { hairColor: [122, 72, 36],   clothColor: [215, 110, 145], pantsColor: [90, 70, 110] },    // Brown hair, pink top, plum skirt
+  papa_milos:  { hairColor: [38, 32, 28],    clothColor: [70, 110, 180],  pantsColor: [70, 65, 75] },     // Black hair, blue shirt, grey pants
+  marie:       { hairColor: [205, 165, 80],  clothColor: [250, 195, 70],  pantsColor: [240, 175, 60] },   // Blonde, yellow dress
+  liam:        { hairColor: [70, 45, 22],    clothColor: [80, 165, 90],   pantsColor: [110, 85, 60] },    // Dark brown, green shirt, brown pants
+  oma:         { hairColor: [88, 88, 96],    clothColor: [165, 105, 145], pantsColor: [120, 80, 110] },   // Grey hair, mauve dress
+  opa:         { hairColor: [225, 195, 160], clothColor: [110, 135, 105], pantsColor: [85, 80, 70] },     // Bald (hair=skin tone), olive shirt
+  baba:        { hairColor: [120, 60, 30],   clothColor: [195, 75, 65],   pantsColor: [150, 55, 50] },    // Auburn, red dress
+  deda:        { hairColor: [150, 145, 138], clothColor: [70, 90, 140],   pantsColor: [60, 60, 65] },     // Grey, navy shirt
+  ferdinand:   { hairColor: [215, 185, 90],  clothColor: [70, 165, 140],  pantsColor: [105, 80, 55] },    // Blonde hair, teal trader shirt
 };

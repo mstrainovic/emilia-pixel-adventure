@@ -32,9 +32,10 @@ export const ITEMS = {
   bloom_petal:    { id: 'bloom_petal',    name: 'Bluetenblatt',     category: 'magical', stackSize: 30, color: '#FFAACC', sellValue: 2 },
 
   // ── Weapons ──
-  sword_wood:  { id: 'sword_wood',  name: 'Holzschwert',    category: 'weapon', stackSize: 1, color: '#AA8844', damage: 15 },
+  sword_wood:  { id: 'sword_wood',  name: 'Holzschwert',    category: 'weapon', stackSize: 1, color: '#AA8844', damage: 18 },
   sword_stone: { id: 'sword_stone', name: 'Steinschwert',   category: 'weapon', stackSize: 1, color: '#888888', damage: 25 },
   sword_bone:  { id: 'sword_bone',  name: 'Knochenkeule',   category: 'weapon', stackSize: 1, color: '#CCBBAA', damage: 20 },
+  sword_coral: { id: 'sword_coral', name: 'Korallenschwert', category: 'weapon', stackSize: 1, color: '#FF7F66', damage: 32 },
 
   // ── Fish (catchable) ──
   goldfish:      { id: 'goldfish',      name: 'Goldfisch',          category: 'fish', stackSize: 20, color: '#FFD700', value: 5, sellValue: 2 },

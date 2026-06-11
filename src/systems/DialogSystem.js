@@ -139,6 +139,15 @@ export class DialogSystem {
     this.ui.showChoices(name, text, '#FFD700', choices);
   }
 
+  /** Hard-close the dialog (scene switches, cleanup). */
+  forceClose() {
+    this.activeNPC = null;
+    this._activeDialogs = null;
+    this.cooldown = 0.3;
+    if (this.ui?.hide) this.ui.hide();
+    else if (this.ui?.close) this.ui.close();
+  }
+
   get isActive() {
     return this.ui.isOpen;
   }

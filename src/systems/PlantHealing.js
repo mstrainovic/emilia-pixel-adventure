@@ -11,6 +11,7 @@ class WiltedPlant {
     this.healed = false;
     this.healRange = 2.0;
     this.scene = scene;
+    this.disposed = false;
 
     // Canvas-drawn wilted plant (much more visible than a brown square)
     const canvas = document.createElement('canvas');
@@ -138,6 +139,7 @@ class WiltedPlant {
     this.mesh.scale.set(0.3, 0.3, 1);
     let growT = 0;
     const growAnim = () => {
+      if (this.disposed) return;
       growT += 0.02;
       if (growT > 1) {
         this.mesh.scale.set(1.1, 1.1, 1);
@@ -152,6 +154,7 @@ class WiltedPlant {
     growAnim();
 
     setTimeout(() => {
+      if (this.disposed) return;
       if (this.healEffect) {
         this.scene.remove(this.healEffect);
         this.healEffect = null;
@@ -205,7 +208,7 @@ class WiltedPlant {
     // Multiple sparkle rings
     const createRing = (delay, color, size) => {
       setTimeout(() => {
-        if (!this.scene) return;
+        if (this.disposed || !this.scene) return;
         const geo = new THREE.RingGeometry(0.1, size, 16);
         const mat = new THREE.MeshBasicMaterial({
           color, transparent: true, opacity: 0.9,
@@ -218,7 +221,7 @@ class WiltedPlant {
         let t = 0;
         const animate = () => {
           t += 0.025;
-          if (t > 1) {
+          if (t > 1 || this.disposed) {
             this.scene.remove(ring);
             ring.geometry.dispose();
             mat.dispose();
@@ -240,6 +243,7 @@ class WiltedPlant {
   }
 
   dispose() {
+    this.disposed = true;
     if (this.mesh.parent) this.scene.remove(this.mesh);
     if (this.healEffect && this.healEffect.parent) this.scene.remove(this.healEffect);
     if (this.hintMesh && this.hintMesh.parent) this.scene.remove(this.hintMesh);
@@ -279,7 +283,7 @@ export class PlantHealingSystem {
           window.__game.progression.reportHeal();
         }
         if (this.onHeal) this.onHeal();
-        if (hud) hud.showInfo(`Pflanze geheilt! +10 XP (${this.totalHealed}/10)`);
+        if (hud) hud.showInfo(this.totalHealed <= 10 ? `Pflanze geheilt! +10 XP (${this.totalHealed}/10)` : 'Pflanze geheilt! +10 XP');
 
         if (this.totalHealed >= 10 && !this.unicornUnlocked) {
           this.unicornUnlocked = true;

@@ -264,6 +264,13 @@ export class Game {
       this.hud.updateCoins(this.inventory.coins);
       if (this.audio) this.audio.playUIClick();
     };
+    this.tradeUI.onBuy = (itemId, price) => {
+      const def = getItem(itemId);
+      this.hud.showInfo(`Gekauft: ${def?.name || itemId}! (-${price} Muenzen)`);
+      this.hud.updateHotbar(this.inventory);
+      this.hud.updateCoins(this.inventory.coins);
+      if (this.audio) this.audio.playUIClick();
+    };
     this.dialog.onDialogEnd = (npcId, stationId) => {
       // Track friendship on talk
       if (this.friendship && npcId) {
@@ -313,6 +320,9 @@ export class Game {
     this.resources = null;
     this.plantHealing = new PlantHealingSystem(null); // scene set per map
     this.dayNight = new DayNightSystem();
+    this.dayNight.onPhaseChange = (phase) => {
+      if (phase === 'morning' && this.hud?.showDayBanner) this.hud.showDayBanner();
+    };
     this.dayNightRenderer = null; // created per scene
     this._shootingStarReported = false;
     this.fishing = new FishingSystem();
@@ -334,6 +344,8 @@ export class Game {
     this._distanceWalked = 0;
     this._lastPlayerPos = null;
     this._collectedRareFinds = new Set(); // tracks one-time rare find pickups
+    this._openedChests = new Set(); // persistent: opened treasure chests
+    this._chests = []; // interactive chest props in the current scene
 
     // Map edge vignette (persists across scenes)
     this.mapVignette = new MapVignette();
@@ -420,9 +432,15 @@ export class Game {
       if (e.code === 'KeyQ') {
         this._useSelectedItem();
       }
-      // G key = drop selected item
+      // G key = gift to a nearby NPC, otherwise drop selected item
       if (e.code === 'KeyG') {
-        this._dropSelectedItem(e.shiftKey);
+        const nearNpc = this.npcs?.find(n =>
+          Math.hypot(n.x - this.player.x, n.y - this.player.y) < 1.8);
+        if (nearNpc) {
+          this._giftSelectedItem(nearNpc);
+        } else {
+          this._dropSelectedItem(e.shiftKey);
+        }
       }
       // P key for achievement overlay (only when explorer book is not open)
       if (e.code === 'KeyP' && !this.explorerBookUI.isOpen) {
@@ -632,6 +650,7 @@ export class Game {
         if (typeof save.distanceWalked === 'number') this._distanceWalked = save.distanceWalked;
         if (save.bossNoHitKill) this._bossNoHitKill = save.bossNoHitKill;
         if (save.collectedRareFinds) this._collectedRareFinds = new Set(save.collectedRareFinds);
+        if (save.openedChests) this._openedChests = new Set(save.openedChests);
         if (this.tutorialTooltips) this.tutorialTooltips.loadState(save.seenTooltips || []);
         if (this.friendship) this.friendship.loadState(save.friendship || {});
         // Restore garden state (before _buildScene so it can be applied during init)
@@ -1004,6 +1023,12 @@ export class Game {
     // Hide death screen on scene clear (prevents stale overlay)
     if (this.gameOverScreen) this.gameOverScreen.hide();
 
+    // Close any open dialog — otherwise the dialog box sticks around
+    // across scene switches (forced switches bypass the exit gate)
+    if (this.dialog?.forceClose) this.dialog.forceClose();
+
+    this._chests = [];
+
     // Remove player from old scene
     if (this.player) this.player.removeFromScene();
 
@@ -1142,13 +1167,18 @@ export class Game {
         }, undefined, reject);
       });
     };
-    try { cfOakTex = await cfLoad('Outdoor decoration/Oak_Tree.png'); } catch (e) {}
-    try { cfOakSmallTex = await cfLoad('Outdoor decoration/Oak_Tree_Small.png'); } catch (e) {}
-    try { cfDecorTex = await cfLoad('Outdoor decoration/Outdoor_Decor_Free.png'); } catch (e) {}
-    try { cfHouseTex = await cfLoad('Outdoor decoration/House_1_Wood_Base_Blue.png'); } catch (e) {}
-    try { cfFenceTex = await cfLoad('Outdoor decoration/Fences.png'); } catch (e) {}
-    try { cfBridgeTex = await cfLoad('Outdoor decoration/Bridge_Wood.png'); } catch (e) {}
-    try { cfChestTex = await cfLoad('Outdoor decoration/Chest.png'); } catch (e) {}
+    // Load all decoration textures in PARALLEL — the old serial awaits made
+    // scene transitions take several seconds (black screen) on first visit
+    const _safe = (pr) => pr.catch(() => null);
+    [cfOakTex, cfOakSmallTex, cfDecorTex, cfHouseTex, cfFenceTex, cfBridgeTex, cfChestTex] = await Promise.all([
+      _safe(cfLoad('Outdoor decoration/Oak_Tree.png')),
+      _safe(cfLoad('Outdoor decoration/Oak_Tree_Small.png')),
+      _safe(cfLoad('Outdoor decoration/Outdoor_Decor_Free.png')),
+      _safe(cfLoad('Outdoor decoration/House_1_Wood_Base_Blue.png')),
+      _safe(cfLoad('Outdoor decoration/Fences.png')),
+      _safe(cfLoad('Outdoor decoration/Bridge_Wood.png')),
+      _safe(cfLoad('Outdoor decoration/Chest.png')),
+    ]);
 
     // ── Farm RPG Asset Pack — load via direct path (keep only cropsTex, mapleTex, chickenTex) ──
     let mapleTex = null, cropsTex = null;
@@ -1168,15 +1198,18 @@ export class Game {
         }, undefined, reject);
       });
     };
-    try { mapleTex = await farmLoad('Objects/Maple Tree.png'); } catch (e) { console.warn('Maple not loaded'); }
-    try { cropsTex = await farmLoad('Objects/Spring Crops.png'); } catch (e) { console.warn('Crops not loaded'); }
-    try {
-      const chickenBaseTex = await farmLoad('Farm Animals/Baby Chicken Yellow.png');
+    let chickenBaseTex = null;
+    [mapleTex, cropsTex, chickenBaseTex] = await Promise.all([
+      _safe(farmLoad('Objects/Maple Tree.png')),
+      _safe(farmLoad('Objects/Spring Crops.png')),
+      _safe(farmLoad('Farm Animals/Baby Chicken Yellow.png')),
+    ]);
+    if (chickenBaseTex) {
       chickenTex = {
         texture: chickenBaseTex, frameWidth: 16, frameHeight: 16,
         frameCount: 4, sheetWidth: 64, sheetHeight: 48,
       };
-    } catch (e) { console.warn('Chicken not loaded'); }
+    }
 
     for (const prop of props) {
       switch (prop.type) {
@@ -1355,12 +1388,16 @@ export class Game {
         case 'trophy_shelf':
           // Handled by TrophyShelf system (Modul 2)
           break;
-        case 'chest':
+        case 'chest': {
           if (cfChestTex) {
             // Cute_Fantasy chest (32x32)
             this.tileMapRenderer.addProp(cfChestTex, prop.x, prop.y, 1, 1, 0.1);
           }
+          // Register as interactive treasure chest (E to open, once)
+          const chestId = prop.id || `chest_${this.sceneManager.currentScene}_${prop.x}_${prop.y}`;
+          this._chests.push({ x: prop.x, y: prop.y, id: chestId, loot: prop.loot || 'coins' });
           break;
+        }
         case 'chicken':
           // Animated baby chicken!
           if (chickenTex) {
@@ -2325,6 +2362,29 @@ export class Game {
     // Player
     if (!uiBlocking) {
       this.player.update(dt, this.input, this.tileMap);
+
+      // Ground feedback while moving: dust puffs on grass/dirt,
+      // fading footprints on sand (beach)
+      if (this.vfx && (this.player.state === 'walk' || this.player.state === 'run')) {
+        this._dustTimer = (this._dustTimer || 0) - dt;
+        if (this._dustTimer <= 0) {
+          const running = this.player.state === 'run';
+          const tileId = this.tileMap?.getGroundTile
+            ? this.tileMap.getGroundTile(Math.floor(this.player.x), Math.floor(this.player.y + 0.5))
+            : null;
+          const underwater = this.sceneManager.currentScene === 'grotto'
+            || (tileId >= 15 && tileId <= 18);
+          if (underwater) {
+            this.vfx.bubbles(this.player.x, this.player.y);
+          } else if (tileId === 11 || tileId === 12 || tileId === 13) {
+            this._stepSide = !this._stepSide;
+            this.vfx.footprint(this.player.x, this.player.y, this._stepSide);
+          } else {
+            this.vfx.dustPuff(this.player.x, this.player.y, running);
+          }
+          this._dustTimer = running ? 0.14 : 0.22;
+        }
+      }
     }
 
     // Update cloud castle player shadow position
@@ -2395,10 +2455,12 @@ export class Game {
       if (this._activeBoss.defeated) {
         const boss = this._activeBoss;
         this._bossStates[boss.bossType] = boss.getState();
-        // Drop rewards
+        // Drop rewards (boss rewards never despawn — they must not be lost
+        // even if the inventory is full when they hit the ground)
         if (this.itemDrops) {
           for (const drop of boss.drops) {
-            this.itemDrops.spawnMobDrops([{ itemId: drop.itemId, chance: 1.0, min: drop.count, max: drop.count }], boss.x, boss.y);
+            const d = this.itemDrops.spawnDrop(drop.itemId, drop.count, boss.x, boss.y);
+            if (d) d.lifetime = Infinity;
           }
         }
         // Grant XP
@@ -2563,14 +2625,18 @@ export class Game {
         bossesKilled: this.progression.stats.bossesKilled || {},
         bossNoHitKill: this._bossNoHitKill,
         fishCaught: Object.keys(this.progression.stats.fishCaught || {}).length,
-        shellsFound: Object.keys(this.progression.stats.uniqueCollected || {}).filter(k => k.startsWith('shell') || k === 'sand_dollar' || k === 'pearl' || k === 'rainbow_shell').length,
+        shellsFound: (() => {
+          const set = this.progression.stats.uniqueCollected?.shell;
+          if (!set) return 0;
+          return set.size ?? (Array.isArray(set) ? set.length : Object.keys(set).length);
+        })(),
         insectsCaught: [...this.explorerBook.discovered].filter(e => ['butterfly', 'ladybug', 'firefly', 'dragonfly', 'bee', 'cricket'].includes(e)).length,
         gemsFound: [...this.explorerBook.discovered].filter(e => ['crystal', 'sapphire', 'ruby', 'emerald', 'cloud_crystal', 'ghost_pearl'].includes(e)).length,
         bookEntries: bookProg.found,
         bookTotal: bookProg.total,
         plantsCollected: this.progression.stats.plantsHealed || 0,
-        chestsFound: 0,
-        secretsFound: 0,
+        chestsFound: this._openedChests ? this._openedChests.size : 0,
+        secretsFound: this._collectedRareFinds ? this._collectedRareFinds.size : 0,
         distanceWalked: this._distanceWalked,
         npcsSpoken: this.progression.stats.npcsSpoken || {},
         unicornsPetted: this.progression.stats.unicornsPetted || 0,
@@ -2586,6 +2652,15 @@ export class Game {
     // Pet update
     if (this.pet) {
       this.pet.update(dt, this.player.x, this.player.y);
+
+      // (see also: chest opening below)
+      // Pet petting: press E near the companion → hearts + friendship
+      const petDist = Math.hypot(this.pet.x - this.player.x, this.pet.y - this.player.y);
+      if (petDist < 1.6 && !uiBlocking && this.input.justPressed('KeyE')) {
+        if (this.vfx) this.vfx.hearts(this.pet.x, this.pet.y);
+        this.pet.friendship = Math.min(100, this.pet.friendship + 2);
+        if (this.audio?.playPlantHeal) this.audio.playPlantHeal();
+      }
     }
 
     // Insect updates
@@ -2700,6 +2775,19 @@ export class Game {
     // Animated sprites
     for (const s of this._animatedSprites) s.update(dt);
 
+    // Treasure chests: E to open (once per chest, persistent)
+    if (!uiBlocking && this._chests.length > 0) {
+      for (const chest of this._chests) {
+        if (this._openedChests.has(chest.id)) continue;
+        const cd = Math.hypot(chest.x + 0.5 - this.player.x, chest.y + 0.5 - this.player.y);
+        if (cd < 1.4 && this.input.justPressed('KeyE')) {
+          this._openedChests.add(chest.id);
+          this._openChestLoot(chest);
+          break;
+        }
+      }
+    }
+
     // Check exits — only when no UI is blocking
     if (!uiBlocking) {
       this.sceneManager.checkExits(this.player, this.tileMap);
@@ -2734,6 +2822,7 @@ export class Game {
       distanceWalked: this._distanceWalked,
       bossNoHitKill: this._bossNoHitKill,
       collectedRareFinds: [...this._collectedRareFinds],
+        openedChests: [...this._openedChests],
       seenTooltips: this.tutorialTooltips?.getState() || [],
       friendship: this.friendship?.getState() || {},
       garden: this._garden ? this._garden.getState() : (this._gardenSaveData || []),
@@ -2813,6 +2902,58 @@ export class Game {
     }
   }
 
+  /**
+   * Open a treasure chest: kid-friendly loot bursts out.
+   */
+  _openChestLoot(chest) {
+    const LOOT = {
+      coins:     { coins: 15, items: [] },
+      gems:      { coins: 5,  items: [['crystal', 2]] },
+      rare_gems: { coins: 10, items: [['ruby', 1], ['sapphire', 1]] },
+      equipment: { coins: 0,  items: [['heal_potion', 2]] },
+    };
+    const loot = LOOT[chest.loot] || LOOT.coins;
+    if (loot.coins > 0) {
+      this.inventory.coins += loot.coins;
+      this.hud.updateCoins?.(this.inventory.coins);
+    }
+    for (const [itemId, count] of loot.items) {
+      if (this.itemDrops) this.itemDrops.spawnDrop(itemId, count, chest.x + 0.5, chest.y + 1.2);
+    }
+    if (this.vfx) this.vfx.hitSparks(chest.x + 0.5, chest.y + 0.5);
+    this.juice?.shakeMedium?.();
+    const msg = loot.coins > 0 ? `Schatztruhe! +${loot.coins} Muenzen!` : 'Schatztruhe geoeffnet!';
+    this.hud.showInfo('\u{1F381} ' + msg);
+    this.audio.playUIClick();
+    if (this.progression.reportChestOpened) this.progression.reportChestOpened(chest.id);
+  }
+
+  /**
+   * Gift the selected hotbar item to a nearby NPC (G key near NPC).
+   */
+  _giftSelectedItem(npc) {
+    const slot = this.inventory.slots[this.inventory.selectedHotbar];
+    if (!slot.itemId) {
+      this.hud.showInfo('Waehle zuerst ein Geschenk in der Hotbar!');
+      return;
+    }
+    const itemId = slot.itemId;
+    const itemDef = getItem(itemId);
+    this.inventory.removeItem(itemId, 1);
+    const result = this.friendship?.onGift
+      ? this.friendship.onGift(npc._characterId, itemId)
+      : { points: 5, isFavorite: false };
+    if (this.vfx) this.vfx.hearts(npc.x, npc.y);
+    if (this.audio?.playPlantHeal) this.audio.playPlantHeal();
+    const name = npc.name || 'Freund';
+    if (result.isFavorite) {
+      this.hud.showInfo(`\u2764 ${name} LIEBT ${itemDef?.name || itemId}! (+${result.points || 15})`);
+    } else {
+      this.hud.showInfo(`\u2764 ${name} freut sich ueber ${itemDef?.name || itemId}! (+${result.points || 5})`);
+    }
+    this.hud.updateHotbar(this.inventory);
+  }
+
   _dropSelectedItem(dropAll = false) {
     if (!this.player || this.player.state === 'dead') return;
     if (!this.itemDrops) return;
@@ -2886,7 +3027,15 @@ export class Game {
     if (!this.explorerBook || !itemId) return;
     if (this.explorerBook.discover(itemId)) {
       const itemDef = getItem(itemId);
-      this.hud.showInfo('Neu entdeckt: ' + (itemDef?.name || itemId) + '!');
+      // Shell journal gets its own loving message with progress
+      const shellCat = BOOK_CATEGORIES.shells;
+      if (shellCat && shellCat.entries.includes(itemId)) {
+        const prog = this.explorerBook.getCategoryProgress('shells');
+        this.hud.showInfo('\u{1F41A} ' + (itemDef?.name || itemId) +
+          ' ins Muschel-Tagebuch! (' + prog.found + '/' + prog.total + ')');
+      } else {
+        this.hud.showInfo('Neu entdeckt: ' + (itemDef?.name || itemId) + '!');
+      }
       if (this.progression.reportDiscover) this.progression.reportDiscover(this.explorerBook.getTotalProgress().found);
       for (const catKey of Object.keys(BOOK_CATEGORIES)) {
         const rewardId = this.explorerBook.checkCategoryReward(catKey);
@@ -2915,8 +3064,17 @@ export class Game {
     if (this.pickupPopup) this.pickupPopup.dispose();
     if (this.explorerBookUI) this.explorerBookUI.dispose();
     if (this.gameOverScreen) this.gameOverScreen.dispose();
-    if (this.pet) this.pet.dispose();
-    this.sceneManager.dispose();
-    this.renderer.dispose();
+    if (this.minimap) this.minimap.dispose();
+    if (this.touchControls) this.touchControls.dispose();
+    if (this.helpOverlay) this.helpOverlay.dispose();
+    if (this.trophyShelf) this.trophyShelf.dispose();
+    if (this.tradeUI) this.tradeUI.dispose();
+    if (this.bossHealthBar) this.bossHealthBar.dispose();
+    if (this.renderer) {
+      this.renderer.dispose();
+      if (this.renderer.domElement?.parentNode) {
+        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+      }
+    }
   }
 }

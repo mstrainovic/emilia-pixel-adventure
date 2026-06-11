@@ -26,7 +26,7 @@ export class NPC extends Entity {
   async loadAnimations(_assetLoader) {
     // Load Cute_Fantasy player sprite with per-NPC palette swap
     const palette = NPC_PALETTE_CONFIGS[this._characterId] || NPC_PALETTE_CONFIGS.papa_milos;
-    const anims = await loadCuteFantasyNPC(palette.hairColor, palette.clothColor);
+    const anims = await loadCuteFantasyNPC(palette.hairColor, palette.clothColor, palette.pantsColor);
 
     const speed = ANIM_SPEED_IDLE + Math.floor(Math.random() * 80);
 
@@ -40,8 +40,14 @@ export class NPC extends Entity {
     this.setAnimation(dirAnim);
   }
 
-  // Cute_Fantasy sprites already include a shadow in the texture
-  _createShadow() {}
+  // Soft contact shadow under the feet.
+  _createShadow(scene) {
+    super._createShadow(scene, 0.42, 0.16);
+    if (this.shadow) {
+      // NPCs are static — position the shadow once
+      this.shadow.position.set(this.x, -(this.y + 0.8), 0.15 + this.y * 0.001);
+    }
+  }
 
   addToScene(scene) {
     super.addToScene(scene);

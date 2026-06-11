@@ -7,8 +7,11 @@ import {
 } from '../utils/Constants.js';
 
 export class Player extends Entity {
-  // Cute_Fantasy sprites already include a shadow in the texture
-  _createShadow() {}
+  // Soft contact shadow under the feet (in addition to the subtle
+  // baked-in sprite shadow) — grounds the character visually.
+  _createShadow(scene) {
+    super._createShadow(scene, 0.42, 0.16);
+  }
 
   updatePosition() {
     const ox = this._attackOffsetX || 0;

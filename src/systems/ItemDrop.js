@@ -68,6 +68,7 @@ class DroppedItem {
             this.destroy();
             return true;
           }
+          this.count = remaining; // partial pickup: keep only what didn't fit
         }
       } else {
         // Mob drops / natural drops: auto-magnet pickup
@@ -86,6 +87,7 @@ class DroppedItem {
               this.destroy();
               return true;
             }
+            this.count = remaining; // partial pickup: keep only what didn't fit
           }
         }
       }
@@ -112,7 +114,9 @@ export class ItemDropManager {
     const spread = 0.8;
     const dx = (Math.random() - 0.5) * spread;
     const dy = (Math.random() - 0.5) * spread;
-    this.drops.push(new DroppedItem(itemId, count, x + dx, y + dy, this.scene, playerDropped));
+    const drop = new DroppedItem(itemId, count, x + dx, y + dy, this.scene, playerDropped);
+    this.drops.push(drop);
+    return drop;
   }
 
   spawnMobDrops(dropTable, x, y) {

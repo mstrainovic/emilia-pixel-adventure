@@ -8,8 +8,9 @@
  * Tiles: 19=cloud_white, 20=cloud_pink, 21=cloud_gold, 22=crystal_floor
  * Background tile (void/night sky): -1 (collision=1, not walkable)
  *
- * Layout: Central star-shaped observatory with satellite platforms
- * connected by crystal bridges, surrounded by infinite night sky.
+ * Layout: A winding crystal "star path" links five glowing island
+ * platforms to a big eight-pointed star observatory in the middle of
+ * the infinite night sky. Tiny golden star islets twinkle in the void.
  */
 
 const W = 30;
@@ -34,14 +35,7 @@ function fillCircle(grid, cx, cy, radius, val) {
     }
 }
 
-function seededRandom(seed) {
-  let s = seed;
-  return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
-}
-
 export function generateStarskyMap() {
-  const rng = seededRandom(9999);
-
   // Start with night sky void (no tile, collision=1 — can't walk on void)
   const ground    = createGrid(W, H, -1);
   const collision = createGrid(W, H, 1);
@@ -57,99 +51,117 @@ export function generateStarskyMap() {
     fillCircle(collision, cx, cy, radius, 0);
   }
 
-  function carveBridge(x1, y1, x2, y2, width, tileId) {
-    const bw = width || 1;
-    const tile = tileId || 22;
-    if (x1 === x2) {
-      const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
-      fillRect(ground,    x1, minY, bw, maxY - minY + 1, tile);
-      fillRect(collision, x1, minY, bw, maxY - minY + 1, 0);
-    } else if (y1 === y2) {
-      const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
-      fillRect(ground,    minX, y1, maxX - minX + bw, bw, tile);
-      fillRect(collision, minX, y1, maxX - minX + bw, bw, 0);
+  // Ringed island: bright rim, softer body, glowing core
+  function carveIsland(cx, cy, rimTile, bodyTile, coreTile) {
+    carveCircle(cx, cy, 3, rimTile);
+    carveCircle(cx, cy, 2, bodyTile);
+    carveCircle(cx, cy, 1, coreTile);
+  }
+
+  // Winding 2x2 stepped crystal path through given waypoints
+  function carveStarPath(steps) {
+    for (const s of steps) carveFloor(s.x, s.y, 2, 2, 22);
+  }
+
+  // Tiny decorative star islet in the void (visible, NOT walkable)
+  function starIslet(cx, cy, tileId) {
+    const cells = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (const [dx, dy] of cells) {
+      const x = cx + dx, y = cy + dy;
+      if (y >= 0 && y < H && x >= 0 && x < W && ground[y][x] === -1) {
+        ground[y][x] = tileId;   // collision stays 1 — just a twinkle in the sky
+      }
     }
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // CENTRAL OBSERVATORY — large star-shaped platform (pink cloud)
-  // Center at (15, 12)
+  // CENTRAL OBSERVATORY — big eight-pointed star, center (15, 12)
   // ═══════════════════════════════════════════════════════════════════
 
-  // Main circular platform (radius 4)
-  carveCircle(15, 12, 4, 20);  // pink cloud base
-
-  // Star points extending from center (N, S, E, W)
-  // North point
-  carveFloor(14, 6, 3, 2, 20);
-  // South point
-  carveFloor(14, 18, 3, 2, 20);
-  // East point
-  carveFloor(20, 11, 2, 3, 20);
-  // West point
-  carveFloor(9, 11, 2, 3, 20);
-
-  // Connect star points to center circle
-  carveBridge(15, 8, 15, 9, 1, 20);
-  carveBridge(15, 16, 15, 17, 1, 20);
-  carveBridge(18, 12, 19, 12, 1, 20);
-  carveBridge(11, 12, 12, 12, 1, 20);
-
-  // Gold cloud inner ring (accent on the center platform)
+  // Main circular platform: crystal rim → pink body → gold ring → crystal heart
+  carveCircle(15, 12, 4, 22);
+  carveCircle(15, 12, 3, 20);
   carveCircle(15, 12, 2, 21);
-
-  // Crystal floor at the very center (special)
   carveFloor(15, 12, 1, 1, 22);
 
+  // Cardinal star points (N, S, E, W) — pink with crystal tips
+  carveFloor(14, 6, 3, 2, 20);
+  carveFloor(14, 18, 3, 2, 20);
+  carveFloor(20, 11, 2, 3, 20);
+  carveFloor(9, 11, 2, 3, 20);
+  carveFloor(15, 6, 1, 1, 22);   // N tip
+  carveFloor(15, 19, 1, 1, 22);  // S tip
+  carveFloor(21, 12, 1, 1, 22);  // E tip
+  carveFloor(9, 12, 1, 1, 22);   // W tip
+
+  // Connect cardinal points to the center circle
+  carveFloor(15, 8, 1, 2, 20);
+  carveFloor(15, 16, 1, 2, 20);
+  carveFloor(18, 12, 2, 1, 20);
+  carveFloor(11, 12, 2, 1, 20);
+
+  // Diagonal star points (NE, NW, SE, SW) — gold pads, complete the 8-point star
+  carveFloor(11, 8, 2, 2, 21);
+  carveFloor(18, 8, 2, 2, 21);
+  carveFloor(11, 15, 2, 2, 21);
+  carveFloor(18, 15, 2, 2, 21);
+
   // ═══════════════════════════════════════════════════════════════════
-  // SATELLITE PLATFORMS — 4 floating islands connected by bridges
+  // SATELLITE PLATFORMS — 4 glowing islands, linked by winding star paths
   // ═══════════════════════════════════════════════════════════════════
 
-  // ── NW Platform: "Mama's Terrace" (cloud_white) ──
-  carveCircle(5, 5, 3, 19);
-  carveCircle(5, 5, 1, 21);   // gold accent center
-  // Bridge NW → center (diagonal via two segments)
-  carveBridge(8, 5, 9, 5, 1, 22);
-  carveBridge(9, 5, 9, 11, 1, 22);
+  // ── NW Platform: "Mama's Terrace" (white, pink rim, gold core) ──
+  carveIsland(5, 5, 20, 19, 21);
+  // Winding star path NW → observatory (down the diagonal)
+  carveStarPath([{ x: 8, y: 6 }, { x: 9, y: 7 }, { x: 10, y: 8 }]);
 
-  // ── NE Platform: "Constellation Lookout" (cloud_white + crystal) ──
-  carveCircle(25, 5, 3, 19);
-  carveCircle(25, 5, 1, 22);  // crystal center (telescope spot)
-  // Bridge NE → center
-  carveBridge(21, 5, 22, 5, 1, 22);
-  carveBridge(21, 5, 21, 11, 1, 22);
+  // ── NE Platform: "Constellation Lookout" (white, crystal core) ──
+  carveIsland(25, 5, 20, 19, 22);
+  carveStarPath([{ x: 21, y: 6 }, { x: 20, y: 7 }, { x: 19, y: 8 }]);
 
-  // ── SW Platform: "Moon Garden" (cloud_pink) ──
-  carveCircle(5, 20, 3, 20);
-  carveCircle(5, 20, 1, 21);  // gold accent center
-  // Bridge SW → center
-  carveBridge(8, 20, 9, 20, 1, 22);
-  carveBridge(9, 14, 9, 20, 1, 22);
+  // ── SW Platform: "Moon Garden" (pink, white rim, gold core) ──
+  carveIsland(5, 20, 19, 20, 21);
+  carveStarPath([{ x: 8, y: 17 }, { x: 9, y: 16 }, { x: 10, y: 15 }]);
 
-  // ── SE Platform: "Star Crystal Shrine" (crystal + gold) ──
-  carveCircle(25, 20, 3, 22);
-  carveCircle(25, 20, 1, 21); // gold accent center
-  // Bridge SE → center
-  carveBridge(21, 20, 22, 20, 1, 22);
-  carveBridge(21, 14, 21, 20, 1, 22);
+  // ── SE Platform: "Star Crystal Shrine" (crystal, gold rim+core) ──
+  carveIsland(25, 20, 21, 22, 21);
+  carveStarPath([{ x: 21, y: 17 }, { x: 20, y: 16 }, { x: 19, y: 15 }]);
 
   // ═══════════════════════════════════════════════════════════════════
   // ENTRANCE PLATFORM — south (arrival from cloud_castle)
   // ═══════════════════════════════════════════════════════════════════
 
   carveFloor(13, 22, 5, 3, 19);   // white cloud landing pad
+  fillRect(ground, 13, 22, 5, 1, 20);  // pink front edge
   carveFloor(15, 22, 1, 1, 22);   // crystal marker at entry
-  // Bridge from entrance to central observatory
-  carveBridge(15, 20, 15, 22, 1, 22);
+  // Wide crystal bridge from entrance to the south star point
+  carveFloor(14, 20, 3, 2, 22);
+
+  // Hidden-exit landing (cloud_castle north exit spawns at 2,4)
+  carveFloor(2, 3, 2, 3, 19);     // connects to NW platform rim at (3,4)
 
   // ═══════════════════════════════════════════════════════════════════
   // CONSTELLATION VIEWING PLATFORM — north (the "Danke Emilia" text)
   // ═══════════════════════════════════════════════════════════════════
 
   carveFloor(11, 1, 9, 3, 19);    // wide white cloud platform
+  fillRect(ground, 11, 1, 9, 1, 20);   // pink back edge
   carveFloor(14, 2, 3, 1, 21);    // gold accent center strip
-  // Bridge from constellation platform to center
-  carveBridge(15, 4, 15, 6, 1, 22);
+  // Wide crystal bridge from constellation platform to the north star point
+  carveFloor(14, 4, 3, 2, 22);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // TINY STAR ISLETS — golden twinkles floating in the night void
+  // ═══════════════════════════════════════════════════════════════════
+
+  starIslet(2, 12, 21);
+  starIslet(28, 12, 21);
+  starIslet(10, 22, 22);
+  starIslet(20, 23, 21);
+  starIslet(22, 2, 22);
+  starIslet(8, 1, 21);
+  starIslet(28, 17, 22);
+  starIslet(1, 17, 22);
 
   // ═══════════════════════════════════════════════════════════════════
   // PROPS / DECORATIONS
@@ -173,7 +185,6 @@ export function generateStarskyMap() {
   }
 
   // ── Constellation text marker (rendered by AmbientLife as star pattern) ──
-  // Placed on the north constellation platform, above the map center
   props.push({ type: 'constellation', text: 'Danke Emilia', x: 15, y: 2 });
 
   // ── Crystal flowers on satellite platforms (decorative glow) ──
@@ -197,6 +208,23 @@ export function generateStarskyMap() {
   props.push({ type: 'crystal_pillar', x: 15, y: 18, collision: false });
   props.push({ type: 'crystal_pillar', x: 10, y: 12, collision: false });
   props.push({ type: 'crystal_pillar', x: 20, y: 12, collision: false });
+
+  // ── Sparkles along the star paths and on platforms ──
+  const sparkleSpots = [
+    { x: 9, y: 7 }, { x: 19, y: 7 }, { x: 9, y: 16 }, { x: 19, y: 16 },
+    { x: 5, y: 3 }, { x: 25, y: 3 }, { x: 5, y: 18 }, { x: 25, y: 18 },
+    { x: 12, y: 8 }, { x: 18, y: 9 }, { x: 12, y: 16 }, { x: 19, y: 15 },
+    { x: 13, y: 2 }, { x: 18, y: 2 }, { x: 14, y: 23 }, { x: 16, y: 23 },
+  ];
+  for (const sp of sparkleSpots) props.push({ type: 'sparkle_deco', x: sp.x, y: sp.y });
+
+  // ── Cloud puffs drifting at platform edges ──
+  const puffSpots = [
+    { x: 3, y: 7 }, { x: 7, y: 3 }, { x: 23, y: 3 }, { x: 27, y: 7 },
+    { x: 3, y: 18 }, { x: 7, y: 22 }, { x: 23, y: 22 }, { x: 27, y: 18 },
+    { x: 11, y: 4 }, { x: 19, y: 4 }, { x: 12, y: 24 }, { x: 18, y: 24 },
+  ];
+  for (const pf of puffSpots) props.push({ type: 'cloud_puff', x: pf.x, y: pf.y });
 
   // ── Signpost at entrance (back to cloud castle) ──
   props.push({ type: 'signpost', x: 14, y: 23, label: 'Wolkenschloss', dir: 'south' });

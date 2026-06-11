@@ -79,13 +79,46 @@ export class SceneManager {
       y: spawnY !== undefined ? spawnY : null
     };
 
-    // Set fade color: blend current scene color → target scene color
-    const targetColor = this._fadeColors[target] || '#000';
-    this.overlay.style.background = targetColor;
+    // Fade color for the iris wipe ring
+    this._irisColor = this._fadeColors[target] || '#000';
+    this.overlay.style.background = 'transparent';
 
     this.fadeDirection = 1; // start fading out
     this.fadeElapsed = 0;
     this.fadeAlpha = 0;
+  }
+
+  /**
+   * Project the player position to screen coordinates (iris wipe focus).
+   */
+  _focusPoint() {
+    try {
+      const g = this.game;
+      const v = new THREE.Vector3(g.player.x, -g.player.y, 0.2);
+      v.project(g.camera.three);
+      return [
+        (v.x * 0.5 + 0.5) * window.innerWidth,
+        (-v.y * 0.5 + 0.5) * window.innerHeight,
+      ];
+    } catch (e) {
+      return [window.innerWidth / 2, window.innerHeight / 2];
+    }
+  }
+
+  /**
+   * Zelda-style iris wipe: a shrinking/growing circle of visibility
+   * centered on the player. alpha 0 = fully open, alpha 1 = fully closed.
+   */
+  _applyIris(alpha) {
+    const [cx, cy] = this._focusPoint();
+    const maxR = Math.hypot(window.innerWidth, window.innerHeight) * 0.6;
+    // Ease the radius for a snappier close and gentler open
+    const r = Math.max(0, (1 - alpha) * (1 - alpha) * maxR);
+    const color = this._irisColor || '#000';
+    this.overlay.style.opacity = '1';
+    this.overlay.style.background =
+      `radial-gradient(circle at ${cx.toFixed(0)}px ${cy.toFixed(0)}px, ` +
+      `transparent ${Math.max(0, r - 14).toFixed(0)}px, ${color} ${r.toFixed(0)}px)`;
   }
 
   update(dt) {
@@ -96,7 +129,7 @@ export class SceneManager {
     if (this.fadeDirection === 1) {
       // Fading out (going dark)
       this.fadeAlpha = Math.min(1, this.fadeElapsed / this.fadeDuration);
-      this.overlay.style.opacity = this.fadeAlpha;
+      this._applyIris(this.fadeAlpha);
 
       if (this.fadeAlpha >= 1 && !this._switching) {
         // Screen is black — switch map (await async loadScene)
@@ -115,12 +148,13 @@ export class SceneManager {
     } else if (this.fadeDirection === -1) {
       // Fading in (revealing new map)
       this.fadeAlpha = Math.max(0, 1 - this.fadeElapsed / this.fadeDuration);
-      this.overlay.style.opacity = this.fadeAlpha;
+      this._applyIris(this.fadeAlpha);
 
       if (this.fadeAlpha <= 0) {
         this.transitioning = false;
         this.fadeDirection = 0;
         this.overlay.style.opacity = 0;
+        this.overlay.style.background = 'transparent';
       }
     }
 

@@ -221,6 +221,147 @@ export class VisualEffects {
   }
 
   /**
+   * Floating pink hearts when petting the companion.
+   */
+  hearts(x, y) {
+    if (!this._heartTex) {
+      const c = document.createElement('canvas');
+      c.width = 8; c.height = 8;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ff5d8f';
+      // pixel heart
+      ctx.fillRect(1, 1, 2, 2); ctx.fillRect(5, 1, 2, 2);
+      ctx.fillRect(0, 2, 8, 2); ctx.fillRect(1, 4, 6, 1);
+      ctx.fillRect(2, 5, 4, 1); ctx.fillRect(3, 6, 2, 1);
+      ctx.fillStyle = '#ffc2d4';
+      ctx.fillRect(1, 2, 1, 1);
+      this._heartTex = new THREE.CanvasTexture(c);
+      this._heartTex.magFilter = THREE.NearestFilter;
+      this._heartTex.minFilter = THREE.NearestFilter;
+    }
+    for (let i = 0; i < 4; i++) {
+      const size = 0.22 + Math.random() * 0.12;
+      const geo = new THREE.PlaneGeometry(size, size);
+      const mat = new THREE.MeshBasicMaterial({
+        map: this._heartTex, transparent: true, opacity: 0.95, depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x + (Math.random() - 0.5) * 0.7, -(y - 0.3), 0.45);
+      this.scene.add(mesh);
+      const wobble = 2 + Math.random() * 2;
+      const phase = Math.random() * Math.PI * 2;
+      const delay = i * 0.08;
+      this.effects.push({
+        mesh, age: -delay, maxAge: 0.9 + Math.random() * 0.3,
+        update: (dt, e) => {
+          e.age += dt;
+          if (e.age < 0) { mat.opacity = 0; return; }
+          const t = e.age / e.maxAge;
+          mesh.position.y += 1.1 * dt; // float up
+          mesh.position.x += Math.sin(e.age * wobble + phase) * 0.25 * dt;
+          mat.opacity = 0.95 * (1 - t * t);
+        }
+      });
+    }
+  }
+
+  /**
+   * Rising air bubbles while walking underwater (grotto).
+   */
+  bubbles(x, y) {
+    const count = 2 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < count; i++) {
+      const size = 0.08 + Math.random() * 0.09;
+      const geo = new THREE.CircleGeometry(size, 8);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xbfe8ff, transparent: true, opacity: 0.55, depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(
+        x + (Math.random() - 0.5) * 0.4,
+        -(y + 0.5 + Math.random() * 0.2),
+        0.3,
+      );
+      this.scene.add(mesh);
+      const wob = 3 + Math.random() * 3;
+      const phase = Math.random() * Math.PI * 2;
+      this.effects.push({
+        mesh, age: 0, maxAge: 0.8 + Math.random() * 0.5,
+        update: (dt, e) => {
+          e.age += dt;
+          const t = e.age / e.maxAge;
+          mesh.position.y += 1.4 * dt; // rise
+          mesh.position.x += Math.sin(e.age * wob + phase) * 0.18 * dt;
+          mat.opacity = 0.55 * (1 - t);
+          mesh.scale.setScalar(1 + t * 0.5);
+        }
+      });
+    }
+  }
+
+  /**
+   * Fading footprint in the sand (beach). flip alternates left/right foot.
+   */
+  footprint(x, y, side) {
+    const geo = new THREE.PlaneGeometry(0.13, 0.2);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x8a6b45, transparent: true, opacity: 0.4, depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x + (side ? 0.12 : -0.12), -(y + 0.68), 0.045 + y * 0.0001);
+    mesh.rotation.z = (side ? -1 : 1) * 0.12;
+    this.scene.add(mesh);
+    this.effects.push({
+      mesh, age: 0, maxAge: 3.0,
+      update: (dt, e) => {
+        e.age += dt;
+        const t = e.age / e.maxAge;
+        mat.opacity = 0.4 * (1 - t);
+      }
+    });
+  }
+
+  /**
+   * Small dust puffs at the feet while walking/running.
+   * Subtle, short-lived, slightly rising and fading.
+   */
+  dustPuff(x, y, running = false) {
+    const count = running ? 3 : 2;
+    for (let i = 0; i < count; i++) {
+      const size = 0.10 + Math.random() * 0.10;
+      const geo = new THREE.PlaneGeometry(size, size);
+      const shade = 0.72 + Math.random() * 0.12;
+      const mat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(shade, shade * 0.95, shade * 0.82),
+        transparent: true,
+        opacity: 0.35,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(
+        x + (Math.random() - 0.5) * 0.35,
+        -(y + 0.65 + (Math.random() - 0.5) * 0.1),
+        0.18 + y * 0.001,
+      );
+      mesh.rotation.z = Math.random() * Math.PI;
+      this.scene.add(mesh);
+
+      const drift = (Math.random() - 0.5) * 0.4;
+      this.effects.push({
+        mesh, age: 0, maxAge: 0.35 + Math.random() * 0.2,
+        update: (dt, e) => {
+          e.age += dt;
+          const t = e.age / e.maxAge;
+          mesh.position.x += drift * dt;
+          mesh.position.y += 0.5 * dt; // rise
+          mesh.scale.setScalar(1 + t * 1.6);
+          mat.opacity = 0.35 * (1 - t);
+        }
+      });
+    }
+  }
+
+  /**
    * Hit sparks when attacking a mob — Pokemon-style star burst.
    * Central flash + radiating sparks + lingering star shapes.
    */
