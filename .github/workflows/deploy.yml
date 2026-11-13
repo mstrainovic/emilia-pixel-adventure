@@ -24,12 +24,35 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            v2/package-lock.json
 
       - run: npm ci
 
       - run: npm test
 
       - run: npm run build
+
+      - run: npm ci
+        working-directory: v2
+
+      - run: npm run typecheck
+        working-directory: v2
+
+      - run: npm test -- --passWithNoTests
+        working-directory: v2
+
+      - run: npx playwright install --with-deps chromium
+        working-directory: v2
+
+      - run: npm run test:e2e
+        working-directory: v2
+
+      - run: npm run build
+        working-directory: v2
+
+      - run: test -f dist/index.html && test -f dist/v2/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:
