@@ -1009,3 +1009,43 @@ git commit -m "feat(v2): bestehende Karten als Daten exportiert und geprüft"
 - [ ] `git status` ist sauber; keine fremden Dateien im Stamm.
 - [ ] Skill `superpowers:requesting-code-review` für den gesamten Branch.
 - [ ] Auftraggeber fragen, ob der Branch in `main` gemergt und veröffentlicht werden soll (das neue Spiel zeigt dann unter `/v2/` nur eine grüne Fläche; das alte bleibt unverändert).
+
+---
+
+# Abschluss Etappe 0 (Stand 2026-11-13) — Übergabe an Etappe 1
+
+**Teil A** ist seit 2026-11-13 live (`main` = `c30a6d0`). **Teil B** liegt fertig und geprüft auf dem Branch `v2/etappe-0-fundament`.
+
+## Was gegenüber dem Plan geändert wurde
+
+- Auslieferung mit Node 24 statt 20 (Vitest 5 verlangt Node 22+).
+- Download-Adresse der Sicherung bleibt 60 s gültig (iOS fragt vor dem Download nach).
+- Pixelraster zusätzlich bei doppelter Pixeldichte getestet, inklusive Zeiger-Abbildung.
+- Drei alte Tippfehler in Texten korrigiert („Kräuter", 2× „Zaubertränke"); `EMILIA_CONFIG` nicht portiert.
+- Spielstand-Übernahme: Boss-Siege stehen im alten Stand als `true`, nicht als Zahl (die Testvorlage im Plan oben ist an dieser Stelle falsch); Aufgaben mit `completed: true` in `activeQuests` gelten als erledigt; Rückgriff auf `stats.fishCaught`/`uniqueCollected`.
+- Speicher: bei Lesefehler wird nicht geschrieben; ein nicht ladbarer Eintrag wird nach `emilia2_save_rejected` gesichert; `migrateState` repariert statt zu verwerfen (hartes Minimum: Objekt, `formatVersion === 1`, gültige Karte, 48 Plätze, Level ist Zahl).
+- Auslieferung in vier Jobs (`alt`, `v2`, `seite`, `deploy`): Das alte Spiel wird veröffentlicht, wenn seine Tests grün sind; `/v2/` kommt nur bei grünen v2-Tests dazu.
+- Truhen ohne eigene Kennung bekommen beim Export die Kennung des alten Spiels (`chest_<karte>_<x>_<y>`).
+- XP-Umrechnung rechnet ganzzahlig.
+
+## Pflicht-Einstieg für den Plan von Etappe 1 (aus der Gesamtprüfung von Teil B)
+
+1. **Speicher-Schnittstelle für die Oberfläche:** Ergebnis-Typen statt `null`/`false` (unterscheiden: kein Stand, Stand kaputt, neuerer Stand blockiert, Speicher voll); Lesezugriff auf den gesicherten abgelehnten Stand; Sicherung des v2-Stands, bevor erneute Übernahme oder Datei-Import ihn ersetzen; Merker „Übernahme abgelehnt"; Rückmeldung bei fehlgeschlagenem Takt-Speichern; ein Programmfehler in der Übernahme darf nicht wie „kein alter Stand" aussehen.
+2. **Reparatur eigener Stände:** unbekannte Gegenstände und Aufgaben in v2-Ständen nicht stumm entfernen; Karte und Platzzahl reparieren statt ablehnen; Regel festlegen und testen, wann `formatVersion` steigt (neue Kennungen, neue Karte wie das Dino-Tal); bei verlustbehafteter Reparatur den Rohtext sichern.
+3. **Pixelraster als spielweiter Dienst** statt in der Start-Szene; Fläche messen statt rechnen (`ResizeObserver` mit `device-pixel-content-box`); Kamera-Sichtfeld auf Vielfache des Zooms; Test mit Schachbrett bei Pixeldichte 1 / 1,25 / 2 / 2,625 / 3 und ungeraden Größen.
+4. **Fehlende Schutztests:** CSP-Zeile, kein Test-Zugang im Produktions-Bundle, kein `localStorage` außerhalb von `save/`, echtes Zeichnen, Browser-Test „speichern, neu laden" (auch WebKit), Start des ausgelieferten Bundles, Kennungen der Karten gegen `data/`.
+5. **Karten:** Doppelungen auflösen (Figurenpositionen in `NpcDef` und in der Ebene `npcs`; Ausgänge doppelt in `unicorn_meadow`/`starsky`; Startpunkt 20/15 dreifach im Code, Karte sagt 19/14); Exportziel vor Überschreiben schützen, sobald Karten von Hand bearbeitet werden; Gegenstück-Prüfung schärfen.
+6. **Texte:** „mächtiger stolz" (Opa) korrigieren; serbische Sätze vom Auftraggeber gegenlesen lassen; Negativliste gegen zu viel gesetzte Umlaute.
+7. **Kleinere Punkte:** Tests in den Typecheck aufnehmen; doppelte Größenberechnung in `main.ts`/`BootScene.ts`; Test für `completed: true` zusammen mit New Game Plus; Klemmtests in `normalize`; zwei offene Tabs überschreiben sich gegenseitig (Etappe 2).
+
+## Bekannte Mängel der alten Karten (in `v2/tests/maps/exported.test.ts` festgehalten)
+
+- `lake`: Südausgang ragt eine Kachel über den Kartenrand.
+- `grotto`: zwei Muscheln (10/15, 32/25) liegen im Fels und sind nicht erreichbar.
+- `cloud_castle` → `unicorn_meadow`: Ankunft auf der gesperrten Kachel 12/2. Im laufenden alten Spiel nachgestellt: Emilia kann nach links, rechts und oben weglaufen, sie steckt nicht fest.
+
+## Noch offen beim Auftraggeber
+
+- Sicherungsdatei von Emilias Gerät (für `v2/tests/fixtures/legacy/emilia-real.json`; nicht ohne Zustimmung ins öffentliche Repo).
+- Geräte und Browser der Kinder (WebKit-Tests).
+- Umgang mit dem alten Spiel und den Paketen `Cute_Fantasy_Free` / `Farm RPG` nach dem Umschalten.
