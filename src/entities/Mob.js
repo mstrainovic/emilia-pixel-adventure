@@ -3,6 +3,7 @@ import { Entity } from './Entity.js';
 import { distance } from '../utils/MathUtils.js';
 import { ANIM_SPEED_IDLE } from '../utils/Constants.js';
 import { loadCuteFantasyEnemy, loadSlimeAnims } from '../utils/SpriteSheetLoader.js';
+import { blinkVisible } from '../utils/Blink.js';
 
 /**
  * Enemy mob with simple AI: Idle → Chase → Attack → Death.
@@ -142,7 +143,7 @@ export class Mob extends Entity {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer -= dt;
       if (this.activeSprite) {
-        this.activeSprite.mesh.visible = Math.floor(this.hitFlashTimer * 10) % 2 === 0;
+        this.activeSprite.mesh.visible = blinkVisible(this.hitFlashTimer, 10);
       }
     }
 

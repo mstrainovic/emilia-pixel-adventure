@@ -5,6 +5,7 @@ import {
   PLAYER_SPEED, PLAYER_RUN_SPEED,
   ANIM_SPEED_IDLE, ANIM_SPEED_WALK, ANIM_SPEED_RUN
 } from '../utils/Constants.js';
+import { blinkVisible } from '../utils/Blink.js';
 
 export class Player extends Entity {
   // Soft contact shadow under the feet (in addition to the subtle
@@ -65,7 +66,7 @@ export class Player extends Entity {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer -= dt;
       if (this.activeSprite) {
-        this.activeSprite.mesh.visible = Math.floor(this.hitFlashTimer * 10) % 2 === 0;
+        this.activeSprite.mesh.visible = blinkVisible(this.hitFlashTimer, 10);
       }
     }
 
@@ -110,7 +111,7 @@ export class Player extends Entity {
       if (this._deathFlashTimer > 0) {
         this._deathFlashTimer -= dt;
         if (this.activeSprite) {
-          this.activeSprite.mesh.visible = Math.floor(this._deathFlashTimer * 15) % 2 === 0;
+          this.activeSprite.mesh.visible = blinkVisible(this._deathFlashTimer, 15);
         }
       }
       super.update(dt);

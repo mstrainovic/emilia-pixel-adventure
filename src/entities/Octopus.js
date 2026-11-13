@@ -3,6 +3,7 @@ import { Entity } from './Entity.js';
 import { MOB_TYPES } from '../data/mobs.js';
 import { distance } from '../utils/MathUtils.js';
 import { ANIM_SPEED_IDLE } from '../utils/Constants.js';
+import { blinkVisible } from '../utils/Blink.js';
 
 /**
  * Octopus enemy with canvas-drawn sprites and ink spray attack.
@@ -351,7 +352,7 @@ export class Octopus extends Entity {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer -= dt;
       if (this.activeSprite) {
-        this.activeSprite.mesh.visible = Math.floor(this.hitFlashTimer * 10) % 2 === 0;
+        this.activeSprite.mesh.visible = blinkVisible(this.hitFlashTimer, 10);
       }
     }
 

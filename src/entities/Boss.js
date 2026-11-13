@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { distance } from '../utils/MathUtils.js';
+import { blinkVisible } from '../utils/Blink.js';
 
 /**
  * Boss base class — shared logic for all 3 boss encounters.
@@ -190,7 +191,7 @@ export class Boss {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer -= dt;
       if (this.mesh) {
-        this.mesh.visible = Math.floor(this.hitFlashTimer * 10) % 2 === 0;
+        this.mesh.visible = blinkVisible(this.hitFlashTimer, 10);
       }
     }
 

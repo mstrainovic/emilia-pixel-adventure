@@ -3,6 +3,9 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
   base: '/emilia-pixel-adventure/',
+  test: {
+    include: ['tests/unit/**/*.test.js'],
+  },
   plugins: [
     viteStaticCopy({
       targets: [

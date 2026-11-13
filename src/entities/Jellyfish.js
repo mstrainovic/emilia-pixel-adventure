@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Entity } from './Entity.js';
 import { MOB_TYPES } from '../data/mobs.js';
 import { ANIM_SPEED_IDLE } from '../utils/Constants.js';
+import { blinkVisible } from '../utils/Blink.js';
 
 /**
  * Jellyfish enemy with canvas-drawn sprites and lazy drift movement.
@@ -213,7 +214,7 @@ export class Jellyfish extends Entity {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer -= dt;
       if (this.activeSprite) {
-        this.activeSprite.mesh.visible = Math.floor(this.hitFlashTimer * 10) % 2 === 0;
+        this.activeSprite.mesh.visible = blinkVisible(this.hitFlashTimer, 10);
       }
     }
 
