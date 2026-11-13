@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Entity } from './Entity.js';
 import { distance } from '../utils/MathUtils.js';
-import { ANIM_SPEED_IDLE } from '../utils/Constants.js';
+import { ANIM_SPEED_IDLE, MOB_RESPAWN_SECONDS } from '../utils/Constants.js';
 import { loadCuteFantasyEnemy, loadSlimeAnims } from '../utils/SpriteSheetLoader.js';
 import { blinkVisible } from '../utils/Blink.js';
 
@@ -134,7 +134,7 @@ export class Mob extends Entity {
       if (this.deathTimer <= 0) {
         this.hide();
         this.aiState = 'respawning';
-        this.respawnTimer = this.respawnTime || 180; // per-spawn or default 3 min
+        this.respawnTimer = this.respawnTime || MOB_RESPAWN_SECONDS; // per-spawn or default 3 min
       }
       return;
     }

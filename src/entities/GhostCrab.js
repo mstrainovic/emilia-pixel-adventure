@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Entity } from './Entity.js';
 import { MOB_TYPES } from '../data/mobs.js';
 import { distance } from '../utils/MathUtils.js';
-import { ANIM_SPEED_IDLE } from '../utils/Constants.js';
+import { ANIM_SPEED_IDLE, MOB_RESPAWN_SECONDS } from '../utils/Constants.js';
 import { blinkVisible } from '../utils/Blink.js';
 
 /**
@@ -249,7 +249,7 @@ export class GhostCrab extends Entity {
       if (this.deathTimer <= 0) {
         this.hide();
         this.aiState = 'respawning';
-        this.respawnTimer = 5;
+        this.respawnTimer = MOB_RESPAWN_SECONDS;
       }
       return;
     }

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Entity } from './Entity.js';
 import { MOB_TYPES } from '../data/mobs.js';
-import { ANIM_SPEED_IDLE } from '../utils/Constants.js';
+import { ANIM_SPEED_IDLE, MOB_RESPAWN_SECONDS } from '../utils/Constants.js';
 import { blinkVisible } from '../utils/Blink.js';
 
 /**
@@ -205,7 +205,7 @@ export class Jellyfish extends Entity {
       if (this.deathTimer <= 0) {
         this._hide();
         this.aiState = 'respawning';
-        this.respawnTimer = 5;
+        this.respawnTimer = MOB_RESPAWN_SECONDS;
       }
       return;
     }

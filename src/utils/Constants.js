@@ -42,3 +42,6 @@ export const DIR_RIGHT = 'right';
 // Asset base path — uses Vite's base URL for GitHub Pages compatibility
 export const BASE_URL = import.meta.env.BASE_URL || '/';
 export const ASSET_PATH = `${BASE_URL}Game Assets`;
+
+// Wartezeit in Sekunden, bis ein besiegter Gegner wiederkommt (drei Minuten)
+export const MOB_RESPAWN_SECONDS = 180;
