@@ -13,6 +13,7 @@ export class MainMenu {
         <div class="mm-buttons">
           <button id="mm-start" class="mm-btn mm-btn-primary">Neues Spiel</button>
           <button id="mm-continue" class="mm-btn mm-btn-secondary" style="display:none">Weiterspielen</button>
+          <button id="mm-export" class="mm-btn mm-btn-secondary" style="display:none">Spielstand sichern</button>
         </div>
         <div class="mm-controls">
           <p>WASD — Laufen &nbsp;|&nbsp; Shift — Rennen</p>
@@ -31,6 +32,10 @@ export class MainMenu {
     if (continueBtn) {
       continueBtn.style.display = hasSave ? 'block' : 'none';
     }
+    const exportBtn = document.getElementById('mm-export');
+    if (exportBtn) {
+      exportBtn.style.display = hasSave ? 'block' : 'none';
+    }
   }
 
   hide() {
@@ -46,6 +51,10 @@ export class MainMenu {
 
   onContinue(callback) {
     document.getElementById('mm-continue').addEventListener('click', callback);
+  }
+
+  onExport(callback) {
+    document.getElementById('mm-export').addEventListener('click', callback);
   }
 
   _addStyles() {

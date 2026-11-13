@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { startServer, launchBrowser, startNewGame, check, finish } from './harness.mjs';
 
 const server = await startServer();
@@ -63,6 +64,59 @@ try {
     if (classes !== 'Crab,GhostCrab,Jellyfish,Octopus') throw new Error(`Geprueft wurden nur: ${classes}`);
     for (const [name, t] of Object.entries(seen)) {
       if (!(t > 100)) throw new Error(`${name}: respawnTimer ist ${t}, erwartet > 100`);
+    }
+  });
+
+  const SAVE_KEY = 'emilia_pixel_adventure_save';
+  const SAVE_TEXT = '{"version":3,"timestamp":1,"player":{"hp":100,"scene":"hub","x":20,"y":15},"inventory":[]}';
+
+  await check('Sicherung lädt den gespeicherten Stand herunter', async () => {
+    const ctx = await browser.newContext({ acceptDownloads: true });
+    try {
+      const p = await ctx.newPage();
+      await p.addInitScript(([k, v]) => localStorage.setItem(k, v), [SAVE_KEY, SAVE_TEXT]);
+      await p.goto(server.url);
+      const btn = p.locator('#mm-export');
+      await btn.waitFor({ state: 'visible', timeout: 60000 });
+      const [download] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), btn.click()]);
+      const name = download.suggestedFilename();
+      if (!/^emilia-spielstand-\d{4}-\d{2}-\d{2}\.json$/.test(name)) throw new Error(`Unerwarteter Dateiname: ${name}`);
+      const content = readFileSync(await download.path(), 'utf8');
+      if (content !== SAVE_TEXT) throw new Error(`Inhalt weicht ab: ${content}`);
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  await check('Ohne Spielstand kein Knopf', async () => {
+    const ctx = await browser.newContext({ acceptDownloads: true });
+    try {
+      const p = await ctx.newPage();
+      await p.goto(server.url);
+      await p.locator('#mm-start').waitFor({ state: 'visible', timeout: 60000 });
+      if (await p.locator('#mm-export').isVisible()) throw new Error('#mm-export ist ohne Spielstand sichtbar');
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  await check('Verschwundener Stand löst nichts aus', async () => {
+    const ctx = await browser.newContext({ acceptDownloads: true });
+    try {
+      const p = await ctx.newPage();
+      const errors = [];
+      p.on('pageerror', (e) => errors.push(e.message));
+      await p.addInitScript(([k, v]) => localStorage.setItem(k, v), [SAVE_KEY, SAVE_TEXT]);
+      await p.goto(server.url);
+      const btn = p.locator('#mm-export');
+      await btn.waitFor({ state: 'visible', timeout: 60000 });
+      await p.evaluate((k) => localStorage.removeItem(k), SAVE_KEY);
+      const downloadEvent = p.waitForEvent('download', { timeout: 1000 }).then(() => true, () => false);
+      await btn.click();
+      if (await downloadEvent) throw new Error('Es gab einen Download, obwohl kein Stand mehr da war');
+      if (errors.length) throw new Error(`pageerror: ${errors.join(' | ')}`);
+    } finally {
+      await ctx.close();
     }
   });
 } finally {

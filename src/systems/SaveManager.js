@@ -64,6 +64,15 @@ export class SaveManager {
     }
   }
 
+  /** Unveränderter gespeicherter Text oder null (auch bei Lesefehlern). */
+  exportRaw() {
+    try {
+      return localStorage.getItem(SAVE_KEY);
+    } catch (e) {
+      return null;
+    }
+  }
+
   hasSave() {
     return !!localStorage.getItem(SAVE_KEY);
   }

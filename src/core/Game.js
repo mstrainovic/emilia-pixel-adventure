@@ -28,6 +28,7 @@ import { DialogSystem } from '../systems/DialogSystem.js';
 import { CraftingSystem } from '../systems/CraftingSystem.js';
 import { SaveManager } from '../systems/SaveManager.js';
 import { MainMenu } from '../ui/MainMenu.js';
+import { buildSaveExportFilename, downloadTextFile } from '../utils/SaveExport.js';
 import { getItem } from '../data/items.js';
 import { generateHubMap } from '../world/maps/hub.js';
 import { generateForestMap } from '../world/maps/forest.js';
@@ -591,6 +592,12 @@ export class Game {
     const menu = new MainMenu();
     const hasSave = this.saveManager.hasSave();
     menu.show(hasSave);
+
+    menu.onExport(() => {
+      const raw = this.saveManager.exportRaw();
+      if (raw === null) return;
+      downloadTextFile(buildSaveExportFilename(new Date()), raw);
+    });
 
     menu.onStart(async () => {
       this.audio.init();
