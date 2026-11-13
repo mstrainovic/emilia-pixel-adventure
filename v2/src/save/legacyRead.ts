@@ -81,3 +81,14 @@ export function listRecord(v: unknown): Record<string, string[]> {
   }
   return out;
 }
+
+/** Boss-Zähler: das alte Spiel schreibt `true`; das wird zu 1, Zahlen ≥ 1 bleiben (abgerundet). */
+export function bossRecord(v: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const k of keysOf(v)) {
+    const x = field(v, k);
+    const n = x === true ? 1 : finite(x);
+    if (n !== undefined && n >= 1) out[k] = Math.floor(n);
+  }
+  return out;
+}

@@ -4,11 +4,12 @@
 import { createNewGameState, INVENTORY_SLOTS, type GameState } from '../core/state';
 import { MAX_LEVEL, HP_PER_HEART, heartsForLevel, convertLegacyXp } from '../core/levels';
 import { ITEM_SUCCESSORS, getItem } from '../data/items';
+import { BOSSES } from '../data/bosses';
 import { QUESTS, QUEST_ORDER } from '../data/quests';
 import { isMapId, type MapId } from '../data/maps';
 import {
   isObj, keysOf, field, finite, counter, nonNegative, stringList, trueKeys, listOrTrueKeys,
-  counterRecord, boolRecord, listRecord, type Obj,
+  counterRecord, bossRecord, boolRecord, listRecord, type Obj,
 } from './legacyRead';
 
 /** Schlüssel des alten Spielstands und der Stummschaltung im localStorage (von v2 nur gelesen). */
@@ -23,6 +24,7 @@ export interface MigrationReport {
 }
 
 const HUB_START = { map: 'hub' as MapId, x: 20, y: 15 };
+const NGPLUS_BOSS = 'shadow_knight';
 const NGPLUS_LAST_QUEST = 'shadow_slayer';
 const NGPLUS_ACHIEVEMENTS_FOR_STAR = 15;
 const UNICORN_MIN_PLANTS = 10;
@@ -70,10 +72,14 @@ function readStats(save: Obj, prog: unknown, state: GameState): void {
   const s = state.progression.stats;
   s.mobsKilled = counterRecord(field(stats, 'mobsKilled'));
   s.itemsCollected = counterRecord(field(stats, 'itemsCollected'));
-  s.bossesKilled = counterRecord(field(stats, 'bossesKilled'));
+  // Das alte Spiel schreibt `true` und führt die Liste zweimal (in stats und eine Ebene darüber).
+  const bk = bossRecord(field(stats, 'bossesKilled'));
+  const bkTop = bossRecord(field(prog, 'bossesKilled'));
+  for (const id of Object.keys(bkTop)) bk[id] = Math.max(bk[id] ?? 0, bkTop[id] ?? 0);
+  s.bossesKilled = bk;
   s.puzzlesSolved = boolRecord(field(stats, 'puzzlesSolved'));
-  s.fishCaught = counterRecord(save['fishCaught']);
-  s.uniqueCollected = listRecord(save['uniqueCollected']);
+  s.fishCaught = counterRecord(isObj(save['fishCaught']) ? save['fishCaught'] : field(stats, 'fishCaught'));
+  s.uniqueCollected = listRecord(isObj(save['uniqueCollected']) ? save['uniqueCollected'] : field(stats, 'uniqueCollected'));
   s.npcsSpoken = listOrTrueKeys(field(stats, 'npcsSpoken'));
   s.grottoZones = listOrTrueKeys(field(stats, 'grottoZones'));
   const unicorn = save['unicornUnlocked'] === true ? UNICORN_MIN_PLANTS : 0;
@@ -87,26 +93,33 @@ function readStats(save: Obj, prog: unknown, state: GameState): void {
   s.bossNoHitKill = save['bossNoHitKill'] === true;
 }
 
-function readQuests(prog: unknown, state: GameState): void {
-  const done = new Set(trueKeys(field(prog, 'completedQuests')));   // Liste statt Objekt zählt nicht
-  state.progression.completedQuests = QUEST_ORDER.filter((id) => done.has(id));
+/** Liefert die Aufgaben, die der alte Stand im Objekt `completedQuests` als erledigt führt. */
+function readQuests(prog: unknown, state: GameState): Set<string> {
+  const oldDone = new Set(trueKeys(field(prog, 'completedQuests')));   // Liste statt Objekt zählt nicht
+  const done = new Set(oldDone);
   const active = field(prog, 'activeQuests');
+  // Ein abgeschlossener Eintrag in activeQuests bleibt im alten Spiel stehen und ist nach NG+ der einzige Beleg.
+  for (const id of keysOf(active)) {
+    if (Object.hasOwn(QUESTS, id) && field(field(active, id), 'completed') === true) done.add(id);
+  }
+  state.progression.completedQuests = QUEST_ORDER.filter((id) => done.has(id));
   for (const id of keysOf(active)) {
     const entry = field(active, id);
     if (!Object.hasOwn(QUESTS, id) || done.has(id) || !isObj(entry)) continue;
     state.progression.activeQuests[id] = { progress: counter(entry['progress']) };
   }
+  return oldDone;
 }
 
 /** Nach „New Game Plus" sind die erledigten Aufgaben im alten Stand gelöscht: im Zweifel gelten sie als erledigt. */
-function reconstructQuests(state: GameState, report: MigrationReport): void {
+function reconstructQuests(state: GameState, report: MigrationReport, oldDone: Set<string>): void {
   const known = new Set(state.progression.completedQuests);
   const want = new Set(QUEST_ORDER.slice(0, QUEST_ORDER.indexOf(NGPLUS_LAST_QUEST) + 1));
   if (state.achievements.length >= NGPLUS_ACHIEVEMENTS_FOR_STAR) want.add('star_collector');
   if (state.progression.level >= MAX_LEVEL) want.add('emilia_legend');
   if (state.visitedMaps.includes('starsky')) want.add('secret_heroine');
   const all = QUEST_ORDER.filter((id) => known.has(id) || want.has(id));
-  report.reconstructedQuests = all.filter((id) => !known.has(id));
+  report.reconstructedQuests = all.filter((id) => want.has(id) && !oldDone.has(id));
   state.progression.completedQuests = all;
   for (const id of all) delete state.progression.activeQuests[id];
 }
@@ -191,15 +204,19 @@ function build(save: Obj, mutedRaw: string | null, now: number): { state: GameSt
   state.inventory.coins = counter(save['coins']);
   readStats(save, prog, state);
   state.achievements = stringList(save['achievements']);
-  readQuests(prog, state);
-  if (field(save['newGamePlus'], 'active') === true) reconstructQuests(state, report);
+  const oldDone = readQuests(prog, state);
+  const newGamePlus = field(field(save, 'newGamePlus'), 'active') === true;
+  if (newGamePlus) reconstructQuests(state, report, oldDone);
 
   readFriendship(save['friendship'], state);
   readGarden(save['garden'], state);
   state.pet = readPet(save['pet']);
   readExplorerBook(save['explorerBook'], state);
   const bosses = field(save, 'bossStates');
-  state.bossesDefeated = keysOf(bosses).filter((k) => field(field(bosses, k), 'defeated') === true);
+  const defeated = keysOf(bosses).filter((k) => field(field(bosses, k), 'defeated') === true);
+  for (const id of Object.keys(state.progression.stats.bossesKilled)) defeated.push(id);
+  if (newGamePlus) defeated.push(NGPLUS_BOSS);   // Neues Abenteuer+ gab es erst nach diesem Sieg
+  state.bossesDefeated = defeated.filter((id, i) => Object.hasOwn(BOSSES, id) && defeated.indexOf(id) === i);
   state.openedChests = stringList(save['openedChests']);
   state.collectedRareFinds = stringList(save['collectedRareFinds']);
   state.seenHints = stringList(save['seenTooltips']);

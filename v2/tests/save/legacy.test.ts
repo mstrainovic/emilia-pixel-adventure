@@ -63,6 +63,7 @@ it('bereinigt einen vollen Stand der Version 3', () => {
   expect(state.explorerBook).toEqual({ discovered: ['goldfish'], rewardsClaimed: [] });
   expect(state.achievements).toEqual(['a', 'b']);
   expect(state.bossesDefeated).toEqual(['coconut_king']);
+  expect(state.progression.stats.bossesKilled).toEqual({ coconut_king: 1 });
   expect(state.pet).toEqual({ type: 'fox', friendship: 12, evolved: false });
   expect(state.seenHints).toEqual(['move', 'talk']);
   expect(state.settings).toEqual({ muted: true, difficulty: 'sanft' });
@@ -125,8 +126,8 @@ describe('Spielstand in unerwarteter Form', () => {
 
   it.each(inputs.map((raw, i) => [i, raw] as const))('wirft nicht und bleibt gültig (Fall %i)', (_i, raw) => {
     const result = migrateLegacySave(raw, null, 5000);
-    if (result === null) return;
-    const { state } = result;
+    expect(result).not.toBeNull();
+    const { state } = result!;
     expect(state.inventory.slots).toHaveLength(48);
     expect(state.progression.level).toBeGreaterThanOrEqual(1);
     expect(state.progression.level).toBeLessThanOrEqual(30);
@@ -168,4 +169,43 @@ it.runIf(existsSync(REAL))('übernimmt Emilias echten Stand', () => {
   const result = migrateLegacySave(readFileSync(REAL, 'utf8'), null, 5000);
   expect(result).not.toBeNull();
   expect(result!.state.inventory.slots).toHaveLength(48);
+});
+
+describe('Boss-Siege und erledigte Aufgaben', () => {
+  it('behält nach New Game Plus alle Boss-Siege', () => {
+    const { state } = run(LEGACY_NGPLUS)!;
+    expect(state.bossesDefeated).toEqual(['coconut_king', 'leviathan', 'shadow_knight']);
+  });
+
+  it('nimmt nach New Game Plus ohne Belege den Schattenritter an', () => {
+    const o = { ...LEGACY_NGPLUS, progression: { ...LEGACY_NGPLUS.progression, stats: { scenesVisited: { hub: true } } } };
+    expect(run(o)!.state.bossesDefeated).toEqual(['shadow_knight']);
+  });
+
+  it('filtert nur die Siegesliste auf bekannte Bosse, nicht die Zähler', () => {
+    const { state } = run({ bossStates: { made_up_boss: { defeated: true } },
+      progression: { stats: { bossesKilled: { made_up_boss: true, leviathan: 2 } } } })!;
+    expect(state.bossesDefeated).toEqual(['leviathan']);
+    expect(state.progression.stats.bossesKilled).toEqual({ made_up_boss: 1, leviathan: 2 });
+  });
+
+  it('liest bossesKilled auch von der obersten Ebene der Fortschritte (Maximum)', () => {
+    const { state } = run({ progression: { bossesKilled: { leviathan: true, coconut_king: 3 },
+      stats: { bossesKilled: { coconut_king: true } } } })!;
+    expect(state.progression.stats.bossesKilled).toEqual({ coconut_king: 3, leviathan: 1 });
+  });
+
+  it('zählt abgeschlossene Einträge unter activeQuests als erledigt', () => {
+    const { state, report } = run({ progression: { completedQuests: {}, activeQuests: {
+      first_steps: { progress: 1, completed: true }, wood_collector: { progress: 2, completed: false } } } })!;
+    expect(state.progression.completedQuests).toEqual(['first_steps']);
+    expect(state.progression.activeQuests).toEqual({ wood_collector: { progress: 2 } });
+    expect(report.reconstructedQuests).toEqual([]);
+  });
+
+  it('nimmt Fänge und Einzelstücke notfalls aus stats', () => {
+    const { state } = run({ progression: { stats: { fishCaught: { goldfish: 2 }, uniqueCollected: { shell: ['pearl'] } } } })!;
+    expect(state.progression.stats.fishCaught).toEqual({ goldfish: 2 });
+    expect(state.progression.stats.uniqueCollected).toEqual({ shell: ['pearl'] });
+  });
 });
