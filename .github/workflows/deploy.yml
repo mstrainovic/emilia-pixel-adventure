@@ -1,3 +1,6 @@
+# Auslieferung: Das alte Spiel wird veröffentlicht, sobald SEINE Tests grün sind.
+# /v2/ kommt nur dazu, wenn auch die Tests von v2 grün sind. Ein rotes v2 blockiert
+# das alte Spiel nie und wird nie ungetestet veröffentlicht.
 name: Deploy to GitHub Pages
 
 on:
@@ -15,7 +18,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  alt:
+    name: Altes Spiel prüfen und bauen
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +28,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            v2/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
 
@@ -34,13 +36,34 @@ jobs:
 
       - run: npm run build
 
+      - run: test -f dist/index.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alt
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  v2:
+    name: v2 prüfen und bauen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: v2/package-lock.json
+
       - run: npm ci
         working-directory: v2
 
       - run: npm run typecheck
         working-directory: v2
 
-      - run: npm test -- --passWithNoTests
+      - run: npm test
         working-directory: v2
 
       - run: npx playwright install --with-deps chromium
@@ -52,14 +75,48 @@ jobs:
       - run: npm run build
         working-directory: v2
 
-      - run: test -f dist/index.html && test -f dist/v2/index.html
+      - run: test -f dist/v2/index.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v2
+          path: dist/v2/
+          if-no-files-found: error
+          retention-days: 1
+
+  seite:
+    name: Seite zusammenstellen
+    needs: [alt, v2]
+    if: ${{ always() && needs.alt.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: alt
+          path: dist
+
+      - if: ${{ needs.v2.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: v2
+          path: dist/v2
+
+      - name: Inhalt der Auslieferung
+        run: |
+          ls dist
+          if [ "${{ needs.v2.result }}" != "success" ]; then
+            echo "::warning::v2 fehlt in dieser Auslieferung (Ergebnis: ${{ needs.v2.result }})"
+          fi
+
+      - run: test -f dist/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    needs: build
+    needs: seite
+    if: ${{ always() && needs.seite.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
