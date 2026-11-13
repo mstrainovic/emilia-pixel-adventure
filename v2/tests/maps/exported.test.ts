@@ -40,4 +40,23 @@ describe('exportierte Karten', () => {
       beach: [55, 35], grotto: [45, 40], cloud_castle: [50, 45], starsky: [30, 25],
     });
   });
+
+  it('jede Truhe hat eine eindeutige Kennung, auch die ohne eigene im alten Spiel', () => {
+    const ids: string[] = [];
+    for (const id of MAP_IDS) {
+      for (const layer of maps[id].layers) {
+        if (layer.type !== 'objectgroup') continue;
+        for (const o of layer.objects) {
+          if (o.type !== 'chest') continue;
+          const prop = o.properties?.find((p) => p.name === 'id');
+          expect(typeof prop?.value, `${id}: Truhe ${o.id}`).toBe('string');
+          expect((prop?.value as string).length).toBeGreaterThan(0);
+          ids.push(prop?.value as string);
+        }
+      }
+    }
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain('chest_hub_9_9');
+    expect(ids).toContain('chest_hub_33_12');
+  });
 });

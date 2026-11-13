@@ -59,10 +59,18 @@ export function convertLegacyMap(id, legacy) {
     id: lid, name, type: 'objectgroup', draworder: 'topdown', x: 0, y: 0, opacity: 1, visible: true, objects,
   });
 
+  // Truhen ohne eigene Kennung bekommen die Kennung, die das alte Spiel aus Karte und Kachel bildet.
+  const propProperties = (p) => {
+    const props = toProperties(p);
+    if (p.type === 'chest' && !props.some((q) => q.name === 'id')) {
+      props.push(toProperty('id', `chest_${id}_${p.x}_${p.y}`));
+    }
+    return props;
+  };
   const objects = (legacy.props ?? []).map((p) => ({
     id: objectId(), name: '', type: p.type,
     x: p.x * TILE, y: p.y * TILE, width: (p.w ?? 1) * TILE, height: (p.h ?? 1) * TILE,
-    rotation: 0, visible: true, properties: toProperties(p),
+    rotation: 0, visible: true, properties: propProperties(p),
   }));
   const npcs = (legacy.npcs ?? []).map((n) => ({
     id: objectId(), name: n.id, type: 'npc',

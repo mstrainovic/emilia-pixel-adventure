@@ -42,6 +42,22 @@ describe('Umwandlung alter Karten', () => {
     expect(m.nextobjectid).toBe(Math.max(...ids) + 1);
   });
 
+  it('brennt für Truhen ohne Kennung die Kennung des alten Spiels ein', () => {
+    const m = convertLegacyMap('hub', {
+      ...legacy,
+      props: [
+        { type: 'chest', x: 1, y: 1, loot: 'coins' },
+        { type: 'chest', x: 4, y: 5, id: 'x1' },
+        { type: 'station', x: 0, y: 0, stationId: 'cooking' },
+      ],
+    });
+    const props = (i: number) => m.layers[2].objects[i].properties;
+    expect(props(0)).toContainEqual({ name: 'id', type: 'string', value: 'chest_hub_1_1' });
+    expect(props(1)).toContainEqual({ name: 'id', type: 'string', value: 'x1' });
+    expect(props(1).filter((p: { name: string }) => p.name === 'id')).toHaveLength(1);
+    expect(props(2).some((p: { name: string }) => p.name === 'id')).toBe(false);
+  });
+
   it('seededRandom ist wiederholbar', () => {
     const a = seededRandom(1), b = seededRandom(1);
     expect([a(), a(), a()]).toEqual([b(), b(), b()]);
