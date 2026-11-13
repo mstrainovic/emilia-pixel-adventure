@@ -1046,6 +1046,6 @@ git commit -m "feat(v2): bestehende Karten als Daten exportiert und geprüft"
 
 ## Noch offen beim Auftraggeber
 
-- Sicherungsdatei von Emilias Gerät (für `v2/tests/fixtures/legacy/emilia-real.json`; nicht ohne Zustimmung ins öffentliche Repo).
-- Geräte und Browser der Kinder (WebKit-Tests).
+- Sicherungsdatei von Emilias Gerät — erledigt (2026-11-13): Der Auftraggeber liefert keine; der Spielstand wird trotzdem übernommen, der Test mit `v2/tests/fixtures/legacy/emilia-real.json` bleibt übersprungen.
+- Geräte und Browser der Kinder — erledigt (2026-11-13): PC und iPad, also Tests auch in WebKit.
 - Umgang mit dem alten Spiel und den Paketen `Cute_Fantasy_Free` / `Farm RPG` nach dem Umschalten.

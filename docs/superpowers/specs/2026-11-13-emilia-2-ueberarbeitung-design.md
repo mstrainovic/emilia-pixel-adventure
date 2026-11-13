@@ -364,7 +364,7 @@ Beim Richtungswechsel läuft die Animation im Takt weiter, statt neu zu beginnen
 - Gespeichert wird bei Kartenwechsel, nach Aufgabe, Boss und Bauprojekt, am Lagerfeuer, beim Verlassen der Seite und zusätzlich alle 60 s.
 - **Übergangszeit:** Solange das neue Spiel Vorschau ist, bietet es beim Start an, den Stand aus dem alten Spiel neu zu holen, sobald dieser neuer ist als die letzte Übernahme. Am Umschalttag wählt der Auftraggeber einmalig, ob der Vorschau-Stand oder der Stand aus dem alten Spiel weitergeführt wird.
 - **Schutz vor Verlust:** Spielstände liegen je Gerät und Browser getrennt, und manche Browser (Safari) können sie nach längerer Pause löschen. Deshalb gibt es die Sicherung als Datei, und das Spiel erinnert gelegentlich daran.
-- Die Übernahme wird mit Beispielständen jeder Form getestet, die es in der Git-Historie gab, mit beschädigten und unvollständigen Ständen sowie mit Emilias echtem Stand (aus dem Sicherungs-Knopf der Etappe 0a).
+- Die Übernahme wird mit Beispielständen jeder Form getestet, die es in der Git-Historie gab, sowie mit beschädigten und unvollständigen Ständen. Ein Test mit Emilias echtem Stand entfällt: Der Auftraggeber liefert keine Sicherungsdatei (entschieden am 2026-11-13); der Spielstand wird trotzdem übernommen. Umso wichtiger sind die Robustheit der Übernahme und die Regel, dass der alte Schlüssel nie beschrieben wird (das alte Spiel bleibt als Rückweg nutzbar).
 
 ### 11.2 Tests und Auslieferung
 
@@ -385,7 +385,7 @@ Jede Etappe endet spielbar und getestet. Für jede Etappe entsteht ein eigener U
 
 | # | Etappe | Ergebnis |
 |---|---|---|
-| 0a | Sofort-Korrekturen im alten Spiel | Emilia bleibt nach Treffern sichtbar; Krabben und Grotten-Wesen kommen nicht mehr nach 5 s wieder. Dazu ein Knopf „Spielstand sichern", der den Stand als Datei herunterlädt (Sicherung vor allem Weiteren und echte Testvorlage). Drei kleine, gezielte Änderungen, damit sie sofort etwas davon hat. |
+| 0a | Sofort-Korrekturen im alten Spiel | Emilia bleibt nach Treffern sichtbar; Krabben und Grotten-Wesen kommen nicht mehr nach 5 s wieder. Dazu ein Knopf „Spielstand sichern", der den Stand als Datei herunterlädt (Sicherung vor allem Weiteren; als Testvorlage wird die Datei nicht mehr gebraucht, siehe 11.1). Drei kleine, gezielte Änderungen, damit sie sofort etwas davon hat. |
 | 0b | Fundament | neues Projekt, Tests und Auslieferung, Spielstand-Format mit Migration, Inhaltsdaten umgezogen, alte Karten exportiert. Die Spiellogik zieht jeweils mit der Etappe um, die sie braucht. |
 | 1 | Das Dorf im neuen Look | pixelgenaues Bild, Bewegung, Kamera, Figuren, Gespräche, Grundanzeige, Touch — zum Anfassen unter `/v2/`. Hier fällt die endgültige Stil-Entscheidung. |
 | 2 | Kernschleifen | Rucksack, Herstellen, erstes Bauprojekt, Garten, Angeln, Laden, Speichern |
@@ -415,5 +415,5 @@ Jede Etappe endet spielbar und getestet. Für jede Etappe entsteht ein eigener U
 
 1. Sprite-Quelle — erledigt: „Ninja Adventure" (5.2).
 2. **Altes Spiel nach dem Umschalten:** Bleibt es als „Klassik" erreichbar, wird das Paket `Cute_Fantasy_Free` weiter öffentlich verteilt. Empfehlung: beim Umschalten abschalten und die beiden unklaren Pakete aus dem aktuellen Stand des Repos entfernen. Ein Bereinigen der Git-Historie wäre ein eigener, nicht umkehrbarer Schritt und geschieht nur auf ausdrücklichen Wunsch.
-3. **Geräte:** Auf welchen Geräten und in welchen Browsern spielen die Kinder (PC, iPad, Android-Tablet, Handy)? Davon hängt ab, in welchen Browsern automatisch getestet wird und wie wichtig die Datei-Sicherung ist.
+3. Geräte — erledigt (2026-11-13): PC und iPad („sie spielen am PC und am iPad"). Folgen: Browser-Tests in Chromium und WebKit; Touch und beide Lagen am iPad sind Pflicht; die Sicherung als Datei kommt schon mit Etappe 1 in die Oberfläche (Plan 1b).
 4. Ausgaben für Grafik — erledigt: keine bezahlten Dienste, keine zusätzlichen Konten.
