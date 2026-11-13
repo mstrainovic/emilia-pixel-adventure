@@ -12,3 +12,22 @@ test('startet ohne Fehler und ohne fremde Anfragen', async ({ page }) => {
   expect(errors).toEqual([]);
   expect(foreign).toEqual([]);
 });
+
+test('zoomt ganzzahlig', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('./');
+  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 4);
+  const size = await page.evaluate(() => {
+    const c = document.querySelector('canvas')!;
+    const r = c.getBoundingClientRect();
+    return { w: c.width, h: c.height, cw: Math.round(r.width), ch: Math.round(r.height) };
+  });
+  expect(size).toEqual({ w: 1280, h: 720, cw: 1280, ch: 720 });
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 6);
+  const size2 = await page.evaluate(() => {
+    const c = document.querySelector('canvas')!;
+    return { w: c.width, h: c.height };
+  });
+  expect(size2).toEqual({ w: 1920, h: 1080 });
+});
