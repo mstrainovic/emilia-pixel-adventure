@@ -31,3 +31,48 @@ test('zoomt ganzzahlig', async ({ page }) => {
   });
   expect(size2).toEqual({ w: 1920, h: 1080 });
 });
+
+test('bleibt bei hoher Pixeldichte ganzzahlig und bildet Zeiger richtig ab', async ({ browser }) => {
+  const context = await browser.newContext({
+    baseURL: 'http://localhost:5183/',
+    viewport: { width: 812, height: 375 },
+    deviceScaleFactor: 2,
+  });
+  const page = await context.newPage();
+  type Hooks = {
+    zoom: number;
+    canvasSize: { width: number; height: number };
+    pointerScale: { x: number; y: number };
+    toCanvas: (x: number, y: number) => { x: number; y: number };
+  };
+  const read = () =>
+    page.evaluate(() => {
+      const h = (window as any).__emilia2 as Hooks;
+      const r = document.querySelector('canvas')!.getBoundingClientRect();
+      return {
+        zoom: h.zoom,
+        canvasSize: h.canvasSize,
+        pointerScale: h.pointerScale,
+        css: { width: Math.round(r.width), height: Math.round(r.height) },
+        mapped: h.toCanvas(406, 100),
+      };
+    });
+  await page.goto('./');
+  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 4);
+  expect(await read()).toEqual({
+    zoom: 4,
+    canvasSize: { width: 1624, height: 750 },
+    pointerScale: { x: 2, y: 2 },
+    css: { width: 812, height: 375 },
+    mapped: { x: 812, y: 200 },
+  });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 8);
+  expect(await read()).toMatchObject({
+    zoom: 8,
+    canvasSize: { width: 2048, height: 1536 },
+    pointerScale: { x: 2, y: 2 },
+    css: { width: 1024, height: 768 },
+  });
+  await context.close();
+});

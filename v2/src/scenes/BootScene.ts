@@ -26,9 +26,15 @@ export class BootScene extends Phaser.Scene {
     const canvas = this.game.canvas;
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
-    scale.displaySize.setSize(window.innerWidth, window.innerHeight);
+    // Anzeigemaßstab und Grenzen für die Zeigerabbildung neu berechnen (liest die CSS-Größe der Zeichenfläche)
+    scale.refresh();
     const zoom = computeZoom(physicalWidth, physicalHeight);
     this.cameras.main.setZoom(zoom);
-    installTestHooks({ zoom });
+    installTestHooks({
+      zoom,
+      canvasSize: { width: canvas.width, height: canvas.height },
+      pointerScale: { x: scale.displayScale.x, y: scale.displayScale.y },
+      toCanvas: (cssX: number, cssY: number) => ({ x: scale.transformX(cssX), y: scale.transformY(cssY) }),
+    });
   }
 }
