@@ -40,3 +40,25 @@ describe('Level-Kurve', () => {
     }
   });
 });
+
+describe('XP-Umrechnung ganzzahlig', () => {
+  it('verliert kein XP durch Gleitkomma (Level 7, 29 XP)', () => {
+    expect(convertLegacyXp(7, 29)).toBe(29);
+  });
+  it('stimmt für alle Level und alle XP-Werte mit der BigInt-Rechnung überein', () => {
+    for (let level = 1; level < MAX_LEVEL; level++) {
+      const need = xpToNext(level);
+      const legacyNeed = LEGACY_XP_TO_NEXT[level - 1];
+      let previous = -1;
+      for (let xp = 0; xp <= legacyNeed; xp++) {
+        const result = convertLegacyXp(level, xp);
+        const exact = (BigInt(xp) * BigInt(need)) / BigInt(legacyNeed);
+        const expected = Math.min(need - 1, Number(exact));
+        if (!Number.isInteger(result) || result < 0 || result > need - 1 || result < previous || result !== expected) {
+          throw new Error(`Level ${level}, XP ${xp}: ${result} statt ${expected} (vorher ${previous})`);
+        }
+        previous = result;
+      }
+    }
+  });
+});

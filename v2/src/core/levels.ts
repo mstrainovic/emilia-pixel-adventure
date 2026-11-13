@@ -38,8 +38,9 @@ export function convertLegacyXp(level: number, legacyXp: number): number {
   const n = clampLevel(level);
   if (n >= MAX_LEVEL) return 0;
   const legacyNeed = LEGACY_XP_TO_NEXT[n - 1] ?? 1;
-  const raw = Number.isFinite(legacyXp) ? legacyXp : 0;
-  const share = Math.min(1, Math.max(0, raw / legacyNeed));
+  const raw = Number.isFinite(legacyXp) ? Math.max(0, Math.floor(legacyXp)) : 0;
+  const clamped = Math.min(legacyNeed, raw);
   const need = xpToNext(n);
-  return Math.min(need - 1, Math.floor(share * need));
+  // Ganzzahlig rechnen: Gleitkomma-Teilen verliert in einzelnen Fällen 1 XP.
+  return Math.min(need - 1, Math.floor((clamped * need) / legacyNeed));
 }
