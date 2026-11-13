@@ -2,6 +2,9 @@
  * Hilfen, um den Spielstand als Datei zu sichern.
  */
 
+// iOS/iPadOS fragt vor dem Download nach; eine zu früh freigegebene Adresse lässt ihn ins Leere laufen.
+const REVOKE_DELAY_MS = 60000;
+
 /** Dateiname aus dem lokalen Datum, z. B. emilia-spielstand-2026-11-13.json */
 export function buildSaveExportFilename(date) {
   const y = String(date.getFullYear()).padStart(4, '0');
@@ -21,5 +24,5 @@ export function downloadTextFile(filename, text) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS);
 }
