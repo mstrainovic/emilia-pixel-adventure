@@ -10,8 +10,7 @@ type SaveDoc = Pick<Document, 'addEventListener' | 'removeEventListener' | 'visi
 type SaveWin = Pick<Window, 'addEventListener' | 'removeEventListener'>;
 
 export class SaveService {
-  /** Grund des letzten Speicherversuchs; nur zur Ansicht, ändert kein Verhalten. */
-  lastReason: SaveReason | null = null;
+  private reason: SaveReason | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private teardown: (() => void) | null = null;
 
@@ -34,6 +33,11 @@ export class SaveService {
     };
   }
 
+  /** Grund des letzten Speicherversuchs; nur zur Ansicht, ändert kein Verhalten. */
+  get lastReason(): SaveReason | null {
+    return this.reason;
+  }
+
   stop(): void {
     if (this.timer !== null) clearInterval(this.timer);
     this.timer = null;
@@ -42,7 +46,7 @@ export class SaveService {
   }
 
   saveNow(reason: SaveReason): boolean {
-    this.lastReason = reason;
+    this.reason = reason;
     try {
       return this.store.save(this.getState(), this.now());
     } catch {

@@ -1,8 +1,7 @@
 // Speicher des neuen Spiels: laden, speichern, Übernahme des alten Stands, Sicherung als Datei.
 // Regeln: nichts wirft; die alten Schlüssel werden nur gelesen; ein neuerer Stand wird nie überschrieben.
-import { GAME_STATE_VERSION, INVENTORY_SLOTS, type GameState } from '../core/state';
-import { MAX_LEVEL } from '../core/levels';
-import { isMapId } from '../data/maps';
+import { GAME_STATE_VERSION, type GameState } from '../core/state';
+import { normalizeState } from './normalize';
 import {
   LEGACY_SAVE_KEY, LEGACY_MUTED_KEY, migrateLegacySave, legacyTimestamp,
 } from './legacy';
@@ -10,19 +9,18 @@ import { isObj, field } from './legacyRead';
 
 /** Eigener Schlüssel des neuen Spiels (nicht zu verwechseln mit den alten Schlüsseln). */
 export const SAVE_KEY = 'emilia2_save';
+/** Rohtext eines abgelehnten Eintrags, einmal gesichert, bevor er überschrieben wird. */
+export const REJECTED_SAVE_KEY = 'emilia2_save_rejected';
 
 export type SaveReason = 'timer' | 'map-change' | 'quest' | 'boss' | 'build' | 'campfire' | 'page-hide';
 
-/** Prüft die Mindestform eines gespeicherten Standes; unbekannte Zusatzfelder bleiben erhalten. */
+/** Prüft das harte Minimum und repariert den Rest (siehe normalize.ts); wirft nie. */
 export function migrateState(raw: unknown): GameState | null {
-  if (!isObj(raw)) return null;
-  if (raw['formatVersion'] !== GAME_STATE_VERSION) return null;
-  if (!isMapId(field(raw['player'], 'map'))) return null;
-  const slots = field(raw['inventory'], 'slots');
-  if (!Array.isArray(slots) || slots.length !== INVENTORY_SLOTS) return null;
-  const level = field(raw['progression'], 'level');
-  if (typeof level !== 'number' || !Number.isInteger(level) || level < 1 || level > MAX_LEVEL) return null;
-  return raw as unknown as GameState;
+  try {
+    return normalizeState(raw);
+  } catch {
+    return null;
+  }
 }
 
 function parseJson(text: string): unknown {
@@ -68,11 +66,33 @@ export class SaveStore {
     return migrateState(parseJson(text));
   }
 
-  /** Schreibt nie, wenn dort ein Stand einer neueren Version liegt. `true` nur, wenn geschrieben wurde. */
+  /** Sichert den Rohtext eines abgelehnten Eintrags einmal; Fehler dabei sind unkritisch. */
+  private backupRejected(text: string): void {
+    try {
+      if (text !== '' && this.storage.getItem(REJECTED_SAVE_KEY) !== text) this.storage.setItem(REJECTED_SAVE_KEY, text);
+    } catch {
+      // Sicherung nicht möglich: das normale Speichern läuft trotzdem.
+    }
+  }
+
+  /**
+   * Schreibt nie, wenn das Lesen scheitert oder dort ein Stand einer neueren Version liegt.
+   * Ein nicht ladbarer Eintrag wird vor dem Überschreiben einmal unter REJECTED_SAVE_KEY gesichert.
+   * `true` nur, wenn geschrieben wurde.
+   */
   save(state: GameState, now: number): boolean {
-    const existing = parseJson(this.read(SAVE_KEY) ?? '');
-    const stored = field(existing, 'formatVersion');
-    if (typeof stored === 'number' && stored > GAME_STATE_VERSION) return false;
+    let existing: string | null;
+    try {
+      existing = this.storage.getItem(SAVE_KEY);
+    } catch {
+      return false;
+    }
+    if (existing !== null) {
+      const parsed = parseJson(existing);
+      const stored = field(parsed, 'formatVersion');
+      if (typeof stored === 'number' && stored > GAME_STATE_VERSION) return false;
+      if (migrateState(parsed) === null) this.backupRejected(existing);
+    }
     try {
       this.storage.setItem(SAVE_KEY, JSON.stringify({ ...state, savedAt: now }));
       return true;

@@ -44,7 +44,7 @@ export function legacyTimestamp(raw: string | null): number | null {
   return finite(field(parseObject(raw), 'timestamp')) ?? null;
 }
 
-function readInventory(
+export function readInventory(
   old: unknown, state: GameState, report: MigrationReport,
 ): void {
   const entries = Array.isArray(old) ? old : [];
@@ -124,7 +124,7 @@ function reconstructQuests(state: GameState, report: MigrationReport, oldDone: S
   for (const id of all) delete state.progression.activeQuests[id];
 }
 
-function readFriendship(old: unknown, state: GameState): void {
+export function readFriendship(old: unknown, state: GameState): void {
   for (const id of keysOf(old)) {
     const entry = field(old, id);
     const points = finite(field(entry, 'points'));
@@ -137,7 +137,7 @@ function readFriendship(old: unknown, state: GameState): void {
   }
 }
 
-function readGarden(old: unknown, state: GameState): void {
+export function readGarden(old: unknown, state: GameState): void {
   if (!Array.isArray(old)) return;
   for (const plot of old as unknown[]) {
     const x = finite(field(plot, 'x')); const y = finite(field(plot, 'y'));
@@ -151,13 +151,13 @@ function readGarden(old: unknown, state: GameState): void {
   }
 }
 
-function readPet(old: unknown): GameState['pet'] {
+export function readPet(old: unknown): GameState['pet'] {
   const type = field(old, 'type');
   if (typeof type !== 'string' || type === '') return null;
   return { type, friendship: nonNegative(field(old, 'friendship')), evolved: field(old, 'evolved') === true };
 }
 
-function readExplorerBook(old: unknown, state: GameState): void {
+export function readExplorerBook(old: unknown, state: GameState): void {
   if (Array.isArray(old)) state.explorerBook.discovered = stringList(old);
   else if (isObj(old)) {
     state.explorerBook.discovered = stringList(old['discovered']);
@@ -165,7 +165,7 @@ function readExplorerBook(old: unknown, state: GameState): void {
   }
 }
 
-function readWorld(save: Obj, state: GameState): void {
+export function readWorld(save: Obj, state: GameState): void {
   const dn = field(save, 'dayNight');
   state.dayNight = {
     totalTime: finite(field(dn, 'totalTime')) ?? state.dayNight.totalTime,

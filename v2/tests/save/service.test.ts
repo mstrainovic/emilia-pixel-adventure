@@ -77,4 +77,30 @@ describe('SaveService', () => {
     expect(service.saveNow('map-change')).toBe(false);
     service.stop();
   });
+
+  it('start, stop, start ergibt genau ein Speichern je Takt und je pagehide', () => {
+    const service = new SaveService(store, () => state, () => 1); const spy = vi.spyOn(store, 'save');
+    service.start(doc, win); service.stop(); service.start(doc, win);
+    vi.advanceTimersByTime(60_000); expect(spy).toHaveBeenCalledTimes(1);
+    win.dispatchEvent(new Event('pagehide')); expect(spy).toHaveBeenCalledTimes(2);
+    service.stop();
+  });
+
+  it('nach einem Takt mit werfendem getState speichert der nächste wieder', () => {
+    let broken = true;
+    const service = new SaveService(store, () => { if (broken) throw new Error('x'); return state; }, () => 1);
+    const spy = vi.spyOn(store, 'save');
+    service.start(doc, win);
+    vi.advanceTimersByTime(60_000); expect(spy).not.toHaveBeenCalled();
+    broken = false;
+    vi.advanceTimersByTime(60_000); expect(spy).toHaveBeenCalledTimes(1);
+    service.stop();
+  });
+
+  it('lastReason ist von außen nur lesbar', () => {
+    const service = new SaveService(store, () => state, () => 1);
+    service.saveNow('quest');
+    expect(() => { (service as unknown as { lastReason: string }).lastReason = 'x'; }).toThrow();
+    expect(service.lastReason).toBe('quest');
+  });
 });
