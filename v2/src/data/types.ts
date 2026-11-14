@@ -49,7 +49,8 @@ export interface QuestDef {
   readonly itemReward: readonly ItemStack[];
 }
 
-export type Direction = 'down' | 'side';
+/** Blickrichtung einer Figur auf der Karte (Eigenschaft facing in der Ebene npcs). */
+export type Facing = 'down' | 'up' | 'left' | 'right';
 export type FriendshipLevel = 1 | 2 | 3;
 
 export interface NpcDef {
@@ -58,9 +59,6 @@ export interface NpcDef {
   readonly role: string;
   /** Nur beim Händler Ferdinand gesetzt. */
   readonly type?: 'trader';
-  readonly x: number;
-  readonly y: number;
-  readonly direction: Direction;
   readonly favoriteGifts: readonly string[];
   readonly dialogs: readonly string[];
   readonly friendshipDialogs: Readonly<Record<FriendshipLevel, readonly string[]>>;

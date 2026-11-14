@@ -1,7 +1,8 @@
 import type { NpcDef } from './types';
 
 /**
- * Die Dorfbewohner. Aussehen (Haar, Kleidung) gehört nicht mehr zu den Daten.
+ * Die Dorfbewohner. Aussehen (Haar, Kleidung) gehört nicht mehr zu den Daten; ihr Ort und ihre Blickrichtung stehen
+ * nur in der Ebene „npcs“ der Karte (Objektname = Kennung, Eigenschaft facing).
  * Die serbischen Sätze von Baba und Deda sind absichtlich unverändert (Durchsicht in Etappe 1).
  */
 export const NPCS: readonly NpcDef[] = [
@@ -9,8 +10,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'mama_tanja',
     name: 'Mama Tanja',
     role: 'Köchin',
-    x: 8, y: 11,
-    direction: 'down',
     favoriteGifts: ['goldfish', 'cooked_meat'],
     dialogs: [
       'Hallo Schatz! Die Welt wartet — aber iss erstmal was!',
@@ -44,8 +43,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'papa_milos',
     name: 'Papa Milos',
     role: 'Baumeister',
-    x: 30, y: 11,
-    direction: 'down',
     favoriteGifts: ['iron_ore', 'stone'],
     dialogs: [
       'Hey mala moja! An der Werkbank baust du tolle Sachen!',
@@ -79,8 +76,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'marie',
     name: 'Marie',
     role: 'Abenteurerin',
-    x: 15, y: 7,
-    direction: 'down',
     favoriteGifts: ['rainbow_flower', 'bloom_petal'],
     dialogs: [
       'Im Wald gibt es lustige Schleime! Komm mit!',
@@ -114,8 +109,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'liam',
     name: 'Liam',
     role: 'Angler',
-    x: 20, y: 26,
-    direction: 'down',
     favoriteGifts: ['starfish', 'goldfish'],
     dialogs: [
       'Hey! Geh zum See im Süden — drück F zum Fischen!',
@@ -149,8 +142,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'oma',
     name: 'Oma',
     role: 'Gärtnerin',
-    x: 8, y: 20,
-    direction: 'down',
     favoriteGifts: ['vegetable', 'seed_carrot'],
     dialogs: [
       'Sonnenschein! Siehst du die welken Pflanzen? Drück F!',
@@ -183,8 +174,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'opa',
     name: 'Opa',
     role: 'Holzarbeiter',
-    x: 30, y: 24,
-    direction: 'down',
     favoriteGifts: ['wood', 'driftwood'],
     dialogs: [
       'Holz ist wichtig! Sammle welches im Wald mit E!',
@@ -217,8 +206,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'baba',
     name: 'Baba',
     role: 'Lagerfeuer',
-    x: 18, y: 20,
-    direction: 'side',
     favoriteGifts: ['mushroom', 'berry'],
     dialogs: [
       'Dodji ovamo! Setz dich ans Feuer, zlato moje!',
@@ -252,8 +239,6 @@ export const NPCS: readonly NpcDef[] = [
     id: 'deda',
     name: 'Deda',
     role: 'Geschichtenerzähler',
-    x: 33, y: 13,
-    direction: 'down',
     favoriteGifts: ['crystal', 'magic_herb'],
     dialogs: [
       'Einhörner verstecken sich! Mein Deda hat davon erzählt!',
@@ -288,8 +273,6 @@ export const NPCS: readonly NpcDef[] = [
     name: 'Ferdinand',
     role: 'Händler',
     type: 'trader',
-    x: 25, y: 15,
-    direction: 'side',
     favoriteGifts: ['pearl', 'sapphire'],
     dialogs: [
       'Hey! Willst du was verkaufen? Ich kauf alles!',

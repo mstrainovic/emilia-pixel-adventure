@@ -1,4 +1,5 @@
-// Exportiert die neun Karten des alten Spiels als Tiled-JSON nach src/assets/maps/.
+// Exportiert die neun Karten des alten Spiels als Tiled-JSON nach tools/legacy-maps/exported/.
+// Das sind eingefrorene Vorlagen für die Neugestaltung; das Spiel lädt nur Karten aus src/assets/maps/.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { convertLegacyMap, seededRandom } from './legacy-maps/convert.mjs';
@@ -16,7 +17,7 @@ const SOURCES = {
   starsky: ['starsky.js', 'generateStarskyMap'],
 };
 
-const outDir = dir('../src/assets/maps/');
+const outDir = dir('./legacy-maps/exported/');
 mkdirSync(fileURLToPath(outDir), { recursive: true });
 
 for (const [id, [file, fn]] of Object.entries(SOURCES)) {

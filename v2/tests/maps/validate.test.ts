@@ -56,6 +56,23 @@ describe('Kartenprüfung', () => {
     expect(msgs[0]).toContain('7/2');
   });
 
+  it('meldet einen Zielpunkt, der weit vom Rück-Ausgang liegt', () => {
+    // Der Rück-Ausgang der Waldkarte liegt ganz rechts (13/2), der Zielpunkt des Hub-Ausgangs bei 1/2: 12 Kacheln entfernt.
+    const maps = build((l) => {
+      Object.assign(l.forest, { width: 14, ground: ground(14, 6), collision: free(14, 6) });
+      Object.assign(l.forest.exits[0]!, { x: 13 });
+    });
+    expect(validateMap('hub', maps)).toEqual(['hub: Ausgang bei 7/2 nach forest: Zielpunkt liegt nicht beim Rück-Ausgang']);
+  });
+
+  it('lässt einen Zielpunkt zu, der genau 3 Kacheln vom Rück-Ausgang liegt', () => {
+    const maps = build((l) => {
+      Object.assign(l.forest, { width: 14, ground: ground(14, 6), collision: free(14, 6) });
+      Object.assign(l.forest.exits[0]!, { x: 4 });
+    });
+    expect(validateMap('hub', maps)).toEqual([]);
+  });
+
   it('meldet einen Zielpunkt in der Wand', () => {
     const maps = build((l) => { l.forest.collision[2]![1] = 1; });
     const msgs = validateMap('hub', maps);

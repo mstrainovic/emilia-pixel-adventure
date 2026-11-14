@@ -59,6 +59,38 @@ describe('Umwandlung alter Karten', () => {
     expect(props(2).some((p: { name: string }) => p.name === 'id')).toBe(false);
   });
 
+  it('lässt den doppelten Ausgang als Objekt weg, wenn die Karte denselben Ausgang in exits hat', () => {
+    // Quelle der Doppelung: altes Spiel, unicorn_meadow.js Zeile 180 und starsky.js Zeile 236.
+    const m = convertLegacyMap('unicorn_meadow', {
+      ...legacy,
+      props: [
+        { type: 'chest', x: 1, y: 1, loot: 'coins' },
+        { type: 'exit', x: 0, y: 1, width: 1, target: 'forest', spawnX: 5, spawnY: 6 },
+        { type: 'exit', x: 2, y: 0, width: 1, target: 'mars', spawnX: 1, spawnY: 1 },
+      ],
+    });
+    const objs = m.layers.find((l: { name: string }) => l.name === 'objects').objects;
+    // Der Ausgang nach forest steht in exits und fällt aus objects; der nach mars hat kein Gegenstück und bleibt.
+    expect(objs.map((o: { type: string }) => o.type)).toEqual(['chest', 'exit']);
+    expect(objs[1].properties).toContainEqual({ name: 'target', type: 'string', value: 'mars' });
+  });
+
+  it('gibt Figuren die Blickrichtung facing', () => {
+    const m = convertLegacyMap('hub', {
+      ...legacy,
+      npcs: [
+        { id: 'a', x: 0, y: 0, direction: 'down' },
+        { id: 'b', x: 1, y: 0, direction: 'side' },
+        { id: 'c', x: 2, y: 0 },
+      ],
+    });
+    const npcs = m.layers.find((l: { name: string }) => l.name === 'npcs').objects;
+    const facing = (i: number) => npcs[i].properties.find((p: { name: string }) => p.name === 'facing');
+    expect(facing(0)).toEqual({ name: 'facing', type: 'string', value: 'down' });
+    expect(facing(1)).toEqual({ name: 'facing', type: 'string', value: 'right' });
+    expect(facing(2)).toEqual({ name: 'facing', type: 'string', value: 'down' });
+  });
+
   it('seededRandom ist wiederholbar', () => {
     const a = seededRandom(1), b = seededRandom(1);
     expect([a(), a(), a()]).toEqual([b(), b(), b()]);

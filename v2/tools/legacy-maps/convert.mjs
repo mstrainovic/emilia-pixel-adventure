@@ -1,4 +1,5 @@
 // Wandelt eine Karte des alten Spiels (Generator-Ergebnis) in das Tiled-JSON-Format um.
+// Das Ergebnis ist eine eingefrorene Vorlage unter tools/legacy-maps/exported/, nicht die Karte des Spiels.
 const TILE = 16;
 const RESERVED = new Set(['type', 'x', 'y', 'w', 'h']);
 
@@ -34,6 +35,12 @@ function toProperties(source, skip = RESERVED) {
   return out;
 }
 
+/** Blickrichtung wie in der Ebene npcs: das alte `side` heißt nach rechts, ohne Angabe nach unten. */
+function facingOf(direction) {
+  if (direction === 'side') return 'right';
+  return ['down', 'up', 'left', 'right'].includes(direction) ? direction : 'down';
+}
+
 function flatten(grid, map) {
   const data = [];
   for (const row of grid) for (const v of row) data.push(map(v));
@@ -67,7 +74,11 @@ export function convertLegacyMap(id, legacy) {
     }
     return props;
   };
-  const objects = (legacy.props ?? []).map((p) => ({
+  // Das alte Spiel führt manche Ausgänge doppelt: einmal in exits, einmal als Objekt vom Typ exit
+  // (unicorn_meadow.js Zeile 180, starsky.js Zeile 236). Maßgeblich ist exits.
+  const exitTargets = new Set((legacy.exits ?? []).map((e) => e.target));
+  const props = (legacy.props ?? []).filter((p) => !(p.type === 'exit' && exitTargets.has(p.target)));
+  const objects = props.map((p) => ({
     id: objectId(), name: '', type: p.type,
     x: p.x * TILE, y: p.y * TILE, width: (p.w ?? 1) * TILE, height: (p.h ?? 1) * TILE,
     rotation: 0, visible: true, properties: propProperties(p),
@@ -75,6 +86,7 @@ export function convertLegacyMap(id, legacy) {
   const npcs = (legacy.npcs ?? []).map((n) => ({
     id: objectId(), name: n.id, type: 'npc',
     x: n.x * TILE, y: n.y * TILE, width: TILE, height: TILE, rotation: 0, visible: true,
+    properties: [toProperty('facing', facingOf(n.direction))],
   }));
   const exits = (legacy.exits ?? []).map((e) => ({
     id: objectId(), name: e.id ?? '', type: 'exit',

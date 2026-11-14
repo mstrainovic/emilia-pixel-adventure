@@ -10,6 +10,9 @@ export const INTERACTIVE_TYPES = [
 /** Abstand in Kacheln (Chebyshev) um das Objekt, in dem eine erreichbare Kachel liegen muss. */
 const REACH = 2;
 
+/** Größter Abstand in Kacheln (Chebyshev) zwischen dem Zielpunkt eines Ausgangs und dem Rück-Ausgang der Zielkarte. */
+const COUNTERPART_REACH = 3;
+
 const TYPE_NAMES: Record<string, string> = {
   resource: 'Rohstoff', wilted_plant: 'Welke Pflanze', chest: 'Truhe', station: 'Station',
   fishing_spot: 'Angelstelle', garden_plot: 'Gartenbeet', trophy_shelf: 'Trophäenregal',
@@ -154,13 +157,25 @@ export function validateMap(id: MapId, maps: Record<MapId, TiledMap>): string[] 
       errors.push(`${id}: Ausgang bei ${pos} führt zu einer unbekannten Karte (${String(target)})`);
     } else {
       const tmap = maps[target];
-      const back = objectLayer(tmap, 'exits')?.objects.some((o) => prop(o, 'target') === id);
-      if (!back) errors.push(`${id}: Ausgang bei ${pos} nach ${target} hat kein Gegenstück (kein Ausgang zurück)`);
+      const backs = (objectLayer(tmap, 'exits')?.objects ?? []).filter((o) => prop(o, 'target') === id);
+      if (backs.length === 0) errors.push(`${id}: Ausgang bei ${pos} nach ${target} hat kein Gegenstück (kein Ausgang zurück)`);
       const tcol = tileLayer(tmap, 'collision');
       if (typeof sx !== 'number' || typeof sy !== 'number') {
         errors.push(`${id}: Ausgang bei ${pos} nach ${target} hat keinen Zielpunkt`);
-      } else if (tcol && !gridOf(tmap, tcol).free(sx, sy)) {
-        errors.push(`${id}: Ausgang bei ${pos} nach ${target}: Zielpunkt ${sx}/${sy} liegt in einer Wand oder außerhalb der Karte`);
+      } else {
+        if (tcol && !gridOf(tmap, tcol).free(sx, sy)) {
+          errors.push(`${id}: Ausgang bei ${pos} nach ${target}: Zielpunkt ${sx}/${sy} liegt in einer Wand oder außerhalb der Karte`);
+        }
+        // Gegenstück-Regel: Der Zielpunkt liegt höchstens COUNTERPART_REACH Kacheln neben einem Ausgang, der zurückführt.
+        const near = backs.some((b) => {
+          const br = tileRect(tmap, b);
+          const dx = Math.max(br.x0 - sx, 0, sx - br.x1);
+          const dy = Math.max(br.y0 - sy, 0, sy - br.y1);
+          return Math.max(dx, dy) <= COUNTERPART_REACH;
+        });
+        if (backs.length > 0 && !near) {
+          errors.push(`${id}: Ausgang bei ${pos} nach ${target}: Zielpunkt liegt nicht beim Rück-Ausgang`);
+        }
       }
     }
     if (reach && !anyReachable(grid, reach, r, 0)) {

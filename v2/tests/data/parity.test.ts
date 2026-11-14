@@ -10,6 +10,8 @@ import { FISH_TYPES, getAvailableFish, pickRandomFish } from '../../src/data/fis
 import { SHELL_TYPES } from '../../src/data/shells';
 import { RARE_FIND_PLACEMENTS } from '../../src/data/rareFinds';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES } from '../../src/data/achievements';
+import type { TiledObjectLayer } from '../../src/maps/tiled';
+import { loadLegacyMaps } from '../maps/loadMaps';
 // @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { ITEMS as LEGACY_ITEMS, getItem as legacyGetItem } from '../../../src/data/items.js';
 // @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
@@ -123,6 +125,15 @@ describe('Aufgaben', () => {
 });
 
 describe('Dorfbewohner', () => {
+  it('Ort und Richtung stehen nur in der Ebene npcs der Vorlage hub und stimmen mit dem alten Spiel überein', () => {
+    const layer = loadLegacyMaps().hub.layers.find((l) => l.name === 'npcs') as TiledObjectLayer;
+    expect(layer.objects.map((o) => o.name)).toEqual(LEGACY_NPCS.map((n: any) => n.id));
+    for (const old of LEGACY_NPCS as any[]) {
+      const o = layer.objects.find((x) => x.name === old.id)!;
+      const facing = o.properties?.find((p) => p.name === 'facing')?.value;
+      expect([o.x / 16, o.y / 16, facing], old.id).toEqual([old.x, old.y, old.direction === 'side' ? 'right' : old.direction]);
+    }
+  });
   it('jeder Dorfbewohner stimmt überein', () => {
     expect(NPCS.length).toBe(LEGACY_NPCS.length);
     LEGACY_NPCS.forEach((old: any, i: number) => {
@@ -130,7 +141,6 @@ describe('Dorfbewohner', () => {
       expect(cur.id).toBe(old.id);
       expect(deUmlaut(cur.name)).toBe(old.name);
       expect(deUmlaut(cur.role)).toBe(old.role);
-      expect([cur.x, cur.y, cur.direction]).toEqual([old.x, old.y, old.direction]);
       expect(cur.type).toBe(old.type);
       expect(cur.favoriteGifts).toEqual(old.favoriteGifts.map(mapId));
       expect(cur.dialogs.map(deUmlaut)).toEqual(old.dialogs.map(fixOld));
@@ -139,7 +149,7 @@ describe('Dorfbewohner', () => {
         expect((cur.friendshipDialogs as any)[lvl].map(deUmlaut), `${old.id} Stufe ${lvl}`).toEqual(old.friendshipDialogs[lvl]);
       }
       // Nur diese Felder sind erlaubt; Haar- und Kleidungsfelder entfallen.
-      const allowed = ['id', 'name', 'role', 'type', 'x', 'y', 'direction', 'favoriteGifts', 'dialogs', 'friendshipDialogs'];
+      const allowed = ['id', 'name', 'role', 'type', 'favoriteGifts', 'dialogs', 'friendshipDialogs'];
       expect(Object.keys(cur).every((k) => allowed.includes(k)), old.id).toBe(true);
     });
     expect(NPCS.find((n) => n.id === 'mama_tanja')!.favoriteGifts).toEqual(['goldfish', 'cooked_meat']);

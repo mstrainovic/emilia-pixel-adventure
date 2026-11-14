@@ -1,16 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { MAP_IDS, type MapId } from '../../src/data/maps';
-import type { TiledMap } from '../../src/maps/tiled';
+import { MAP_IDS } from '../../src/data/maps';
 import { validateMap } from '../../src/maps/validate';
+import { loadLegacyMaps } from './loadMaps';
 
-const maps = Object.fromEntries(
-  MAP_IDS.map((id) => [
-    id,
-    JSON.parse(readFileSync(fileURLToPath(new URL(`../../src/assets/maps/${id}.json`, import.meta.url)), 'utf8')) as TiledMap,
-  ]),
-) as Record<MapId, TiledMap>;
+const maps = loadLegacyMaps();
 
 // Nur mit Begründung im Kommentar füllen: echte Mängel der alten Karten, behoben erst mit der Neugestaltung.
 const KNOWN_LEGACY_ISSUES: Record<string, string[]> = {
@@ -26,6 +19,12 @@ const KNOWN_LEGACY_ISSUES: Record<string, string[]> = {
   cloud_castle: [
     // Der Zielpunkt 12/2 des Südausgangs in der Einhornwiese liegt auf einer gesperrten Kachel (alter Rückweg setzt die Spielerin in eine Wand).
     'cloud_castle: Ausgang bei 13/44 nach unicorn_meadow: Zielpunkt 12/2 liegt in einer Wand oder außerhalb der Karte',
+    // Der Nordausgang (37/0) führt nach starsky 2/4, der Rück-Ausgang von starsky liegt aber im Süden (13/24): Hin- und Rückweg treffen sich nicht.
+    'cloud_castle: Ausgang bei 37/0 nach starsky: Zielpunkt liegt nicht beim Rück-Ausgang',
+  ],
+  starsky: [
+    // Der einzige Ausgang (13/24) setzt die Spielerin in cloud_castle bei 37/5, fünf Kacheln vom Nordausgang (37/0) entfernt, der nach starsky führt.
+    'starsky: Ausgang bei 13/24 nach cloud_castle: Zielpunkt liegt nicht beim Rück-Ausgang',
   ],
 };
 
@@ -39,6 +38,27 @@ describe('exportierte Karten', () => {
       hub: [40, 32], forest: [50, 40], dungeon: [35, 30], lake: [45, 35], unicorn_meadow: [25, 20],
       beach: [55, 35], grotto: [45, 40], cloud_castle: [50, 45], starsky: [30, 25],
     });
+  });
+
+  it('keine Karte führt einen Ausgang doppelt als Objekt vom Typ exit', () => {
+    for (const id of MAP_IDS) {
+      for (const layer of maps[id].layers) {
+        if (layer.type !== 'objectgroup' || layer.name !== 'objects') continue;
+        expect(layer.objects.filter((o) => o.type === 'exit'), id).toEqual([]);
+      }
+    }
+  });
+
+  it('jede Figur der Ebene npcs hat eine Blickrichtung', () => {
+    for (const id of MAP_IDS) {
+      for (const layer of maps[id].layers) {
+        if (layer.type !== 'objectgroup' || layer.name !== 'npcs') continue;
+        for (const o of layer.objects) {
+          const facing = o.properties?.find((p) => p.name === 'facing')?.value;
+          expect(['down', 'up', 'left', 'right'], `${id}: ${o.name}`).toContain(facing);
+        }
+      }
+    }
   });
 
   it('jede Truhe hat eine eindeutige Kennung, auch die ohne eigene im alten Spiel', () => {
