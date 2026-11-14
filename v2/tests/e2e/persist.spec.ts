@@ -37,11 +37,17 @@ const player = (page: Page): Promise<PlayerInfo> => page.evaluate(() => (window 
 const saveNow = (page: Page): Promise<{ kind: string }> => page.evaluate(() => (window as any).__emilia2.saveNow());
 const readKey = (page: Page, key: string): Promise<string | null> => page.evaluate((k) => localStorage.getItem(k), key);
 
+/**
+ * Hält Tasten und wartet dann, bis Emilia steht. Das Warten ist hier keine Zeitmessung (die steht in walk.spec.ts):
+ * Auf dem Rechner der Auslieferung (Linux, Software-Grafik, zwei Worker) stockt das Bild kurz nach dem Seitenstart
+ * bis zu etwa 1 s (gemessen 1007 ms ohne ein einziges Bild; Tasten kamen an, Emilia stand 110 ms nach dem nächsten
+ * Bild). Eine Grenze von 1000 ms ließ den Test dort dreimal in Folge scheitern.
+ */
 async function hold(page: Page, keys: string[], ms: number): Promise<void> {
   for (const k of keys) await page.keyboard.down(k);
   await page.waitForTimeout(ms);
   for (const k of keys) await page.keyboard.up(k);
-  await expect.poll(async () => (await player(page)).moving, { timeout: 1000 }).toBe(false);
+  await expect.poll(async () => (await player(page)).moving, { timeout: 5000 }).toBe(false);
 }
 
 test('laufen, speichern, neu laden: Emilia steht wieder da', async ({ page }) => {
