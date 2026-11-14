@@ -645,7 +645,7 @@
 - [x] In `v2/`: `npm run typecheck && npm test && npm run test:e2e && npm run test:bundle` — alles grün. Im Stamm: `npm test && npm run build`, danach `ls dist/index.html dist/v2/index.html`.
 - [x] `git status` ist sauber; keine fremden Dateien im Stamm; unter `v2/src/assets/gfx/` liegt nichts, das nicht in `quellen.json` steht.
 - [x] Skill `superpowers:requesting-code-review` für den gesamten Branch; Prüfer gleicht alle im Plan genannten Alt-Quellen gegen den alten Code ab.
-- [ ] **Stil-Prüfung mit dem Auftraggeber am lebenden Objekt** (lokal über die Browser-Vorschau, mit `?stilprobe=1`; dazu Screenshots nach `test-artifacts/etappe-1a/`). Fragen, eine nach der anderen: Gefällt das Dorf so? Stimmt das Größenverhältnis (Julian kleiner als Emilia und Lena, die kleiner als die Erwachsenen — reicht ein Bildpunkt Unterschied)? Passen die Figuren zu den Personen (Zuordnungstabelle zeigen)? Sind Marie und Liam Kinder oder Erwachsene? Änderungen hier einarbeiten, bevor Plan 1b beginnt.
+- [x] **Stil-Prüfung mit dem Auftraggeber** — am 2026-11-14 anhand von Bildern geführt (Auftraggeber war unterwegs); Antworten und Änderungen stehen im Abschluss unter den Punkten 15–17 und „Für die Stil-Prüfung". Offen bleibt nur die Prüfung von Hand am echten Gerät (Windows 125 %/150 %, iPad). Ursprünglicher Auftrag: am lebenden Objekt (lokal über die Browser-Vorschau, mit `?stilprobe=1`; dazu Screenshots nach `test-artifacts/etappe-1a/`). Fragen, eine nach der anderen: Gefällt das Dorf so? Stimmt das Größenverhältnis (Julian kleiner als Emilia und Lena, die kleiner als die Erwachsenen — reicht ein Bildpunkt Unterschied)? Passen die Figuren zu den Personen (Zuordnungstabelle zeigen)? Sind Marie und Liam Kinder oder Erwachsene? Änderungen hier einarbeiten, bevor Plan 1b beginnt.
 - [x] Abschluss-Abschnitt an diesen Plan anhängen: was gegenüber dem Plan geändert wurde, endgültige Figuren-Zuordnung, Liste `COLLISION_CHANGES`, gefundene Phaser-4-Aufrufe, offene Punkte für 1b.
 - [ ] Auftraggeber fragen, ob der Branch in `main` gemergt und veröffentlicht werden soll (unter `/v2/` ist dann das begehbare Dorf ohne Gespräche zu sehen; das alte Spiel bleibt unverändert).
 
@@ -717,10 +717,12 @@ Stichwortliste im Kopfkommentar von `v2/src/scenes/world/buildLayers.ts` (Tilema
 - Gefällt das Dorf (Erdweg statt Sandweg; Tannen wirken wie Büsche; Gartenecke mit Blumen unter den Zäunen unruhig)? **Antwort 2026-11-14 (anhand von Bildern, unterwegs): „ja, gefällt mir", mit einer Änderung: Das Lagerfeuer stand auf dem Weg und ist versetzt (siehe Punkt 15 oben).**
 - Größen: Kinder sind meist nur einen Bildpunkt kleiner als Erwachsene; Oma ist so hoch wie Emilia. **Antwort 2026-11-14: „passt" – die Größen bleiben, wie sie sind.**
 - Zuordnung der Figuren (Tabelle oben): Papa ohne Hemd in Blau, Marie in Grün, Baba wirkt jung; Emilia und Mama ähneln sich am meisten. **Antwort 2026-11-14 (anhand des Figurenbilds, die vier Punkte waren genannt): „ja" – alle zwölf Zuordnungen bleiben.** Sind Marie und Liam Kinder oder Erwachsene? **Antwort 2026-11-14: „Kinder" – beide sind jetzt so groß wie Emilia und Lena (siehe Punkt 16 oben).**
-- Schatten der Figuren ist kaum zu sehen (liegt fast ganz unter der Figur).
+- **Antwort 2026-11-14 zu den drei Punkten Schatten, Dedas Platz und Gartenecke: „Ja, so lassen".**
+- Schatten der Figuren ist kaum zu sehen (liegt fast ganz unter der Figur). Bleibt so.
+- Gartenecke mit Blumen zwischen den Zäunen wirkt etwas unruhig. Bleibt so.
 - Zäune, Truhen, Wegweiser, Büsche und Hühner sind wie im alten Spiel durchlaufbar; mit der neuen Tiefensortierung wirkt das wie ein Fehler. Sperren? **Antwort 2026-11-14: „Ja, fest machen" – Zäune, Truhen, Wegweiser und Büsche sind fest, Hühner bleiben durchlaufbar (siehe Punkt 17 oben).**
-- Lena (Stilprobe) und Deda stehen dicht unter Brunnen und Kessel.
-- Von Hand am echten Gerät: Schärfe bei Windows-Skalierung 125 % und 150 % (Fenster auch zwischen Bildschirmen ziehen) und auf dem iPad; ruckelt etwas beim Laufen?
+- Lena (Stilprobe) und Deda stehen dicht unter Brunnen und Kessel. Bleibt so.
+- **Noch offen** – von Hand am echten Gerät: Schärfe bei Windows-Skalierung 125 % und 150 % (Fenster auch zwischen Bildschirmen ziehen) und auf dem iPad; ruckelt etwas beim Laufen?
 
 ### Offene Punkte
 
