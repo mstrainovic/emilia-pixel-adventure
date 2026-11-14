@@ -34,6 +34,8 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 | blume_weiss | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloorDetail.png | 32,0 16×16 | unverändert ausgeschnitten | Bodendetail: weiße Blüte auf der Blumenwiese | CC0 1.0 |
 | grasbuschel | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloorDetail.png | 0,32 16×16 | unverändert ausgeschnitten | Bodendetail: Grasbüschel auf der Blumenwiese | CC0 1.0 |
 | tanne | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 32,1 32×30 | unverändert ausgeschnitten | Baum: Tanne (alte Varianten pine_*), auch Waldrand | CC0 1.0 |
+| tanne_links | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 32,1 32×30 | gleiches Bild wie tanne, Fußpunkt 24,30 | Waldrand: Tanne, Krone über Fußkachel und linker Nachbarkachel | CC0 1.0 |
+| tanne_rechts | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 32,1 32×30 | gleiches Bild wie tanne, Fußpunkt 8,30 | Waldrand: Tanne, Krone über Fußkachel und rechter Nachbarkachel | CC0 1.0 |
 | laubbaum | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 48,288 48×48 | unverändert ausgeschnitten | Baum: grüner Laubbaum (oak_green, oak_bare, oak_ice) | CC0 1.0 |
 | laubbaum_herbst | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 144,288 48×48 | unverändert ausgeschnitten | Baum: Laubbaum im Herbst (oak_orange, oak_yellow, oak_red) | CC0 1.0 |
 | rundbaum | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 0,2 32×29 | unverändert ausgeschnitten | Baum: Rundbaum (round_green, round_autumn, round_red) | CC0 1.0 |

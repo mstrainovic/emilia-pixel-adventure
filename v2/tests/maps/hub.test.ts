@@ -166,6 +166,54 @@ describe('neu gestaltete Dorfkarte hub', () => {
     expect(missing).toEqual([]);
   });
 
+  describe('Waldrand (zwei Kacheln)', () => {
+    interface Frame { w: number; h: number; anchorX: number; anchorY: number }
+    interface Rect { x: number; y: number; w: number; h: number }
+    const frames = JSON.parse(readFileSync(join(GFX, 'props/dorf.json'), 'utf8')) as Record<string, Frame>;
+    const tileIndex = JSON.parse(readFileSync(join(GFX, 'tiles/dorf.json'), 'utf8')) as Record<string, number>;
+    const exitRects: Rect[] = objects(hub, 'exits').map((e) => ({ x: e.x, y: e.y, w: e.width, h: e.height }));
+    const inRect = (r: Rect, px: number, py: number) => px >= r.x && px < r.x + r.w && py >= r.y && py < r.y + r.h;
+    const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    const inExit = (x: number, y: number) => exitRects.some((r) => inRect(r, x * 16 + 8, y * 16 + 8));
+    const border: [number, number][] = [];
+    for (let y = 0; y < 32; y++) for (let x = 0; x < 40; x++) if (x < 2 || y < 2 || x >= 38 || y >= 30) border.push([x, y]);
+    /** Bildrechteck jedes Baums, dessen Fußkachel im Rand liegt. */
+    const treeRects: Rect[] = objects(hub, 'objects')
+      .filter((o) => o.type === 'tree' && border.some(([x, y]) => `${x}/${y}` === tileOf(o)))
+      .map((o) => {
+        const variant = prop(o, 'variant');
+        const f = frames[PROP_DEFS[propKey('tree', typeof variant === 'string' ? variant : null)]!.frame]!;
+        return { x: o.x + o.width / 2 - f.anchorX, y: o.y + o.height - f.anchorY, w: f.w, h: f.h };
+      });
+
+    it('außer den Ausgängen ist jede Randkachel gesperrt, dunkle Wiese und von einer Baumkrone bedeckt', () => {
+      const col = tiles(hub, 'collision');
+      const ground = tiles(hub, 'ground');
+      const wrong = border.filter(([x, y]) => !inExit(x, y)).flatMap(([x, y]) => {
+        const i = y * 40 + x;
+        const problems = [];
+        if (col[i] === 0) problems.push('frei');
+        if (ground[i] !== tileIndex['wiese_dunkel']! + 1) problems.push('keine dunkle Wiese');
+        if (!treeRects.some((r) => inRect(r, x * 16 + 8, y * 16 + 8))) problems.push('ohne Baumkrone');
+        return problems.map((p) => `${x}/${y}: ${p}`);
+      });
+      expect(wrong).toEqual([]);
+    });
+
+    it('jede Ausgangskachel ist begehbarer Weg, und keine Krone des Waldrands ragt in einen Ausgang', () => {
+      const col = tiles(hub, 'collision');
+      const ground = tiles(hub, 'ground');
+      const weg = new Set(Object.entries(tileIndex).filter(([k]) => k.startsWith('weg_')).map(([, v]) => v + 1));
+      const exitTiles = border.filter(([x, y]) => inExit(x, y));
+      expect(exitTiles).toHaveLength(24);
+      for (const [x, y] of exitTiles) {
+        expect(col[y * 40 + x], `${x}/${y}`).toBe(0);
+        expect(weg.has(ground[y * 40 + x]!), `${x}/${y}`).toBe(true);
+      }
+      expect(treeRects.filter((t) => exitRects.some((e) => overlaps(t, e)))).toEqual([]);
+    });
+  });
+
   it('enthält kein Emoji und keinen Verweis auf die alten Kacheln', () => {
     const text = readFileSync(HUB_JSON, 'utf8');
     expect(/\p{Extended_Pictographic}/u.test(text)).toBe(false);

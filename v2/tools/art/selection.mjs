@@ -53,6 +53,9 @@ export const TILES = [
 export const PROPS = [
   // Bäume (TilesetNature): Tanne, Laubbaum, Rundbaum, rosa Baum
   { id: 'tanne', source: NATURE, x: 32, y: 1, w: 32, h: 30, anchorX: 16, anchorY: 30, use: 'Baum: Tanne (alte Varianten pine_*), auch Waldrand' },
+  // Waldrand bündig: die Krone deckt genau die Fußkachel und ihren linken bzw. rechten Nachbarn.
+  { id: 'tanne_links', of: 'tanne', anchorX: 24, anchorY: 30, use: 'Waldrand: Tanne, Krone über Fußkachel und linker Nachbarkachel' },
+  { id: 'tanne_rechts', of: 'tanne', anchorX: 8, anchorY: 30, use: 'Waldrand: Tanne, Krone über Fußkachel und rechter Nachbarkachel' },
   { id: 'laubbaum', source: NATURE, x: 48, y: 288, w: 48, h: 48, anchorX: 24, anchorY: 48, use: 'Baum: grüner Laubbaum (oak_green, oak_bare, oak_ice)' },
   { id: 'laubbaum_herbst', source: NATURE, x: 144, y: 288, w: 48, h: 48, anchorX: 24, anchorY: 48, use: 'Baum: Laubbaum im Herbst (oak_orange, oak_yellow, oak_red)' },
   { id: 'rundbaum', source: NATURE, x: 0, y: 2, w: 32, h: 29, anchorX: 16, anchorY: 29, use: 'Baum: Rundbaum (round_green, round_autumn, round_red)' },

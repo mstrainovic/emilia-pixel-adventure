@@ -318,5 +318,21 @@
     "h": 29,
     "anchorX": 8,
     "anchorY": 29
+  },
+  "tanne_links": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 30,
+    "anchorX": 24,
+    "anchorY": 30
+  },
+  "tanne_rechts": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 30,
+    "anchorX": 8,
+    "anchorY": 30
   }
 }

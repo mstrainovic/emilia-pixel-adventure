@@ -107,11 +107,8 @@ export const COLLISION_CHANGES = [
   ]),
 ];
 
-/**
- * Rand der Karte (zwei Kacheln): dichter Wald. Die dunkle Wiese liegt nur in der äußeren Reihe, ganz unter
- * den Kronen; so zeigt sich keine harte Kante zwischen heller und dunkler Wiese.
- */
-const underForest = (map, x, y) => x === 0 || y === 0 || x === map.width - 1 || y === map.height - 1;
+/** Rand der Karte (zwei Kacheln): dichter Wald auf dunkler Wiese; Kronen decken jede Randkachel außer den Ausgängen. */
+const inBorder = (map, x, y) => x < BORDER || y < BORDER || x >= map.width - BORDER || y >= map.height - BORDER;
 
 function layerOf(map, name) {
   const l = map.layers.find((layer) => layer.name === name);
@@ -144,7 +141,6 @@ function buildGround(map, ground, mask, edgeMask, plots, tileIndex) {
     if (!(name in tileIndex)) throw new Error(`Kachel „${name}" fehlt in tiles/dorf.json (npm run art:build)`);
     return tileIndex[name] + 1;
   };
-  const nearPath = (x, y) => [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => mask[y + dy]?.[x + dx] === true));
   const base = [];
   const detail = [];
   for (let y = 0; y < map.height; y++) {
@@ -156,7 +152,7 @@ function buildGround(map, ground, mask, edgeMask, plots, tileIndex) {
       else if (isOldWood(old)) name = 'hof';
       else if (old === OLD_STONE) name = 'stein';
       else if (plots.has(`${x}/${y}`)) name = 'beet';
-      else if (underForest(map, x, y) && !nearPath(x, y)) name = 'wiese_dunkel';
+      else if (inBorder(map, x, y)) name = 'wiese_dunkel';
       else if (old === OLD_FLOWERS) {
         name = 'wiese';
         // Die Blumen der alten Blumenwiese wandern nach ground_detail, in festem Muster.
@@ -184,21 +180,44 @@ function buildCollision(map, collision) {
   return data;
 }
 
-/** Bäume des Waldrands: eine Reihe Kronen über den Randkacheln, Lücken an den Ausgängen. */
-function forestBorder(map, exits) {
-  const free = (x, y) => !exits.some((e) => {
-    const x0 = Math.floor(e.x / TILE) - 1, x1 = Math.floor((e.x + e.width) / TILE);
-    const y0 = Math.floor(e.y / TILE) - 1, y1 = Math.floor((e.y + e.height) / TILE);
-    return x >= x0 && x <= x1 && y >= y0 && y <= y1;
-  });
-  const spots = [];
-  for (let x = 0; x < map.width; x++) spots.push([x, 1], [x, map.height - 1]);
-  for (let y = BORDER; y < map.height - BORDER; y++) spots.push([0, y], [map.width - 1, y]);
-  // Eine Krone ist zwei Kacheln hoch und breit; sie darf über keinen Ausgang reichen.
-  return spots.filter(([x, y]) => free(x, y) && free(x, y - 1))
-    .map(([x, y]) => ({ x, y, variant: (x * 5 + y * 3) % 4 === 0 ? 'round_dark' : 'pine_dark' }));
+/*
+ * Bäume des Waldrands. Krone 32 px breit, höchstens 31 px hoch, unten auf der Fußkachel. Fußpunkt im Bild:
+ * mittig (pine_dark, round_dark: Krone über halber Nachbarkachel links und rechts), forest_left (Krone genau
+ * über Fußkachel und linkem Nachbarn) oder forest_right (Fußkachel und rechter Nachbar).
+ */
+const CROWN = { w: 32, h: 31 };
+const CROWN_ANCHOR_X = { centered: 16, forest_left: 24, forest_right: 8 };
+
+function crownRect(x, y, anchor) {
+  return { x: x * TILE + TILE / 2 - CROWN_ANCHOR_X[anchor], y: (y + 1) * TILE - CROWN.h, w: CROWN.w, h: CROWN.h };
 }
 
+/**
+ * Oben und unten eine Reihe Kronen (Fußreihe 1 bzw. letzte Reihe), links und rechts eine Spalte bündiger
+ * Kronen (Fuß in Spalte 1 bzw. vorletzter Spalte) über beiden Randkacheln. Keine Krone ragt in einen Ausgang;
+ * neben einem Ausgang wird die Krone bündig an seinen Rand gesetzt.
+ */
+function forestBorder(map, exits) {
+  const exitRects = exits.map((e) => ({ x: e.x, y: e.y, w: e.width, h: e.height }));
+  const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const clear = (x, y, anchor) => !exitRects.some((r) => overlaps(r, crownRect(x, y, anchor)));
+  const trees = [];
+  const place = (x, y, anchors) => {
+    const anchor = anchors.find((a) => clear(x, y, a));
+    if (!anchor) return;
+    const variant = anchor === 'centered' ? ((x * 5 + y * 3) % 4 === 0 ? 'round_dark' : 'pine_dark') : anchor;
+    trees.push({ x, y, variant });
+  };
+  for (let x = 0; x < map.width; x++) {
+    place(x, BORDER - 1, ['centered', 'forest_left', 'forest_right']);
+    place(x, map.height - 1, ['centered', 'forest_left', 'forest_right']);
+  }
+  for (let y = BORDER; y < map.height - BORDER; y++) {
+    place(BORDER - 1, y, ['forest_left']);
+    place(map.width - BORDER, y, ['forest_right']);
+  }
+  return trees;
+}
 function restyleObjects(map, objectsLayer, exits) {
   let nextId = map.nextobjectid;
   const exitByDir = new Map(exits.map((e) => [e.name, prop(e, 'target')]));

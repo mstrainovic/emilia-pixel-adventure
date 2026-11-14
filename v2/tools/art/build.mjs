@@ -96,7 +96,8 @@ function buildTiles() {
  * Bild (parts: [{ source, x, y, w, h, dx, dy }], Größe w×h): das erste Teil wird mit blit gesetzt, jedes
  * weitere mit blitOver darübergelegt. frames: n erzeugt n Bilder <id>_0 … <id>_(n-1); dabei rückt jedes
  * Teil (bzw. der Ausschnitt) mit stepX um stepX Pixel im Quellbild weiter. anchorX/anchorY: der Punkt im
- * Bild, der auf dem Fußpunkt des Objekts steht.
+ * Bild, der auf dem Fußpunkt des Objekts steht. { id, of, anchorX, anchorY } ist ein zweiter Name für das
+ * Bild eines früheren einfachen Ausschnitts mit anderem Fußpunkt (gleiche Pixel im Atlas).
  */
 const PROP_ATLAS_WIDTH = 512;
 
@@ -122,8 +123,17 @@ function buildProps() {
   if (PROPS.length === 0) return;
   // Regale zu je höchstens PROP_ATLAS_WIDTH Pixeln, in fester Reihenfolge der Liste.
   const placed = [];
+  const aliases = [];
   let x = 0, y = 0, rowHeight = 0;
   for (const p of PROPS) {
+    if (p.of) {
+      // Gleiches Bild wie ein früherer Eintrag, nur mit anderem Fußpunkt: kein zweites Mal im Atlas.
+      const base = PROPS.find((q) => q.id === p.of && !q.of && !q.parts && !q.frames);
+      if (!base || PROPS.indexOf(base) > PROPS.indexOf(p)) throw new Error(`Gegenstand ${p.id}: „${p.of}" ist kein früherer einfacher Ausschnitt`);
+      aliases.push({ p, base });
+      record({ ...p, source: base.source }, 'props/dorf.png', { x: base.x, y: base.y, w: base.w, h: base.h }, `gleiches Bild wie ${base.id}, Fußpunkt ${p.anchorX},${p.anchorY}`);
+      continue;
+    }
     const parts = propParts(p);
     const count = p.frames ?? 1;
     for (let i = 0; i < count; i++) {
@@ -149,6 +159,10 @@ function buildProps() {
   for (const f of placed) {
     png.blit(atlas, f.img, f.x, f.y);
     frames[f.name] = { x: f.x, y: f.y, w: f.p.w, h: f.p.h, anchorX: f.p.anchorX, anchorY: f.p.anchorY };
+  }
+  for (const { p, base } of aliases) {
+    const f = frames[base.id];
+    frames[p.id] = { x: f.x, y: f.y, w: f.w, h: f.h, anchorX: p.anchorX, anchorY: p.anchorY };
   }
   writeImage('props/dorf.png', atlas);
   writeJson('props/dorf.json', frames);

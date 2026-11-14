@@ -392,6 +392,34 @@
       "lizenz": "CC0 1.0"
     },
     {
+      "kennung": "tanne_links",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 1,
+        "w": 32,
+        "h": 30
+      },
+      "aenderungen": "gleiches Bild wie tanne, Fußpunkt 24,30",
+      "verwendung": "Waldrand: Tanne, Krone über Fußkachel und linker Nachbarkachel",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "tanne_rechts",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 1,
+        "w": 32,
+        "h": 30
+      },
+      "aenderungen": "gleiches Bild wie tanne, Fußpunkt 8,30",
+      "verwendung": "Waldrand: Tanne, Krone über Fußkachel und rechter Nachbarkachel",
+      "lizenz": "CC0 1.0"
+    },
+    {
       "kennung": "laubbaum",
       "ziel": "props/dorf.png",
       "quelle": "Backgrounds/Tilesets/TilesetNature.png",

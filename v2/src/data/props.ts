@@ -29,6 +29,9 @@ const TREES: Record<string, string> = {
   round_green: 'rundbaum', round_autumn: 'rundbaum', round_red: 'rundbaum',
   round_dark: 'rundbaum_dunkel',
   maple: 'rosabaum',
+  // Waldrand: Tannen, deren Krone bündig über der Fußkachel und dem linken bzw. rechten Nachbarn liegt.
+  forest_left: 'tanne_links',
+  forest_right: 'tanne_rechts',
 };
 
 export const PROP_DEFS: Readonly<Record<string, PropDef>> = {
