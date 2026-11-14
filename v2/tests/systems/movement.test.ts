@@ -336,3 +336,61 @@ describe('Eckenrutschen mit schräger Eingabe: kein Laufen auf der Stelle', () =
     });
   }
 });
+
+describe('Eckenzone: kein Kriechen, auch bei fast gerader Eingabe', () => {
+  const DT = 1 / 60;
+  const tile = gridOf((x, y) => x === 8 && y === 5); // 128..144 × 80..96
+
+  function norm(x: number, y: number): MoveIntent {
+    const len = Math.hypot(x, y);
+    return len > 1 ? { x: x / len, y: y / len, run: false } : { x, y, run: false };
+  }
+
+  const crosses = [0, 0.02, -0.02, 0.05, -0.05, 0.2, -0.2, 0.45, -0.45, 0.55, -0.55, 1, -1];
+  const overlaps = [1, 3, 5];
+
+  /** Aufstellung je Überlappung k; Absicht aus dem Quer-Anteil c. */
+  const setups: Array<{ name: string; start: (k: number) => Partial<Mover>; intent: (c: number) => MoveIntent }> = [
+    { name: 'rechts, frei oben', start: (k) => ({ x: 122, y: 80 + k }), intent: (c) => norm(1, c) },
+    { name: 'rechts, frei unten', start: (k) => ({ x: 122, y: 102 - k }), intent: (c) => norm(1, c) },
+    { name: 'links, frei oben', start: (k) => ({ x: 150, y: 80 + k }), intent: (c) => norm(-1, c) },
+    { name: 'unten, frei links', start: (k) => ({ x: 123 + k, y: 77 }), intent: (c) => norm(c, 1) },
+    { name: 'unten, frei rechts', start: (k) => ({ x: 149 - k, y: 77 }), intent: (c) => norm(c, 1) },
+  ];
+
+  for (const s of setups) {
+    for (const k of overlaps) {
+      for (const c of crosses) {
+        it(`${s.name}, Überlappung ${k}, quer ${c}`, () => {
+          const start = still(s.start(k));
+          const intent = s.intent(c);
+          let m = start;
+          let prev = start;
+          let run = 0;
+          let worst = 0;
+          for (let i = 0; i < 60; i++) {
+            m = stepMover(m, intent, DT, tile);
+            const same = Math.hypot(m.x - prev.x, m.y - prev.y) < 0.2;
+            run = m.moving && same ? run + 1 : 0;
+            worst = Math.max(worst, run);
+            prev = m;
+          }
+          expect(worst).toBeLessThanOrEqual(3);
+          expect(Math.hypot(m.x - start.x, m.y - start.y)).toBeGreaterThanOrEqual(20);
+        });
+      }
+    }
+  }
+
+  for (const c of [0.05, 0.02]) {
+    it(`Regression: Absicht (1, ${c}) von (122, 84) kommt an der Kachel vorbei`, () => {
+      let m = still({ x: 122, y: 84 });
+      let past = false;
+      for (let i = 0; i < 120 && !past; i++) {
+        m = stepMover(m, norm(1, c), DT, tile);
+        past = m.x - 5 >= 144;
+      }
+      expect(past).toBe(true);
+    });
+  }
+});

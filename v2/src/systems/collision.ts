@@ -20,6 +20,17 @@ export interface Box {
 export const MAX_STEP = 4;
 /** Bis zu so viel Überstand rutscht die Figur um eine Ecke. */
 export const CORNER_NUDGE = 5;
+/**
+ * Rutschen um die Ecke gilt auch, wenn die Querabsicht von der freien Seite wegzeigt, solange sie höchstens
+ * halb so groß ist wie der Schritt in die Wand (die Figur will vor allem vorbei). Zeigt sie deutlich
+ * entlang der Wand (mehr als die Hälfte), wird nicht gerutscht, und die Figur gleitet mit ihrer Querbewegung an der Wand entlang.
+ */
+export const NUDGE_MAX_CROSS_RATIO = 0.5;
+/**
+ * Gesucht wird in ganzen Bildpunkten bis `CORNER_NUDGE`, zuletzt noch mit knapp einem Bildpunkt Spielraum (6 bleiben hängen):
+ * Läuft die Figur schräg auf die Ecke zu, wächst der Überstand auf dem Weg bis zur Wand um Bruchteile.
+ */
+const NUDGE_REACH = [1, 2, 3, 4, CORNER_NUDGE, CORNER_NUDGE + 0.9];
 
 export interface SlideResult {
   x: number;
@@ -74,14 +85,14 @@ function stepAxis(grid: SolidGrid, b: Box, axis: Axis, step: number): { value: n
 /**
  * Quer zur Bewegung: um wie viel (höchstens |step|, also im Tempo der Figur) lässt sich die Figur zur Seite
  * schieben, damit sie an der Ecke vorbeikommt? Gesucht wird die Seite mit dem kleinsten
- * Überstand bis `CORNER_NUDGE`, aber nie entgegen `crossStep`. 0 heißt: kein Rutschen möglich.
+ * Überstand bis `CORNER_NUDGE`, aber nicht deutlich entgegen `crossStep` (siehe `NUDGE_MAX_CROSS_RATIO`). 0 heißt: kein Rutschen möglich.
  */
 function cornerNudge(grid: SolidGrid, b: Box, axis: Axis, step: number, crossStep: number): number {
   const cross: Axis = axis === 'x' ? 'y' : 'x';
-  for (let s = 1; s <= CORNER_NUDGE; s++) {
+  for (const s of NUDGE_REACH) {
     for (const dir of [-1, 1]) {
-      // Nie gegen die Querabsicht schieben: sonst hebt sich Rutschen und Weitergehen auf.
-      if (crossStep !== 0 && Math.sign(crossStep) !== dir) continue;
+      // Nicht deutlich gegen die Querabsicht schieben: sonst hebt sich Rutschen und Weitergehen auf.
+      if (Math.sign(crossStep) === -dir && Math.abs(crossStep) > NUDGE_MAX_CROSS_RATIO * Math.abs(step)) continue;
       const [cx, cy] = along(cross, dir * s);
       const [ax, ay] = along(axis, step);
       if (hitsAt(grid, b, cx + ax, cy + ay)) continue;
