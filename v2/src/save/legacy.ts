@@ -21,6 +21,8 @@ export interface MigrationReport {
   replacedItems: Record<string, string>;
   reconstructedQuests: string[];
   warnings: string[];
+  /** Was beim Lesen der Plätze verloren ging: Rest über `stackSize` oder ungültige Stückzahl (dann `count: 0`). */
+  cutItems: Array<{ itemId: string; count: number }>;
 }
 
 const NGPLUS_BOSS = 'shadow_knight';
@@ -72,9 +74,14 @@ export function readInventory(
       continue;
     }
     const count = finite(field(slot, 'count'));
-    if (count === undefined || count <= 0) continue;
+    if (count === undefined || count <= 0) {
+      report.cutItems.push({ itemId, count: 0 });
+      continue;
+    }
     if (successor !== undefined) report.replacedItems[rawId] = successor;
-    state.inventory.slots[i] = { itemId, count: Math.min(def.stackSize, Math.max(1, Math.floor(count))) };
+    const whole = Math.max(1, Math.floor(count));
+    if (whole > def.stackSize) report.cutItems.push({ itemId, count: whole - def.stackSize });
+    state.inventory.slots[i] = { itemId, count: Math.min(def.stackSize, whole) };
   }
 }
 
@@ -194,7 +201,9 @@ export function readWorld(save: Obj, state: GameState): void {
 
 function build(save: Obj, mutedRaw: string | null, now: number): { state: GameState; report: MigrationReport } {
   const state = createNewGameState(now);
-  const report: MigrationReport = { droppedItems: [], replacedItems: {}, reconstructedQuests: [], warnings: [] };
+  const report: MigrationReport = {
+    droppedItems: [], replacedItems: {}, reconstructedQuests: [], warnings: [], cutItems: [],
+  };
   const prog = field(save, 'progression');
 
   // Level, XP, Lebenspunkte (Herzen aus dem Level; alte Lebenspunkte entfallen)

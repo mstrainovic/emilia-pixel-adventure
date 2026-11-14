@@ -1,13 +1,15 @@
 import type Phaser from 'phaser';
 import type { InputHub } from '../input/hub';
 import type { SaveService } from '../save/service';
-import type { SaveStore } from '../save/store';
+import type { SaveStore, SaveResult } from '../save/store';
+import type { RepairReport } from '../save/normalize';
 import { createNewGameState, type GameState } from './state';
 import type { EventBus, GameEvents } from './events';
 import type { PixelGrid } from './pixelGrid';
 
 /** Was beim Start zu erklären ist (die Anzeige dazu kommt in Plan 1b). */
-export type StartNotice = 'save-corrupt' | 'save-newer' | 'storage-unavailable' | 'legacy-imported' | 'legacy-failed';
+export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
+  | 'storage-unavailable' | 'legacy-imported' | 'legacy-failed';
 
 export interface GameStart {
   state: GameState;
@@ -16,16 +18,21 @@ export interface GameStart {
   persist: boolean;
   /** Der alte Stand ist neuer als die letzte Übernahme oder Ablehnung (die Frage dazu stellt Plan 1b). */
   legacyNewer: boolean;
+  /** Bericht des Ladens, wenn etwas repariert wurde; sonst `null`. */
+  repair: RepairReport | null;
+  /** Ergebnis des Sofort-Speicherns nach einer Übernahme; `null` ohne Übernahme. */
+  importSave: SaveResult | null;
 }
 
 /** Neues Spiel; liegt ein alter Stand vor, wird er ohne Nachfrage übernommen (eine Kopie, der alte Schlüssel bleibt). */
-function freshStart(store: SaveStore, now: number): { state: GameState; notice: StartNotice | null } {
+function freshStart(store: SaveStore, now: number): {
+  state: GameState; notice: StartNotice | null; importSave: SaveResult | null;
+} {
   // importLegacy statt legacyOffer: so wird auch ein vorhandener, aber unlesbarer alter Stand erkannt und gemeldet
   const legacy = store.importLegacy(now);
-  if (legacy.kind === 'none') return { state: createNewGameState(now), notice: null };
-  if (legacy.kind !== 'ok') return { state: createNewGameState(now), notice: 'legacy-failed' };
-  store.save(legacy.state, now);
-  return { state: legacy.state, notice: 'legacy-imported' };
+  if (legacy.kind === 'none') return { state: createNewGameState(now), notice: null, importSave: null };
+  if (legacy.kind !== 'ok') return { state: createNewGameState(now), notice: 'legacy-failed', importSave: null };
+  return { state: legacy.state, notice: 'legacy-imported', importSave: store.save(legacy.state, now) };
 }
 
 /**
@@ -35,19 +42,26 @@ function freshStart(store: SaveStore, now: number): { state: GameState; notice: 
  */
 export function startGame(store: SaveStore, now: number): GameStart {
   const loaded = store.load();
+  const blank = { persist: true, legacyNewer: false, repair: null, importSave: null };
   switch (loaded.kind) {
     case 'ok':
-      return { state: loaded.state, notice: null, persist: true, legacyNewer: store.legacyOffer(loaded.state) === 'newer' };
+      return {
+        ...blank, state: loaded.state, repair: loaded.repair,
+        // mit Verlust repariert: der Rohtext liegt unter REJECTED_SAVE_KEY, das Spiel soll es sagen
+        notice: loaded.repair?.lossy === true ? 'save-repaired' : null,
+        legacyNewer: store.legacyOffer(loaded.state) === 'newer',
+      };
     case 'newer':
-      return { state: createNewGameState(now), notice: 'save-newer', persist: false, legacyNewer: false };
+      return { ...blank, state: createNewGameState(now), notice: 'save-newer', persist: false };
     case 'unavailable':
-      return { state: createNewGameState(now), notice: 'storage-unavailable', persist: false, legacyNewer: false };
+      return { ...blank, state: createNewGameState(now), notice: 'storage-unavailable', persist: false };
     case 'empty':
     case 'corrupt': {
       const fresh = freshStart(store, now);
       // der Rohtext des kaputten Stands ist gesichert (REJECTED_SAVE_KEY); dieser Hinweis hat Vorrang
-      const notice = loaded.kind === 'corrupt' ? 'save-corrupt' : fresh.notice;
-      return { state: fresh.state, notice, persist: true, legacyNewer: false };
+      const corrupt = fresh.notice === 'legacy-imported' ? 'save-corrupt-legacy' : 'save-corrupt';
+      const notice = loaded.kind === 'corrupt' ? corrupt : fresh.notice;
+      return { ...blank, state: fresh.state, notice, importSave: fresh.importSave };
     }
   }
 }
@@ -64,6 +78,10 @@ export interface Services {
   persist: boolean;
   startNotice: StartNotice | null;
   legacyNewer: boolean;
+  /** Reparatur-Bericht des Ladens beim Start (siehe GameStart.repair). */
+  startRepair: RepairReport | null;
+  /** Ergebnis des Sofort-Speicherns nach einer Übernahme beim Start (siehe GameStart.importSave). */
+  importSave: SaveResult | null;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

@@ -6,7 +6,7 @@ import { LEGACY_SAVE_KEY, LEGACY_MUTED_KEY, migrateLegacySave } from '../../src/
 import { QUEST_ORDER } from '../../src/data/quests';
 import { createNewGameState, type GameState } from '../../src/core/state';
 import {
-  LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_PARTIAL, LEGACY_NGPLUS,
+  LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_PARTIAL, LEGACY_NGPLUS, LEGACY_NGPLUS_REAL,
 } from './legacySaves';
 
 function mem(initial: Record<string, string> = {}) {
@@ -16,6 +16,8 @@ function mem(initial: Record<string, string> = {}) {
     writtenKeys,
     getItem: (k: string): string | null => data.get(k) ?? null,
     setItem: (k: string, v: string): void => { writtenKeys.push(k); data.set(k, v); },
+    /** Löscht von außen, wie ein anderer Tab oder die Website-Daten-Einstellungen es täten. */
+    remove: (k: string): void => { data.delete(k); },
   };
 }
 
@@ -120,6 +122,18 @@ describe('SaveStore', () => {
     expect(store.readRejected()).toBe(text);
   });
 
+  it('meldet eine zurückgesetzte Aufgabe als Reparatur ohne Verlust und sichert nichts', () => {
+    const raw = JSON.parse(JSON.stringify(createNewGameState(1))) as GameState;
+    raw.progression.activeQuests = { wood_collector: { progress: -3 } };
+    const m = mem({ [SAVE_KEY]: JSON.stringify(raw) });
+    const result = new SaveStore(m).load();
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') return;
+    expect(result.repair).toMatchObject({ lossy: false, resetQuests: ['wood_collector'] });
+    expect(result.state.progression.activeQuests).toEqual({ wood_collector: { progress: 0 } });
+    expect(m.writtenKeys).toEqual([]);
+  });
+
   it('meldet einen gültigen Stand ohne Bericht und sichert nichts', () => {
     const m = mem({ [SAVE_KEY]: JSON.stringify(createNewGameState(1)) });
     expect(new SaveStore(m).load()).toEqual(ok(createNewGameState(1)));
@@ -150,6 +164,75 @@ describe('SaveStore', () => {
     const m = mem({ [SAVE_KEY]: '{kaputt', [REJECTED_SAVE_KEY]: '{kaputt' });
     new SaveStore(m).save(createNewGameState(1), 5);
     expect(m.writtenKeys).toEqual([SAVE_KEY]);
+  });
+});
+
+describe('Zwei Tabs über demselben Speicher', () => {
+  it('ein veralteter Tab überschreibt den Stand des anderen nicht', () => {
+    const m = mem({ [SAVE_KEY]: JSON.stringify({ ...createNewGameState(1), savedAt: 1000 }) });
+    const a = new SaveStore(m); const b = new SaveStore(m);
+    expect(a.load().kind).toBe('ok'); expect(b.load().kind).toBe('ok');
+    expect(b.save(createNewGameState(2), 2000)).toEqual({ kind: 'saved' });
+    const fromB = m.getItem(SAVE_KEY);
+    expect(a.save(createNewGameState(3), 3000)).toEqual({ kind: 'blocked-other-tab' });
+    expect(m.getItem(SAVE_KEY)).toBe(fromB);
+    expect(b.save(createNewGameState(2), 4000)).toEqual({ kind: 'saved' });
+    expect(a.load().kind).toBe('ok');
+    expect(a.save(createNewGameState(3), 5000)).toEqual({ kind: 'saved' });
+  });
+
+  it('nach dem Laden eines leeren Speichers sperrt ein fremder Stand ebenso', () => {
+    const m = mem(); const a = new SaveStore(m); const b = new SaveStore(m);
+    expect(a.load()).toEqual({ kind: 'empty' }); expect(b.load()).toEqual({ kind: 'empty' });
+    expect(b.save(createNewGameState(2), 2000)).toEqual({ kind: 'saved' });
+    expect(a.save(createNewGameState(3), 3000)).toEqual({ kind: 'blocked-other-tab' });
+  });
+
+  it('von außen gelöschter Eintrag: der Tab schreibt wieder', () => {
+    const m = mem({ [SAVE_KEY]: JSON.stringify({ ...createNewGameState(1), savedAt: 1000 }) });
+    const a = new SaveStore(m); const b = new SaveStore(m);
+    a.load(); b.load();
+    expect(b.save(createNewGameState(2), 2000)).toEqual({ kind: 'saved' });
+    m.remove(SAVE_KEY);
+    expect(a.save(createNewGameState(3), 3000)).toEqual({ kind: 'saved' });
+    expect(new SaveStore(m).load()).toEqual(ok({ ...createNewGameState(3), savedAt: 3000 }));
+  });
+
+  it('kaputter Eintrag ohne lesbaren Stempel: schreibt, der Rohtext ist gesichert', () => {
+    const m = mem({ [SAVE_KEY]: JSON.stringify({ ...createNewGameState(1), savedAt: 1000 }) });
+    const a = new SaveStore(m); a.load();
+    m.setItem(SAVE_KEY, '{kaputt');
+    expect(a.save(createNewGameState(3), 3000)).toEqual({ kind: 'saved' });
+    expect(m.getItem(REJECTED_SAVE_KEY)).toBe('{kaputt');
+  });
+
+  it('neuere Version hat Vorrang vor dem fremden Stempel', () => {
+    const m = mem({ [SAVE_KEY]: JSON.stringify({ ...createNewGameState(1), savedAt: 1000 }) });
+    const a = new SaveStore(m); a.load();
+    const newer = JSON.stringify({ ...createNewGameState(1), formatVersion: 2, savedAt: 2000 });
+    m.setItem(SAVE_KEY, newer);
+    expect(a.save(createNewGameState(3), 3000)).toEqual({ kind: 'blocked-newer', storedVersion: 2 });
+    expect(m.getItem(SAVE_KEY)).toBe(newer);
+  });
+
+  it('replaceWith prüft den fremden Stempel nicht, merkt sich aber den eigenen', () => {
+    const m = mem({ [SAVE_KEY]: JSON.stringify({ ...createNewGameState(1), savedAt: 1000 }) });
+    const a = new SaveStore(m); const b = new SaveStore(m);
+    a.load(); b.load();
+    expect(b.save(createNewGameState(2), 2000)).toEqual({ kind: 'saved' });
+    const fromB = m.getItem(SAVE_KEY);
+    expect(a.replaceWith(createNewGameState(3), 3000)).toEqual({ kind: 'saved' });
+    expect(m.getItem(BACKUP_SAVE_KEY)).toBe(fromB);
+    expect(a.save(createNewGameState(3), 4000)).toEqual({ kind: 'saved' });
+  });
+
+  it('ein Speicher ohne vorheriges Laden schreibt beim ersten Mal und merkt sich den Stempel', () => {
+    const m = mem({ [SAVE_KEY]: JSON.stringify({ ...createNewGameState(1), savedAt: 1000 }) });
+    const a = new SaveStore(m);
+    expect(a.save(createNewGameState(3), 3000)).toEqual({ kind: 'saved' });
+    expect(a.save(createNewGameState(3), 4000)).toEqual({ kind: 'saved' });
+    m.setItem(SAVE_KEY, JSON.stringify({ ...createNewGameState(1), savedAt: 4500 }));
+    expect(a.save(createNewGameState(3), 5000)).toEqual({ kind: 'blocked-other-tab' });
   });
 });
 
@@ -303,7 +386,7 @@ function roundTrip<T>(v: T): T { return JSON.parse(JSON.stringify(v)) as T; }
 describe('migrateState: Reparatur statt Verwerfen', () => {
   it('ist die Identität auf gültigen Ständen, auch aus der Übernahme', () => {
     const states: GameState[] = [createNewGameState(1)];
-    for (const f of [LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_PARTIAL]) {
+    for (const f of [LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_NGPLUS_REAL, LEGACY_PARTIAL]) {
       const r = migrateLegacySave(JSON.stringify(f), null, 5);
       if (r.kind !== 'ok') throw new Error('Vorlage nicht übernehmbar');
       states.push(r.state);

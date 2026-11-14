@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { LEGACY_FIRST_COMMIT } from '../save/legacySaves';
+import { createNewGameState } from '../../src/core/state';
 
 type PlayerInfo = { x: number; y: number; facing: string; moving: boolean };
 
@@ -127,6 +128,54 @@ test('Speicher, der beim Schreiben wirft: Spiel startet, Laufen geht, kein Konso
   expect(reported.notice === 'storage-unavailable' || reported.last?.result.kind === 'unavailable').toBe(true);
   expect(reported.last).toEqual({ reason: 'timer', result: { kind: 'unavailable' } });
   expect(errors).toEqual([]);
+});
+
+test('Speicher, dessen Lesen wirft: Spiel startet mit storage-unavailable, Laufen geht, nichts gespeichert', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.addInitScript(() => {
+    Storage.prototype.getItem = function getItem(): string | null {
+      throw new DOMException('Lesen gesperrt', 'SecurityError');
+    };
+  });
+  await page.goto('./');
+  await waitForWorld(page);
+  expect(await page.evaluate(() => (window as any).__emilia2.startNotice)).toBe('storage-unavailable');
+  const start = await player(page);
+  await hold(page, ['KeyD'], 400);
+  expect((await player(page)).x).toBeGreaterThan(start.x + 5);
+  expect((await saveNow(page)).kind).not.toBe('saved');
+  expect(errors).toEqual([]);
+});
+
+test('gespeicherter Ort mitten im Dorfbrunnen (Kachel 20/13): Emilia steht am Startpunkt 19/14', async ({ page }) => {
+  const errors = watchErrors(page);
+  // gültiger v2-Stand, nur der Ort liegt in der festen Kachel des Brunnens (Fußpunkt in der Kachelmitte)
+  const fresh = createNewGameState(5);
+  const inWall = JSON.stringify({ ...fresh, player: { ...fresh.player, map: 'hub', x: 20.5, y: 13.5 } });
+  await prepareStorage(page, { [SAVE_KEY]: inWall });
+  await page.goto('./');
+  await waitForWorld(page);
+  expect(await page.evaluate(() => (window as any).__emilia2.startNotice)).toBeNull();
+  const p = await player(page);
+  expect([p.x, p.y]).toEqual([HUB_SPAWN.x, HUB_SPAWN.y]);
+  expect(errors).toEqual([]);
+});
+
+test('zwei Tabs: der zuerst geladene überschreibt den Stand des anderen nicht', async ({ context }) => {
+  const one = await context.newPage(); const errorsOne = watchErrors(one);
+  await one.goto('./');
+  await waitForWorld(one);
+  const two = await context.newPage(); const errorsTwo = watchErrors(two);
+  await two.goto('./');
+  await waitForWorld(two);
+  await two.evaluate(() => (window as any).__emilia2.teleport(25, 14));
+  expect((await saveNow(two)).kind).toBe('saved');
+  const fromTwo = await readKey(two, SAVE_KEY);
+  expect(fromTwo).not.toBeNull();
+  expect((await saveNow(one)).kind).toBe('blocked-other-tab');
+  expect(await readKey(one, SAVE_KEY)).toBe(fromTwo);
+  expect(errorsOne).toEqual([]);
+  expect(errorsTwo).toEqual([]);
 });
 
 test('Stand mit formatVersion 2: Hinweis save-newer, der Eintrag bleibt bytegleich', async ({ page }) => {

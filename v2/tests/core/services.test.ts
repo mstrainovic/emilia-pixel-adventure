@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { startGame } from '../../src/core/services';
-import { createNewGameState } from '../../src/core/state';
+import { createNewGameState, type GameState } from '../../src/core/state';
 import { SaveStore, SAVE_KEY, REJECTED_SAVE_KEY } from '../../src/save/store';
 import { SaveService } from '../../src/save/service';
 import { LEGACY_SAVE_KEY, LEGACY_MUTED_KEY } from '../../src/save/legacy';
 import { normalizeState } from '../../src/save/normalize';
 import {
-  LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_PARTIAL, LEGACY_LONG_INVENTORY,
+  LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_NGPLUS_REAL, LEGACY_PARTIAL, LEGACY_LONG_INVENTORY,
 } from '../save/legacySaves';
 
 /** Fake-Speicher, der jeden Schreibzugriff je Schlüssel zählt. */
@@ -29,8 +29,56 @@ describe('startGame', () => {
     saved.progression.level = 4;
     const m = mem({ [SAVE_KEY]: JSON.stringify(saved) });
     const start = startGame(new SaveStore(m), NOW);
-    expect(start).toEqual({ state: saved, notice: null, persist: true, legacyNewer: false });
+    expect(start).toEqual({
+      state: saved, notice: null, persist: true, legacyNewer: false, repair: null, importSave: null,
+    });
     expect(m.writesTo(SAVE_KEY)).toBe(0);
+  });
+
+  it('ok mit Verlust beim Reparieren: Hinweis save-repaired samt Bericht, es wird weiter gespeichert', () => {
+    const saved = JSON.parse(JSON.stringify(createNewGameState(5))) as GameState;
+    saved.inventory.slots[1] = { itemId: 'gibt_es_nicht', count: 2 };
+    const m = mem({ [SAVE_KEY]: JSON.stringify(saved) });
+    const start = startGame(new SaveStore(m), NOW);
+    expect(start.notice).toBe('save-repaired');
+    expect(start.persist).toBe(true);
+    expect(start.repair).toMatchObject({ lossy: true, droppedItems: [{ itemId: 'gibt_es_nicht', count: 2 }] });
+    expect(start.importSave).toBeNull();
+  });
+
+  it('ok mit Reparatur ohne Verlust: kein Hinweis, aber der Bericht', () => {
+    const saved = JSON.parse(JSON.stringify(createNewGameState(5))) as GameState;
+    saved.player.map = 'mond' as GameState['player']['map'];
+    const start = startGame(new SaveStore(mem({ [SAVE_KEY]: JSON.stringify(saved) })), NOW);
+    expect(start.notice).toBeNull();
+    expect(start.repair).toMatchObject({ lossy: false, relocated: true });
+  });
+
+  it('kaputt und alter Stand übernommen: Hinweis save-corrupt-legacy, Sofort-Speichern gemeldet', () => {
+    const m = mem({ [SAVE_KEY]: '{kaputt', [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_FIRST_COMMIT) });
+    const start = startGame(new SaveStore(m), NOW);
+    expect(start.notice).toBe('save-corrupt-legacy');
+    expect(start.importSave).toEqual({ kind: 'saved' });
+    expect(start.repair).toBeNull();
+    expect(start.state.progression.level).toBe(3);
+  });
+
+  it('kaputt ohne alten Stand: save-corrupt, kein Sofort-Speichern', () => {
+    const start = startGame(new SaveStore(mem({ [SAVE_KEY]: '{kaputt' })), NOW);
+    expect(start.notice).toBe('save-corrupt');
+    expect(start.importSave).toBeNull();
+  });
+
+  it('leer, alter Stand, Speicher voll: übernommen, das Sofort-Speichern meldet full', () => {
+    const m = mem({ [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_FIRST_COMMIT) });
+    const store = new SaveStore({
+      getItem: m.getItem,
+      setItem: (): void => { throw Object.assign(new Error('voll'), { name: 'QuotaExceededError' }); },
+    });
+    const start = startGame(store, NOW);
+    expect(start.notice).toBe('legacy-imported');
+    expect(start.importSave).toEqual({ kind: 'full' });
+    expect(start.state.progression.level).toBe(3);
   });
 
   it('ok und alter Stand neuer als die letzte Übernahme: legacyNewer, der v2-Stand bleibt', () => {
@@ -48,7 +96,7 @@ describe('startGame', () => {
   it('empty ohne alten Stand: neues Spiel ohne Hinweis', () => {
     const m = mem();
     const start = startGame(new SaveStore(m), NOW);
-    expect(start).toEqual({ state: createNewGameState(NOW), notice: null, persist: true, legacyNewer: false });
+    expect(start).toEqual({ state: createNewGameState(NOW), notice: null, persist: true, legacyNewer: false, repair: null, importSave: null });
   });
 
   it('empty mit LEGACY_FIRST_COMMIT: übernommen, Hinweis legacy-imported, sofort gespeichert', () => {
@@ -62,6 +110,7 @@ describe('startGame', () => {
     expect(start.state.importedLegacyAt).toBe(1711300000000);
     expect(start.state.player.map).toBe('forest');
     expect(m.writesTo(SAVE_KEY)).toBe(1);
+    expect(start.importSave).toEqual({ kind: 'saved' });
     expect(new SaveStore(m).load()).toEqual({ kind: 'ok', state: { ...start.state, savedAt: NOW }, repair: null });
     expect(m.data.get(LEGACY_SAVE_KEY)).toBe(legacyText);
     expect(m.writesTo(LEGACY_SAVE_KEY)).toBe(0);
@@ -70,15 +119,15 @@ describe('startGame', () => {
   it('empty mit unlesbarem alten Stand [1,2]: neues Spiel, Hinweis legacy-failed', () => {
     const m = mem({ [LEGACY_SAVE_KEY]: '[1,2]' });
     const start = startGame(new SaveStore(m), NOW);
-    expect(start).toEqual({ state: createNewGameState(NOW), notice: 'legacy-failed', persist: true, legacyNewer: false });
+    expect(start).toEqual({ state: createNewGameState(NOW), notice: 'legacy-failed', persist: true, legacyNewer: false, repair: null, importSave: null });
     expect(m.data.get(LEGACY_SAVE_KEY)).toBe('[1,2]');
     expect(m.writesTo(LEGACY_SAVE_KEY)).toBe(0);
   });
 
-  it('corrupt: wie empty, der Hinweis save-corrupt hat Vorrang, der Rohtext ist gesichert', () => {
+  it('corrupt: wie empty, ein Hinweis auf den kaputten Stand hat Vorrang, der Rohtext ist gesichert', () => {
     const m = mem({ [SAVE_KEY]: '{kaputt', [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_FIRST_COMMIT) });
     const start = startGame(new SaveStore(m), NOW);
-    expect(start.notice).toBe('save-corrupt');
+    expect(start.notice).toBe('save-corrupt-legacy');
     expect(start.persist).toBe(true);
     expect(start.state.progression.level).toBe(3);
     expect(m.data.get(REJECTED_SAVE_KEY)).toBe('{kaputt');
@@ -86,7 +135,7 @@ describe('startGame', () => {
 
     const alone = mem({ [SAVE_KEY]: '{kaputt' });
     const fresh = startGame(new SaveStore(alone), NOW);
-    expect(fresh).toEqual({ state: createNewGameState(NOW), notice: 'save-corrupt', persist: true, legacyNewer: false });
+    expect(fresh).toEqual({ state: createNewGameState(NOW), notice: 'save-corrupt', persist: true, legacyNewer: false, repair: null, importSave: null });
   });
 
   it('newer: neues Spiel, Hinweis save-newer, es wird nie gespeichert', () => {
@@ -94,7 +143,7 @@ describe('startGame', () => {
     const m = mem({ [SAVE_KEY]: newerText, [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_FIRST_COMMIT) });
     const store = new SaveStore(m);
     const start = startGame(store, NOW);
-    expect(start).toEqual({ state: createNewGameState(NOW), notice: 'save-newer', persist: false, legacyNewer: false });
+    expect(start).toEqual({ state: createNewGameState(NOW), notice: 'save-newer', persist: false, legacyNewer: false, repair: null, importSave: null });
     const service = new SaveService(store, () => start.state, () => NOW + 1);
     expect(service.saveNow('timer').kind).toBe('blocked-newer');
     expect(m.data.get(SAVE_KEY)).toBe(newerText);
@@ -108,7 +157,7 @@ describe('startGame', () => {
       setItem: (): void => { writes++; },
     });
     const start = startGame(store, NOW);
-    expect(start).toEqual({ state: createNewGameState(NOW), notice: 'storage-unavailable', persist: false, legacyNewer: false });
+    expect(start).toEqual({ state: createNewGameState(NOW), notice: 'storage-unavailable', persist: false, legacyNewer: false, repair: null, importSave: null });
     expect(writes).toBe(0);
   });
 });
@@ -174,7 +223,9 @@ function variantsOf(template: unknown, seed: number): string[] {
   return out;
 }
 
-const TEMPLATES = { LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_PARTIAL, LEGACY_LONG_INVENTORY };
+const TEMPLATES = {
+  LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_PARTIAL, LEGACY_LONG_INVENTORY, LEGACY_NGPLUS_REAL,
+};
 
 describe('startGame mit jeder Form eines alten Stands', () => {
   it('die Fassungen sind reproduzierbar und wirklich verschieden', () => {

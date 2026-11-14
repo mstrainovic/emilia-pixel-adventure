@@ -16,8 +16,10 @@ const HOTBAR_MAX = 7;
 
 /** Was beim Reparieren geändert wurde; `lossy` heißt: es ist etwas Echtes verloren gegangen. */
 export interface RepairReport {
+  /** Verlorene Gegenstände: unbekannt, kein Platz mehr, Rest über `stackSize`, ungültige Stückzahl (`count: 0`). */
   droppedItems: Array<{ itemId: string; count: number }>;
   droppedQuests: string[];
+  resetQuests: string[];       // aktive Aufgaben mit ungültigem Stand, auf 0 gesetzt (kein Verlust)
   relocated: boolean;          // Karte oder Position ungültig → Startpunkt
   resizedInventory: boolean;   // Platzzahl war nicht 48
   lossy: boolean;              // droppedItems oder droppedQuests nicht leer
@@ -39,25 +41,27 @@ function repairPlayer(raw: unknown, level: number): { player: GameState['player'
 }
 
 function repairQuests(prog: unknown): {
-  quests: Pick<GameState['progression'], 'completedQuests' | 'activeQuests'>; dropped: string[];
+  quests: Pick<GameState['progression'], 'completedQuests' | 'activeQuests'>; dropped: string[]; reset: string[];
 } {
   const rawDone = stringList(field(prog, 'completedQuests'));
   const done = rawDone.filter((id) => Object.hasOwn(QUESTS, id));
   const dropped = rawDone.filter((id) => !Object.hasOwn(QUESTS, id));
+  const reset: string[] = [];
   const activeQuests: GameState['progression']['activeQuests'] = {};
   const active = field(prog, 'activeQuests');
   for (const id of keysOf(active)) {
     if (!Object.hasOwn(QUESTS, id)) { dropped.push(id); continue; }
+    if (done.includes(id)) continue;   // schon erledigt: der aktive Eintrag ist überflüssig, nichts geht verloren
     const progress = finite(field(field(active, id), 'progress'));
-    if (Object.hasOwn(QUESTS, id) && !done.includes(id) && progress !== undefined && progress >= 0) {
-      activeQuests[id] = { progress: Math.floor(progress) };
-    }
+    // ungültiger Stand: die Aufgabe bleibt aktiv und beginnt von vorn (wie bei der Übernahme)
+    if (progress === undefined || progress < 0) reset.push(id);
+    activeQuests[id] = { progress: progress === undefined || progress < 0 ? 0 : Math.floor(progress) };
   }
-  return { quests: { completedQuests: done, activeQuests }, dropped };
+  return { quests: { completedQuests: done, activeQuests }, dropped, reset };
 }
 
 function newMigrationReport(): MigrationReport {
-  return { droppedItems: [], replacedItems: {}, reconstructedQuests: [], warnings: [] };
+  return { droppedItems: [], replacedItems: {}, reconstructedQuests: [], warnings: [], cutItems: [] };
 }
 
 /** Einträge mit unbekannter Kennung samt Anzahl, je Platz einer (nur Plätze mit gültiger Anzahl). */
@@ -72,20 +76,23 @@ function unknownItems(entries: unknown[], unknownIds: string[]): RepairReport['d
   return out;
 }
 
+/** Liest bis zu 48 Plätze nach `target` und meldet, was dabei verloren ging (unbekannt, gekürzt, ungültig). */
+function readSlots(entries: unknown[], target: GameState): RepairReport['droppedItems'] {
+  const report = newMigrationReport();
+  readInventory(entries, target, report);
+  return [...unknownItems(entries, report.droppedItems), ...report.cutItems];
+}
+
 /**
  * Liest 48 Plätze aus beliebig vielen: Plätze unter 48 bleiben, wo sie sind; überzählige Gegenstände
- * wandern in den ersten freien Platz, was nicht mehr passt, wird gemeldet.
+ * (in Blöcken zu 48, so viele es gibt) wandern in den ersten freien Platz, was nicht mehr passt, wird gemeldet.
  */
 function repairInventory(rawSlots: unknown, target: GameState): Pick<RepairReport, 'droppedItems' | 'resizedInventory'> {
   const entries = Array.isArray(rawSlots) ? (rawSlots as unknown[]) : [];
-  const head = entries.slice(0, INVENTORY_SLOTS); const extra = entries.slice(INVENTORY_SLOTS);
-  const headReport = newMigrationReport();
-  readInventory(head, target, headReport);
-  const droppedItems = unknownItems(head, headReport.droppedItems);
-  if (extra.length > 0) {
-    const scratch = createNewGameState(0); const extraReport = newMigrationReport();
-    readInventory(extra, scratch, extraReport);
-    droppedItems.push(...unknownItems(extra, extraReport.droppedItems));
+  const droppedItems = readSlots(entries.slice(0, INVENTORY_SLOTS), target);
+  for (let from = INVENTORY_SLOTS; from < entries.length; from += INVENTORY_SLOTS) {
+    const scratch = createNewGameState(0);
+    droppedItems.push(...readSlots(entries.slice(from, from + INVENTORY_SLOTS), scratch));
     for (const slot of scratch.inventory.slots) {
       if (slot.itemId === null) continue;
       const free = target.inventory.slots.findIndex((s) => s.itemId === null);
@@ -137,7 +144,7 @@ export function normalizeState(raw: unknown): { state: GameState; report: Repair
   readExplorerBook(raw['explorerBook'], defaults);
   readWorld(raw, defaults);
   const { player: repairedPlayer, relocated } = repairPlayer(player, level);
-  const { quests, dropped: droppedQuests } = repairQuests(prog);
+  const { quests, dropped: droppedQuests, reset: resetQuests } = repairQuests(prog);
   const hotbar = finite(field(inventory, 'selectedHotbar'));
   const difficulty = field(raw['settings'], 'difficulty');
 
@@ -174,7 +181,7 @@ export function normalizeState(raw: unknown): { state: GameState; report: Repair
     },
   };
   const report: RepairReport = {
-    droppedItems: inv.droppedItems, droppedQuests, relocated, resizedInventory: inv.resizedInventory,
+    droppedItems: inv.droppedItems, droppedQuests, resetQuests, relocated, resizedInventory: inv.resizedInventory,
     lossy: inv.droppedItems.length > 0 || droppedQuests.length > 0,
   };
   return { state: { ...(raw as Obj), ...repaired } as GameState, report };

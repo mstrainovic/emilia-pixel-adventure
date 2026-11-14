@@ -8,7 +8,7 @@ import {
   LEGACY_SAVE_KEY, LEGACY_MUTED_KEY, migrateLegacySave, legacyTimestamp, isLegacyReadable,
   type LegacyImportResult,
 } from './legacy';
-import { isObj } from './legacyRead';
+import { isObj, finite } from './legacyRead';
 
 /** Eigener Schlüssel des neuen Spiels (nicht zu verwechseln mit den alten Schlüsseln). */
 export const SAVE_KEY = 'emilia2_save';
@@ -28,6 +28,7 @@ export type LoadResult =
 
 export type SaveResult =
   | { kind: 'saved' } | { kind: 'blocked-newer'; storedVersion: number }
+  | { kind: 'blocked-other-tab' }   // der Eintrag wurde seit unserem letzten Lesen/Schreiben von jemand anderem geschrieben
   | { kind: 'full' } | { kind: 'unavailable' };
 
 export type { LegacyImportResult };
@@ -46,7 +47,7 @@ function inspect(parsed: unknown): Inspection {
     const normalized = normalizeState(migrated.raw);
     if (normalized === null) return { kind: 'corrupt' };
     const r = normalized.report;
-    const untouched = !r.lossy && !r.relocated && !r.resizedInventory;
+    const untouched = !r.lossy && !r.relocated && !r.resizedInventory && r.resetQuests.length === 0;
     return { kind: 'ok', state: normalized.state, repair: untouched ? null : r };
   } catch {
     return { kind: 'corrupt' };
@@ -97,7 +98,21 @@ function failure(error: unknown): SaveResult {
 
 type RawRead = { ok: true; text: string | null } | { ok: false };
 
+/** Der `savedAt` eines gespeicherten Rohtexts, wenn er lesbar und endlich ist; sonst `null`. */
+function savedAtOf(text: string | null): number | null {
+  if (text === null) return null;
+  const parsed = parseJson(text);
+  return isObj(parsed) ? finite(parsed['savedAt']) ?? null : null;
+}
+
 export class SaveStore {
+  /**
+   * Der `savedAt` des Eintrags, wie dieser Speicher ihn zuletzt selbst gelesen oder geschrieben hat
+   * (`at: null`: kein Eintrag oder keiner mit lesbarem Stempel). `null`: noch nie gelesen oder geschrieben.
+   * So erkennt `save`, dass ein anderer Tab inzwischen gespeichert hat.
+   */
+  private seen: { at: number | null } | null = null;
+
   constructor(private readonly storage: Pick<Storage, 'getItem' | 'setItem'>) {}
 
   private readRaw(key: string): RawRead {
@@ -131,6 +146,7 @@ export class SaveStore {
   load(): LoadResult {
     const read = this.readRaw(SAVE_KEY);
     if (!read.ok) return { kind: 'unavailable' };
+    this.seen = { at: savedAtOf(read.text) };
     if (read.text === null) return { kind: 'empty' };
     const found = inspect(parseJson(read.text));
     this.backupIfLost(read.text, found);
@@ -145,6 +161,7 @@ export class SaveStore {
   private write(state: GameState, now: number): SaveResult {
     try {
       this.storage.setItem(SAVE_KEY, JSON.stringify({ ...state, savedAt: now }));
+      this.seen = { at: now };
       return { kind: 'saved' };
     } catch (error) {
       return failure(error);
@@ -152,7 +169,9 @@ export class SaveStore {
   }
 
   /**
-   * Schreibt nie, wenn das Lesen scheitert oder dort ein Stand einer neueren Version liegt.
+   * Schreibt nie, wenn das Lesen scheitert, dort ein Stand einer neueren Version liegt (geht vor) oder ein anderer
+   * Tab seit unserem letzten Lesen oder Schreiben gespeichert hat (anderer endlicher `savedAt`). Ein gelöschter Eintrag
+   * oder einer ohne lesbaren Stempel wird überschrieben; ein Speicher, der noch nie gelesen oder geschrieben hat, schreibt.
    * Ein nicht ladbarer (oder nur mit Verlust reparierbarer) Eintrag wird vor dem Überschreiben
    * einmal unter REJECTED_SAVE_KEY gesichert.
    */
@@ -162,6 +181,8 @@ export class SaveStore {
     if (existing.text !== null) {
       const found = inspect(parseJson(existing.text));
       if (found.kind === 'newer') return { kind: 'blocked-newer', storedVersion: found.storedVersion };
+      const storedAt = savedAtOf(existing.text);
+      if (storedAt !== null && this.seen !== null && storedAt !== this.seen.at) return { kind: 'blocked-other-tab' };
       this.backupIfLost(existing.text, found);
     }
     return this.write(state, now);
@@ -169,7 +190,8 @@ export class SaveStore {
 
   /**
    * Ersetzt den gespeicherten Stand und sichert vorher den bisherigen Rohtext unter BACKUP_SAVE_KEY.
-   * Scheitert die Sicherung, bleibt alles, wie es war.
+   * Scheitert die Sicherung, bleibt alles, wie es war. Ein fremder Stempel sperrt hier nicht (ausdrücklicher Wunsch,
+   * der ersetzte Rohtext ist gesichert); der eigene wird gemerkt.
    */
   replaceWith(state: GameState, now: number): SaveResult {
     const existing = this.readRaw(SAVE_KEY);

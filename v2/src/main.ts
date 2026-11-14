@@ -27,13 +27,20 @@ const scenes: Phaser.Types.Scenes.SceneType[] = probe
 
 // Spielstand vor dem ersten Szenenstart: laden, beim ersten Start den alten Stand übernehmen (siehe startGame)
 const storage = openBrowserStorage(window);
-const start = startGame(new SaveStore(storage), Date.now());
-// Darf diese Sitzung nicht speichern (neuerer Stand, Speicher nicht lesbar), bekommt sie einen Speicher ohne
-// Schreibzugriff: so schreibt auch kein späterer Speicherweg (Plan 1b) über einen Stand, den das Spiel nicht kennt.
-const store = new SaveStore(start.persist ? storage : {
+// Genau ein SaveStore für Start und Sitzung: er merkt sich den Stempel des zuletzt gelesenen oder geschriebenen
+// Eintrags und erkennt so einen zweiten Tab. Darf diese Sitzung nicht speichern (neuerer Stand, Speicher nicht
+// lesbar), wirft das Schreiben: so schreibt auch kein späterer Speicherweg (Plan 1b) über einen Stand, den das
+// Spiel nicht kennt.
+let writable = true;
+const store = new SaveStore({
   getItem: (key: string): string | null => storage.getItem(key),
-  setItem: (): void => { throw new Error('In dieser Sitzung wird nicht gespeichert.'); },
+  setItem: (key: string, value: string): void => {
+    if (!writable) throw new Error('In dieser Sitzung wird nicht gespeichert.');
+    storage.setItem(key, value);
+  },
 });
+const start = startGame(store, Date.now());
+writable = start.persist;
 const bus = new EventBus<GameEvents>();
 
 const game = new Phaser.Game({
@@ -65,6 +72,7 @@ const save = new SaveService(store, () => services.state, () => Date.now(), (rea
 const services: Services = {
   pixelGrid, input, bus, state: start.state, save, store,
   persist: start.persist, startNotice: start.notice, legacyNewer: start.legacyNewer,
+  startRepair: start.repair, importSave: start.importSave,
 };
 game.registry.set(SERVICES_KEY, services);
 pixelGrid.start();
@@ -83,6 +91,8 @@ if (testHooksEnabled) {
   bus.on('save:result', (payload) => { lastSaveResult = payload; });
   installTestHooks({
     startNotice: start.notice,
+    startRepair: start.repair,
+    importSave: start.importSave,
     saveNow: () => save.saveNow('timer'),
     state: () => structuredClone(services.state),
     lastSaveResult: () => lastSaveResult,

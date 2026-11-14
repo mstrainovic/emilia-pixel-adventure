@@ -6,7 +6,7 @@ import { migrateLegacySave as migrateRaw, legacyTimestamp, LEGACY_SAVE_KEY, LEGA
 import { QUEST_ORDER } from '../../src/data/quests';
 import { isMapId } from '../../src/data/maps';
 import {
-  LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_PARTIAL, LEGACY_LONG_INVENTORY,
+  LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_NGPLUS_REAL, LEGACY_PARTIAL, LEGACY_LONG_INVENTORY,
 } from './legacySaves';
 
 const REAL = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/legacy/emilia-real.json');
@@ -51,7 +51,7 @@ it('übernimmt die Form des ersten Commits', () => {
   expect(state.progression.stats.npcsSpoken).toEqual(['mama_tanja']);
   expect(state.pet).toBeNull(); expect(state.garden).toEqual([]);
   expect(state.importedLegacyAt).toBe(1711300000000); expect(state.savedAt).toBe(5000);
-  expect(report).toEqual({ droppedItems: [], replacedItems: {}, reconstructedQuests: [], warnings: [] });
+  expect(report).toEqual({ droppedItems: [], replacedItems: {}, reconstructedQuests: [], warnings: [], cutItems: [] });
 });
 
 it('bereinigt einen vollen Stand der Version 3', () => {
@@ -65,6 +65,7 @@ it('bereinigt einen vollen Stand der Version 3', () => {
   expect(state.inventory.slots[4]).toEqual({ itemId: 'wood', count: 99 });
   expect(report.replacedItems).toEqual({ fish_generic: 'goldfish' });
   expect(report.droppedItems).toEqual(['magic_bean']);
+  expect(report.cutItems).toEqual([{ itemId: 'wood', count: 401 }]);
   expect(state.inventory.coins).toBe(37);
   expect(state.progression.completedQuests).toEqual(['first_steps']);
   expect(state.visitedMaps.sort()).toEqual(['beach', 'hub', 'lake']);
@@ -88,6 +89,25 @@ it('baut erledigte Aufgaben nach New Game Plus wieder auf', () => {
   const upToBoss = QUEST_ORDER.slice(0, QUEST_ORDER.indexOf('shadow_slayer') + 1);
   expect(state.progression.completedQuests).toEqual([...upToBoss, 'star_collector']);
   expect(report.reconstructedQuests).toHaveLength(23);
+});
+
+it('übernimmt die echte Form nach New Game Plus (completedQuests leer, Belege in activeQuests)', () => {
+  const { state } = run(LEGACY_NGPLUS_REAL)!;
+  const upToBoss = QUEST_ORDER.slice(0, QUEST_ORDER.indexOf('shadow_slayer') + 1);
+  expect(state.progression.completedQuests).toEqual(upToBoss);
+  // 14 Erfolge reichen für star_collector noch nicht: die Aufgabe bleibt aktiv mit ihrem Stand
+  expect(state.progression.activeQuests).toEqual({ star_collector: { progress: 14 } });
+  expect(state.bossesDefeated).toEqual(['coconut_king', 'leviathan', 'shadow_knight']);
+  expect(state.player).toMatchObject({ map: 'cloud_castle', x: 25.5, y: 11.75 });
+  expect(state.progression.level).toBe(24);
+  expect(state.inventory.slots[1]).toEqual({ itemId: 'berry', count: 12 });
+});
+
+it('meldet ungültige Stückzahlen bekannter Gegenstände, ohne den übernommenen Stand zu ändern', () => {
+  const { state, report } = run({ inventory: [{ itemId: 'wood', count: -3 }, { itemId: 'stone', count: 2 }] })!;
+  expect(state.inventory.slots[0]).toEqual(EMPTY_SLOT);
+  expect(state.inventory.slots[1]).toEqual({ itemId: 'stone', count: 2 });
+  expect(report.cutItems).toEqual([{ itemId: 'wood', count: 0 }]);
 });
 
 it('füllt einen lückenhaften Stand mit sicheren Vorgaben', () => {

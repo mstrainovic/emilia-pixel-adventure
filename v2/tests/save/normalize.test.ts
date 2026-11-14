@@ -3,6 +3,7 @@ import { normalizeState } from '../../src/save/normalize';
 import { createNewGameState, type GameState } from '../../src/core/state';
 import { HUB_START } from '../../src/data/maps';
 import { heartsForLevel, HP_PER_HEART, xpToNext } from '../../src/core/levels';
+import { getItem } from '../../src/data/items';
 
 type Loose = Record<string, any>;
 
@@ -17,7 +18,74 @@ function run(raw: unknown) {
   return result!;
 }
 
-const CLEAN = { droppedItems: [], droppedQuests: [], relocated: false, resizedInventory: false, lossy: false };
+const CLEAN = {
+  droppedItems: [], droppedQuests: [], resetQuests: [], relocated: false, resizedInventory: false, lossy: false,
+};
+const BERRY_STACK = getItem('berry')!.stackSize;
+
+describe('normalizeState: keine stillen Verluste', () => {
+  it('gültiger Stand: Bericht leer, Stand unverändert (gleiche Werte)', () => {
+    const raw = base();
+    raw.inventory.slots[0] = { itemId: 'berry', count: BERRY_STACK };
+    raw.progression.activeQuests = { wood_collector: { progress: 2 } };
+    const { state, report } = run(raw);
+    expect(state).toEqual(raw);
+    expect(report).toEqual(CLEAN);
+  });
+
+  it.each([['x'], [-3], [Number.NaN], [undefined]])(
+    'aktive Aufgabe mit ungültigem Stand %s: bleibt mit 0, steht in resetQuests, kein Verlust',
+    (progress) => {
+      const raw = base();
+      raw.progression.activeQuests = { wood_collector: progress === undefined ? {} : { progress } };
+      const { state, report } = run(raw);
+      expect(state.progression.activeQuests).toEqual({ wood_collector: { progress: 0 } });
+      expect(report.resetQuests).toEqual(['wood_collector']);
+      expect(report.droppedQuests).toEqual([]);
+      expect(report.lossy).toBe(false);
+    },
+  );
+
+  it('zu großer Stapel: auf stackSize gekürzt, der Rest steht im Bericht', () => {
+    const raw = base(); raw.inventory.slots[4] = { itemId: 'berry', count: BERRY_STACK + 7 };
+    const { state, report } = run(raw);
+    expect(state.inventory.slots[4]).toEqual({ itemId: 'berry', count: BERRY_STACK });
+    expect(report.droppedItems).toEqual([{ itemId: 'berry', count: 7 }]);
+    expect(report.lossy).toBe(true);
+  });
+
+  it.each([[0], [-1], ['viel']])('ungültige Stückzahl %s: Platz leer, Bericht mit 0 Stück', (count) => {
+    const raw = base(); raw.inventory.slots[2] = { itemId: 'berry', count };
+    const { state, report } = run(raw);
+    expect(state.inventory.slots[2]).toEqual({ itemId: null, count: 0 });
+    expect(report.droppedItems).toEqual([{ itemId: 'berry', count: 0 }]);
+    expect(report.lossy).toBe(true);
+  });
+
+  it('100 Plätze, die 48 vorderen voll, Platz 97 hält Holz: gemeldet', () => {
+    const raw = base();
+    raw.inventory.slots = [
+      ...Array.from({ length: 48 }, () => ({ itemId: 'stone', count: 1 })),
+      ...Array.from({ length: 52 }, () => ({ itemId: null, count: 0 })),
+    ];
+    raw.inventory.slots[97] = { itemId: 'wood', count: 3 };
+    const { state, report } = run(raw);
+    expect(state.inventory.slots).toHaveLength(48);
+    expect(state.inventory.slots.every((s) => s.itemId === 'stone')).toBe(true);
+    expect(report.droppedItems).toEqual([{ itemId: 'wood', count: 3 }]);
+    expect(report.lossy).toBe(true);
+  });
+
+  it('100 Plätze mit Lücke vorn: Platz 97 rückt in den freien Platz', () => {
+    const raw = base();
+    raw.inventory.slots = Array.from({ length: 100 }, () => ({ itemId: null, count: 0 }));
+    raw.inventory.slots[97] = { itemId: 'wood', count: 3 };
+    const { state, report } = run(raw);
+    expect(state.inventory.slots[0]).toEqual({ itemId: 'wood', count: 3 });
+    expect(report.droppedItems).toEqual([]);
+    expect(report.lossy).toBe(false);
+  });
+});
 
 describe('normalizeState: Bericht', () => {
   it('gültiger Stand: Zustand unverändert, Bericht leer', () => {
