@@ -72,7 +72,7 @@ function stepAxis(grid: SolidGrid, b: Box, axis: Axis, step: number): { value: n
 }
 
 /**
- * Quer zur Bewegung: um wie viel lässt sich die Figur zur Seite
+ * Quer zur Bewegung: um wie viel (höchstens |step|, also im Tempo der Figur) lässt sich die Figur zur Seite
  * schieben, damit sie an der Ecke vorbeikommt? Gesucht wird die Seite mit dem kleinsten
  * Überstand bis `CORNER_NUDGE`. 0 heißt: kein Rutschen möglich.
  */
@@ -83,7 +83,7 @@ function cornerNudge(grid: SolidGrid, b: Box, axis: Axis, step: number): number 
       const [cx, cy] = along(cross, dir * s);
       const [ax, ay] = along(axis, step);
       if (hitsAt(grid, b, cx + ax, cy + ay)) continue;
-      const m = dir * s;
+      const m = dir * Math.min(s, Math.abs(step));
       const [mx, my] = along(cross, m);
       return hitsAt(grid, b, mx, my) ? 0 : m;
     }

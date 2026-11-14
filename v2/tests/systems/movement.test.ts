@@ -170,12 +170,24 @@ describe('Eckenrutschen im Spiel (stepMover, 60 Bilder/s)', () => {
     return states;
   }
 
-  it('nach rechts, 4 Bildpunkte Überlappung (frei oben): kein Stocken, in unter 0,5 s vorbei', () => {
+  /** Größte Querbewegung je Bild; beim Gleiten höchstens so viel, wie die Figur in einem Bild läuft. */
+  function maxSideways(startPos: number, states: Mover[], axis: 'x' | 'y'): number {
+    let prev = startPos;
+    let worst = 0;
+    for (const m of states) {
+      worst = Math.max(worst, Math.abs(m[axis] - prev));
+      prev = m[axis];
+    }
+    return worst;
+  }
+
+  it('nach rechts, 4 Bildpunkte Überlappung (frei oben): gleitet im Lauftempo, in unter 0,7 s vorbei', () => {
     // Kastenunterkante 84 überlappt die Kachel (Oberkante 80) um 4.
-    const states = walk({ x: 122, y: 84, facing: 'right' }, go(1, 0), 30, (m) => m.x - 5 >= 144);
+    const states = walk({ x: 122, y: 84, facing: 'right' }, go(1, 0), 42, (m) => m.x - 5 >= 144);
     const last = states[states.length - 1]!;
+    expect(maxSideways(84, states, 'y')).toBeLessThanOrEqual(WALK_SPEED / 60 + 0.01);
     expect(last.x - 5).toBeGreaterThanOrEqual(144);
-    expect(states.length).toBeLessThanOrEqual(30);
+    expect(states.length).toBeLessThanOrEqual(42);
     for (const m of states) {
       expect(m.moving).toBe(true);
       expect(m.vx).toBeGreaterThan(0);
@@ -183,10 +195,11 @@ describe('Eckenrutschen im Spiel (stepMover, 60 Bilder/s)', () => {
     expect(last.y).toBeLessThanOrEqual(80); // über die Kachel gerutscht
   });
 
-  it('nach unten, 4 Bildpunkte Überlappung (frei links): kein Stocken, in unter 0,5 s vorbei', () => {
+  it('nach unten, 4 Bildpunkte Überlappung (frei links): gleitet im Lauftempo, in unter 0,7 s vorbei', () => {
     // Kasten rechts 132 überlappt die Kachel (linke Kante 128) um 4.
-    const states = walk({ x: 127, y: 76, facing: 'down' }, go(0, 1), 30, (m) => m.y - 6 >= 96);
+    const states = walk({ x: 127, y: 76, facing: 'down' }, go(0, 1), 42, (m) => m.y - 6 >= 96);
     const last = states[states.length - 1]!;
+    expect(maxSideways(127, states, 'x')).toBeLessThanOrEqual(WALK_SPEED / 60 + 0.01);
     expect(last.y - 6).toBeGreaterThanOrEqual(96);
     for (const m of states) {
       expect(m.moving).toBe(true);
@@ -195,10 +208,11 @@ describe('Eckenrutschen im Spiel (stepMover, 60 Bilder/s)', () => {
     expect(last.x + 5).toBeLessThanOrEqual(128);
   });
 
-  it('nach links, 4 Bildpunkte Überlappung (frei unten): kein Stocken, in unter 0,5 s vorbei', () => {
+  it('nach links, 4 Bildpunkte Überlappung (frei unten): gleitet im Lauftempo, in unter 0,7 s vorbei', () => {
     // Kastenoberkante 92 überlappt die Kachel (Unterkante 96) um 4.
-    const states = walk({ x: 150, y: 98, facing: 'left' }, go(-1, 0), 30, (m) => m.x + 5 <= 128);
+    const states = walk({ x: 150, y: 98, facing: 'left' }, go(-1, 0), 42, (m) => m.x + 5 <= 128);
     const last = states[states.length - 1]!;
+    expect(maxSideways(98, states, 'y')).toBeLessThanOrEqual(WALK_SPEED / 60 + 0.01);
     expect(last.x + 5).toBeLessThanOrEqual(128);
     for (const m of states) {
       expect(m.moving).toBe(true);
@@ -207,10 +221,11 @@ describe('Eckenrutschen im Spiel (stepMover, 60 Bilder/s)', () => {
     expect(last.y - 6).toBeGreaterThanOrEqual(96);
   });
 
-  it('nach oben, 4 Bildpunkte Überlappung (frei rechts): kein Stocken, in unter 0,5 s vorbei', () => {
+  it('nach oben, 4 Bildpunkte Überlappung (frei rechts): gleitet im Lauftempo, in unter 0,7 s vorbei', () => {
     // Kasten links 140 überlappt die Kachel (rechte Kante 144) um 4.
-    const states = walk({ x: 145, y: 106, facing: 'up' }, go(0, -1), 30, (m) => m.y <= 80);
+    const states = walk({ x: 145, y: 106, facing: 'up' }, go(0, -1), 42, (m) => m.y <= 80);
     const last = states[states.length - 1]!;
+    expect(maxSideways(145, states, 'x')).toBeLessThanOrEqual(WALK_SPEED / 60 + 0.01);
     expect(last.y).toBeLessThanOrEqual(80);
     for (const m of states) {
       expect(m.moving).toBe(true);
