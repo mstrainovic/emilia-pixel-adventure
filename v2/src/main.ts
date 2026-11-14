@@ -2,10 +2,14 @@ import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { WorldScene } from './scenes/WorldScene';
 import { PixelGrid } from './core/pixelGrid';
-import { SERVICES_KEY, type Services } from './core/services';
+import { EventBus, type GameEvents } from './core/events';
+import { SERVICES_KEY, startGame, type Services } from './core/services';
 import { installTestHooks } from './core/testHooks';
 import { InputHub } from './input/hub';
 import { KeyboardSource } from './input/keyboard';
+import { openBrowserStorage } from './save/browser';
+import { SaveService } from './save/service';
+import { SaveStore } from './save/store';
 
 const host = document.getElementById('game');
 if (!host) throw new Error('Spielbereich #game fehlt.');
@@ -20,6 +24,17 @@ const probe = testHooksEnabled && new URLSearchParams(window.location.search).ge
 const scenes: Phaser.Types.Scenes.SceneType[] = probe
   ? [(await import('./scenes/PixelProbeScene')).PixelProbeScene]
   : [BootScene, WorldScene];
+
+// Spielstand vor dem ersten Szenenstart: laden, beim ersten Start den alten Stand übernehmen (siehe startGame)
+const storage = openBrowserStorage(window);
+const start = startGame(new SaveStore(storage), Date.now());
+// Darf diese Sitzung nicht speichern (neuerer Stand, Speicher nicht lesbar), bekommt sie einen Speicher ohne
+// Schreibzugriff: so schreibt auch kein späterer Speicherweg (Plan 1b) über einen Stand, den das Spiel nicht kennt.
+const store = new SaveStore(start.persist ? storage : {
+  getItem: (key: string): string | null => storage.getItem(key),
+  setItem: (): void => { throw new Error('In dieser Sitzung wird nicht gespeichert.'); },
+});
+const bus = new EventBus<GameEvents>();
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -44,9 +59,17 @@ const input = new InputHub();
 const keyboard = new KeyboardSource(window);
 keyboard.attach();
 input.add(keyboard);
-const services: Services = { pixelGrid, input };
+const save = new SaveService(store, () => services.state, () => Date.now(), (reason, result) => {
+  bus.emit('save:result', { reason, result });
+});
+const services: Services = {
+  pixelGrid, input, bus, state: start.state, save, store,
+  persist: start.persist, startNotice: start.notice, legacyNewer: start.legacyNewer,
+};
 game.registry.set(SERVICES_KEY, services);
 pixelGrid.start();
+// alle 60 s, beim Verstecken und beim Verlassen der Seite (wie Etappe 0)
+if (start.persist) save.start(document, window);
 
 if (testHooksEnabled) {
   const publish = (): void => installTestHooks({ pixelGrid: pixelGrid.snapshot });
@@ -55,5 +78,13 @@ if (testHooksEnabled) {
   installTestHooks({
     cssToView: (cssX: number, cssY: number) => pixelGrid.cssToView(cssX, cssY),
     toCanvas: (cssX: number, cssY: number) => ({ x: game.scale.transformX(cssX), y: game.scale.transformY(cssY) }),
+  });
+  let lastSaveResult: GameEvents['save:result'] | null = null;
+  bus.on('save:result', (payload) => { lastSaveResult = payload; });
+  installTestHooks({
+    startNotice: start.notice,
+    saveNow: () => save.saveNow('timer'),
+    state: () => structuredClone(services.state),
+    lastSaveResult: () => lastSaveResult,
   });
 }

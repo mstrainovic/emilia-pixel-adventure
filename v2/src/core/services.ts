@@ -1,11 +1,69 @@
 import type Phaser from 'phaser';
 import type { InputHub } from '../input/hub';
+import type { SaveService } from '../save/service';
+import type { SaveStore } from '../save/store';
+import { createNewGameState, type GameState } from './state';
+import type { EventBus, GameEvents } from './events';
 import type { PixelGrid } from './pixelGrid';
+
+/** Was beim Start zu erklären ist (die Anzeige dazu kommt in Plan 1b). */
+export type StartNotice = 'save-corrupt' | 'save-newer' | 'storage-unavailable' | 'legacy-imported' | 'legacy-failed';
+
+export interface GameStart {
+  state: GameState;
+  notice: StartNotice | null;
+  /** Falsch: in dieser Sitzung wird nie gespeichert (neuerer Stand oder Speicher nicht lesbar). */
+  persist: boolean;
+  /** Der alte Stand ist neuer als die letzte Übernahme oder Ablehnung (die Frage dazu stellt Plan 1b). */
+  legacyNewer: boolean;
+}
+
+/** Neues Spiel; liegt ein alter Stand vor, wird er ohne Nachfrage übernommen (eine Kopie, der alte Schlüssel bleibt). */
+function freshStart(store: SaveStore, now: number): { state: GameState; notice: StartNotice | null } {
+  // importLegacy statt legacyOffer: so wird auch ein vorhandener, aber unlesbarer alter Stand erkannt und gemeldet
+  const legacy = store.importLegacy(now);
+  if (legacy.kind === 'none') return { state: createNewGameState(now), notice: null };
+  if (legacy.kind !== 'ok') return { state: createNewGameState(now), notice: 'legacy-failed' };
+  store.save(legacy.state, now);
+  return { state: legacy.state, notice: 'legacy-imported' };
+}
+
+/**
+ * Startablauf: v2-Stand laden; beim ersten Start (leer oder kaputt) den alten Stand übernehmen und sofort speichern.
+ * Bei einem neueren Stand oder unlesbarem Speicher beginnt ein neues Spiel, das nie gespeichert wird. Wirft nie
+ * (SaveStore und die Übernahme werfen nicht).
+ */
+export function startGame(store: SaveStore, now: number): GameStart {
+  const loaded = store.load();
+  switch (loaded.kind) {
+    case 'ok':
+      return { state: loaded.state, notice: null, persist: true, legacyNewer: store.legacyOffer(loaded.state) === 'newer' };
+    case 'newer':
+      return { state: createNewGameState(now), notice: 'save-newer', persist: false, legacyNewer: false };
+    case 'unavailable':
+      return { state: createNewGameState(now), notice: 'storage-unavailable', persist: false, legacyNewer: false };
+    case 'empty':
+    case 'corrupt': {
+      const fresh = freshStart(store, now);
+      // der Rohtext des kaputten Stands ist gesichert (REJECTED_SAVE_KEY); dieser Hinweis hat Vorrang
+      const notice = loaded.kind === 'corrupt' ? 'save-corrupt' : fresh.notice;
+      return { state: fresh.state, notice, persist: true, legacyNewer: false };
+    }
+  }
+}
 
 /** Spielweite Dienste, die `main.ts` vor dem ersten Szenenstart in `game.registry` legt. */
 export interface Services {
   pixelGrid: PixelGrid;
   input: InputHub;
+  bus: EventBus<GameEvents>;
+  /** Der laufende Spielstand; die Welt-Szene schreibt den Ort der Spielerin hinein. */
+  state: GameState;
+  save: SaveService;
+  store: SaveStore;
+  persist: boolean;
+  startNotice: StartNotice | null;
+  legacyNewer: boolean;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

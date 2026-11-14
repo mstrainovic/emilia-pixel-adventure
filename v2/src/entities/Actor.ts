@@ -11,6 +11,14 @@ import { DEPTH, depthForFoot } from '../systems/depth';
  * auf einem ganzen Bildpunkt, damit sitzt das Bild bei ganzzahligem Fußpunkt pixelgenau.
  */
 
+/** Gezeichneter Stand einer Figur: Bildschlüssel, Bildnummer im Blatt, Fußpunkt in ganzen Bildpunkten. */
+export interface ActorPose {
+  texture: string;
+  frame: number;
+  x: number;
+  y: number;
+}
+
 /**
  * Eine stehende Figur: Bild unten mittig am Fußpunkt, darunter der Schatten auf DEPTH.flat. Tiefe und Bildunterkante
  * sind beide der (gerundete) Fußpunkt, siehe depth.ts. Gerechnet wird außerhalb mit Gleitkomma; hier wird beim
@@ -38,6 +46,10 @@ export class Actor {
 
   get depth(): number {
     return this.sprite.depth;
+  }
+
+  get pose(): ActorPose {
+    return { texture: this.sprite.texture.key, frame: Number(this.sprite.frame.name), x: this.sprite.x, y: this.sprite.y };
   }
 
   destroy(): void {

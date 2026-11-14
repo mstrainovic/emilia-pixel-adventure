@@ -1,7 +1,17 @@
+import type { SaveReason, SaveResult } from '../save/store';
+
+/** Ereignisse des Spiels (Plan 1b ergänzt weitere). */
+export interface GameEvents {
+  'save:result': { reason: SaveReason; result: SaveResult };
+}
+
 type Handler<P> = (payload: P) => void;
 
-/** Typisierter Ereignisverteiler; Empfänger laufen in Anmeldereihenfolge. */
-export class EventBus<E extends Record<string, unknown>> {
+/**
+ * Typisierter Ereignisverteiler; Empfänger laufen in Anmeldereihenfolge. `object` statt `Record<string, unknown>`,
+ * damit auch Schnittstellen wie GameEvents passen (sie haben keine Index-Signatur).
+ */
+export class EventBus<E extends object> {
   private readonly handlers = new Map<keyof E, Array<Handler<never>>>();
 
   on<K extends keyof E>(type: K, handler: (payload: E[K]) => void): () => void {

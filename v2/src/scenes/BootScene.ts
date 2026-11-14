@@ -5,9 +5,15 @@ import {
   figureKey, mapKey, tilesetKey,
 } from '../maps/registry';
 import { FIGURE_FRAME } from '../data/sprites';
+import { servicesOf } from '../core/services';
+import type { WorldSceneData } from './WorldScene';
 import { registerPropFrames } from './world/buildProps';
 
-/** Lädt Kachelsätze, Objekt-Atlas, Figurenblätter und alle Karten aus MAP_FILES; startet dann die Welt. */
+/**
+ * Lädt Kachelsätze, Objekt-Atlas, Figurenblätter und alle Karten aus MAP_FILES; startet dann die Welt auf der Karte
+ * aus dem Spielstand. Gibt es diese Karte noch nicht (übernommener Stand aus Wald, See …), beginnt die Spielerin im
+ * Dorf an dessen Startpunkt (resolveStart verwirft den Ort einer anderen Karte).
+ */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene');
@@ -28,6 +34,9 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     registerPropFrames(this.textures);
-    this.scene.start('WorldScene', { map: HUB_START.map });
+    const { player } = servicesOf(this).state;
+    const map = MAP_FILES[player.map] !== undefined ? player.map : HUB_START.map;
+    const data: WorldSceneData = { map, player: { map: player.map, x: player.x, y: player.y } };
+    this.scene.start('WorldScene', data);
   }
 }
