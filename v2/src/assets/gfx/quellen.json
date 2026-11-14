@@ -35,28 +35,100 @@
     "figuren/papa_milos-gesicht.png",
     "figuren/papa_milos.png",
     "figuren/schatten.png",
+    "props/dorf.json",
+    "props/dorf.png",
     "tiles/dorf.json",
     "tiles/dorf.png"
   ],
   "eintraege": [
     {
-      "kennung": "gras",
+      "kennung": "wiese",
       "ziel": "tiles/dorf.png",
-      "quelle": "Backgrounds/Tilesets/TilesetField.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
       "ausschnitt": {
-        "x": 16,
-        "y": 64,
+        "x": 0,
+        "y": 192,
         "w": 16,
         "h": 16
       },
       "aenderungen": "unverändert ausgeschnitten",
-      "verwendung": "Boden im Dorf: helle Wiese",
+      "verwendung": "Boden im Dorf: Wiese, schlicht",
       "lizenz": "CC0 1.0"
     },
     {
-      "kennung": "gras_dunkel",
+      "kennung": "wiese_b",
       "ziel": "tiles/dorf.png",
-      "quelle": "Backgrounds/Tilesets/TilesetField.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 16,
+        "y": 192,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Wiese mit Grasbüschel",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "wiese_c",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 192,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Wiese mit Grasranke",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "wiese_d",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 64,
+        "y": 192,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Wiese mit Halmen",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "wiese_dunkel",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 176,
+        "y": 192,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: dunkle Wiese unter dem Waldrand",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_mitte",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 16,
+        "y": 128,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Mitte",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_n",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
       "ausschnitt": {
         "x": 16,
         "y": 112,
@@ -64,21 +136,706 @@
         "h": 16
       },
       "aenderungen": "unverändert ausgeschnitten",
-      "verwendung": "Boden im Dorf: dunkle Wiese",
+      "verwendung": "Boden im Dorf: Weg, Gras im Norden",
       "lizenz": "CC0 1.0"
     },
     {
-      "kennung": "sand",
+      "kennung": "weg_s",
       "ziel": "tiles/dorf.png",
-      "quelle": "Backgrounds/Tilesets/TilesetField.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
       "ausschnitt": {
         "x": 16,
-        "y": 16,
+        "y": 144,
         "w": 16,
         "h": 16
       },
       "aenderungen": "unverändert ausgeschnitten",
-      "verwendung": "Boden im Dorf: Sandweg",
+      "verwendung": "Boden im Dorf: Weg, Gras im Süden",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_w",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 128,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Gras im Westen",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_o",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 128,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Gras im Osten",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_aussen_nw",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 112,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Außenecke Nordwest",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_aussen_no",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 112,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Außenecke Nordost",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_aussen_sw",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 144,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Außenecke Südwest",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_aussen_so",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 144,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Außenecke Südost",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_innen_nw",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 96,
+        "y": 144,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Innenecke, Gras nur nordwestlich",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_innen_no",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 80,
+        "y": 144,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Innenecke, Gras nur nordöstlich",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_innen_sw",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 96,
+        "y": 128,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Innenecke, Gras nur südwestlich",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "weg_innen_so",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 80,
+        "y": 128,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Weg, Innenecke, Gras nur südöstlich",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "hof",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/Interior/TilesetInteriorFloor.png",
+      "ausschnitt": {
+        "x": 16,
+        "y": 208,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Hofboden (Pflaster) vor den Werkstätten",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "stein",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/Interior/TilesetInteriorFloor.png",
+      "ausschnitt": {
+        "x": 224,
+        "y": 144,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Steinboden (grüne Platten) vor Dedas Labor",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "beet",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloor.png",
+      "ausschnitt": {
+        "x": 192,
+        "y": 240,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Boden im Dorf: Beet-Erde in Omas Garten",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "blumen_rot",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloorDetail.png",
+      "ausschnitt": {
+        "x": 80,
+        "y": 32,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Bodendetail: rote Blumen auf der Blumenwiese",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "blume_weiss",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloorDetail.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Bodendetail: weiße Blüte auf der Blumenwiese",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "grasbuschel",
+      "ziel": "tiles/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloorDetail.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 32,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Bodendetail: Grasbüschel auf der Blumenwiese",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "tanne",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 32,
+        "y": 1,
+        "w": 32,
+        "h": 30
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Baum: Tanne (alte Varianten pine_*), auch Waldrand",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "laubbaum",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 48,
+        "y": 288,
+        "w": 48,
+        "h": 48
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Baum: grüner Laubbaum (oak_green, oak_bare, oak_ice)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "laubbaum_herbst",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 144,
+        "y": 288,
+        "w": 48,
+        "h": 48
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Baum: Laubbaum im Herbst (oak_orange, oak_yellow, oak_red)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "rundbaum",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 2,
+        "w": 32,
+        "h": 29
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Baum: Rundbaum (round_green, round_autumn, round_red)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "rundbaum_dunkel",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 96,
+        "y": 1,
+        "w": 32,
+        "h": 31
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Baum: dunkler Rundbaum (round_dark), auch Waldrand",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "rosabaum",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 224,
+        "y": 2,
+        "w": 32,
+        "h": 29
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Baum: rosa Baum (alter maple_tree)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "haus_orange",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 48
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Haus von Mama Tanja hinter der Küche",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "haus_laden",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 304,
+        "y": 0,
+        "w": 64,
+        "h": 48
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Haus von Papa Milos hinter der Werkstatt",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "haus_stein",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 368,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Haus von Deda hinter dem Alchemie-Kessel",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "haus_holz",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 416,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Haus von Opa hinter dem Sägewerk",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "herd",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 464,
+        "y": 160,
+        "w": 32,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Station Kochen: Küchentisch mit Tomate und Topf",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "werkbank",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 464,
+        "y": 128,
+        "w": 32,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Station Werkbank: Tisch mit Hammer und Axt",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "amboss",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 464,
+        "y": 240,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Station Amboss",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "saegebank",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 496,
+        "y": 240,
+        "w": 32,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Station Sägewerk: Sägebank mit Sägeblatt",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "kessel",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 496,
+        "y": 160,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Station Alchemie: Kessel mit Trank",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "regal_pokale",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetElement.png",
+      "ausschnitt": {
+        "x": 64,
+        "y": 113,
+        "w": 16,
+        "h": 29
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Trophäenregal neben Mama Tanjas Haus",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "lagerfeuer",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/tileset_camp.png + FX/Particle/Fire.png",
+      "ausschnitt": null,
+      "aenderungen": "zusammengesetzt: blit Backgrounds/Tilesets/tileset_camp.png 192,81 32×31 → 0,0; blitOver FX/Particle/Fire.png 12,0 12×12 → 10,4, je Bild 12 px weiter; 3 Bilder",
+      "verwendung": "Lagerfeuer: Feuerstelle aus Steinen und Holz, darüber Flammen (drei Bilder)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "brunnen",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetElement.png",
+      "ausschnitt": {
+        "x": 112,
+        "y": 27,
+        "w": 16,
+        "h": 21
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Dorfbrunnen auf dem Dorfplatz",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "wegweiser",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 464,
+        "y": 256,
+        "w": 16,
+        "h": 15
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Wegweiser an den Ausgängen",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "truhe",
+      "ziel": "props/dorf.png",
+      "quelle": "Items/Treasure/LittleTreasureChest.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 4,
+        "w": 16,
+        "h": 11
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Schatztruhe (geschlossen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "huhn",
+      "ziel": "props/dorf.png",
+      "quelle": "Actor/Animal/Chicken/SpriteSheetWhite.png",
+      "ausschnitt": null,
+      "aenderungen": "blit Actor/Animal/Chicken/SpriteSheetWhite.png 0,0 16×16 → 0,0, je Bild 16 px weiter; 2 Bilder",
+      "verwendung": "Huhn in Omas Garten (zwei Bilder)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "busch",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 48,
+        "y": 162,
+        "w": 16,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Grasbusch am Wegrand",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "blume",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Animated/Plant/SpriteSheet16x16.png",
+      "ausschnitt": null,
+      "aenderungen": "blit Backgrounds/Animated/Plant/SpriteSheet16x16.png 0,3 16×13 → 0,0, je Bild 16 px weiter; 4 Bilder",
+      "verwendung": "Blume, wiegt sich (vier Bilder)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "kiesel",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 288,
+        "y": 289,
+        "w": 16,
+        "h": 14
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Kiesel im Gras",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "welke_pflanze",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 64,
+        "y": 145,
+        "w": 16,
+        "h": 15
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Welke Pflanze, die Emilia heilen kann",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "setzling",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetFloorDetail.png",
+      "ausschnitt": {
+        "x": 96,
+        "y": 32,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Gartenbeet: Setzling auf der Beet-Erde",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "kohl",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetNature.png",
+      "ausschnitt": {
+        "x": 160,
+        "y": 144,
+        "w": 16,
+        "h": 15
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Rohstoff Gemüse in Omas Garten",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "samen",
+      "ziel": "props/dorf.png",
+      "quelle": "Items/Food/SeedLarge.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Rohstoff Samen neben Omas Garten",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "zaun",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 208,
+        "y": 112,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Niedriger Gartenzaun",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "fass",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 256,
+        "y": 240,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Fass neben den Werkstätten",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "korb_gemuese",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 272,
+        "y": 208,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Korb mit Gemüse neben der Küche",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "korb_aepfel",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 288,
+        "y": 208,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Korb mit Äpfeln neben der Küche",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "kiste",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetHouse.png",
+      "ausschnitt": {
+        "x": 320,
+        "y": 224,
+        "w": 16,
+        "h": 32
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Kiste mit Beeren neben den Häusern",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "buecherregal",
+      "ziel": "props/dorf.png",
+      "quelle": "Backgrounds/Tilesets/TilesetElement.png",
+      "ausschnitt": {
+        "x": 48,
+        "y": 113,
+        "w": 16,
+        "h": 29
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Bücherregal neben Dedas Labor",
       "lizenz": "CC0 1.0"
     },
     {

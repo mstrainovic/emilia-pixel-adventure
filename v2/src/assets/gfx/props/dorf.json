@@ -1,0 +1,322 @@
+{
+  "tanne": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 30,
+    "anchorX": 16,
+    "anchorY": 30
+  },
+  "laubbaum": {
+    "x": 32,
+    "y": 0,
+    "w": 48,
+    "h": 48,
+    "anchorX": 24,
+    "anchorY": 48
+  },
+  "laubbaum_herbst": {
+    "x": 80,
+    "y": 0,
+    "w": 48,
+    "h": 48,
+    "anchorX": 24,
+    "anchorY": 48
+  },
+  "rundbaum": {
+    "x": 128,
+    "y": 0,
+    "w": 32,
+    "h": 29,
+    "anchorX": 16,
+    "anchorY": 29
+  },
+  "rundbaum_dunkel": {
+    "x": 160,
+    "y": 0,
+    "w": 32,
+    "h": 31,
+    "anchorX": 16,
+    "anchorY": 31
+  },
+  "rosabaum": {
+    "x": 192,
+    "y": 0,
+    "w": 32,
+    "h": 29,
+    "anchorX": 16,
+    "anchorY": 29
+  },
+  "haus_orange": {
+    "x": 224,
+    "y": 0,
+    "w": 64,
+    "h": 48,
+    "anchorX": 32,
+    "anchorY": 48
+  },
+  "haus_laden": {
+    "x": 288,
+    "y": 0,
+    "w": 64,
+    "h": 48,
+    "anchorX": 32,
+    "anchorY": 48
+  },
+  "haus_stein": {
+    "x": 352,
+    "y": 0,
+    "w": 48,
+    "h": 48,
+    "anchorX": 24,
+    "anchorY": 48
+  },
+  "haus_holz": {
+    "x": 400,
+    "y": 0,
+    "w": 48,
+    "h": 48,
+    "anchorX": 24,
+    "anchorY": 48
+  },
+  "herd": {
+    "x": 448,
+    "y": 0,
+    "w": 32,
+    "h": 16,
+    "anchorX": 16,
+    "anchorY": 16
+  },
+  "werkbank": {
+    "x": 480,
+    "y": 0,
+    "w": 32,
+    "h": 16,
+    "anchorX": 16,
+    "anchorY": 16
+  },
+  "amboss": {
+    "x": 0,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "saegebank": {
+    "x": 16,
+    "y": 48,
+    "w": 32,
+    "h": 16,
+    "anchorX": 16,
+    "anchorY": 16
+  },
+  "kessel": {
+    "x": 48,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "regal_pokale": {
+    "x": 64,
+    "y": 48,
+    "w": 16,
+    "h": 29,
+    "anchorX": 8,
+    "anchorY": 29
+  },
+  "lagerfeuer_0": {
+    "x": 80,
+    "y": 48,
+    "w": 32,
+    "h": 31,
+    "anchorX": 16,
+    "anchorY": 31
+  },
+  "lagerfeuer_1": {
+    "x": 112,
+    "y": 48,
+    "w": 32,
+    "h": 31,
+    "anchorX": 16,
+    "anchorY": 31
+  },
+  "lagerfeuer_2": {
+    "x": 144,
+    "y": 48,
+    "w": 32,
+    "h": 31,
+    "anchorX": 16,
+    "anchorY": 31
+  },
+  "brunnen": {
+    "x": 176,
+    "y": 48,
+    "w": 16,
+    "h": 21,
+    "anchorX": 8,
+    "anchorY": 21
+  },
+  "wegweiser": {
+    "x": 192,
+    "y": 48,
+    "w": 16,
+    "h": 15,
+    "anchorX": 8,
+    "anchorY": 15
+  },
+  "truhe": {
+    "x": 208,
+    "y": 48,
+    "w": 16,
+    "h": 11,
+    "anchorX": 8,
+    "anchorY": 11
+  },
+  "huhn_0": {
+    "x": 224,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "huhn_1": {
+    "x": 240,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "busch": {
+    "x": 256,
+    "y": 48,
+    "w": 16,
+    "h": 13,
+    "anchorX": 8,
+    "anchorY": 13
+  },
+  "blume_0": {
+    "x": 272,
+    "y": 48,
+    "w": 16,
+    "h": 13,
+    "anchorX": 8,
+    "anchorY": 13
+  },
+  "blume_1": {
+    "x": 288,
+    "y": 48,
+    "w": 16,
+    "h": 13,
+    "anchorX": 8,
+    "anchorY": 13
+  },
+  "blume_2": {
+    "x": 304,
+    "y": 48,
+    "w": 16,
+    "h": 13,
+    "anchorX": 8,
+    "anchorY": 13
+  },
+  "blume_3": {
+    "x": 320,
+    "y": 48,
+    "w": 16,
+    "h": 13,
+    "anchorX": 8,
+    "anchorY": 13
+  },
+  "kiesel": {
+    "x": 336,
+    "y": 48,
+    "w": 16,
+    "h": 14,
+    "anchorX": 8,
+    "anchorY": 14
+  },
+  "welke_pflanze": {
+    "x": 352,
+    "y": 48,
+    "w": 16,
+    "h": 15,
+    "anchorX": 8,
+    "anchorY": 15
+  },
+  "setzling": {
+    "x": 368,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "kohl": {
+    "x": 384,
+    "y": 48,
+    "w": 16,
+    "h": 15,
+    "anchorX": 8,
+    "anchorY": 15
+  },
+  "samen": {
+    "x": 400,
+    "y": 48,
+    "w": 14,
+    "h": 13,
+    "anchorX": 7,
+    "anchorY": 13
+  },
+  "zaun": {
+    "x": 414,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "fass": {
+    "x": 430,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "korb_gemuese": {
+    "x": 446,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "korb_aepfel": {
+    "x": 462,
+    "y": 48,
+    "w": 16,
+    "h": 16,
+    "anchorX": 8,
+    "anchorY": 16
+  },
+  "kiste": {
+    "x": 478,
+    "y": 48,
+    "w": 16,
+    "h": 32,
+    "anchorX": 8,
+    "anchorY": 32
+  },
+  "buecherregal": {
+    "x": 494,
+    "y": 48,
+    "w": 16,
+    "h": 29,
+    "anchorX": 8,
+    "anchorY": 29
+  }
+}

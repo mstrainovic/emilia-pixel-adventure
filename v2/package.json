@@ -13,7 +13,9 @@
     "maps:export": "node tools/export-legacy-maps.mjs",
     "save:fingerprint": "node tools/save-fingerprint.mjs",
     "art:build": "node tools/art/build.mjs",
-    "art:sheet": "node tools/art/contact-sheet.mjs"
+    "art:sheet": "node tools/art/contact-sheet.mjs",
+    "maps:build": "node tools/maps/restyle-hub.mjs",
+    "maps:preview": "node tools/maps/preview.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1"

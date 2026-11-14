@@ -9,9 +9,64 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 
 | Kennung | Zieldatei | Quelldatei im Pack | Ausschnitt | Änderungen | Verwendung | Lizenz |
 | --- | --- | --- | --- | --- | --- | --- |
-| gras | tiles/dorf.png | Backgrounds/Tilesets/TilesetField.png | 16,64 16×16 | unverändert ausgeschnitten | Boden im Dorf: helle Wiese | CC0 1.0 |
-| gras_dunkel | tiles/dorf.png | Backgrounds/Tilesets/TilesetField.png | 16,112 16×16 | unverändert ausgeschnitten | Boden im Dorf: dunkle Wiese | CC0 1.0 |
-| sand | tiles/dorf.png | Backgrounds/Tilesets/TilesetField.png | 16,16 16×16 | unverändert ausgeschnitten | Boden im Dorf: Sandweg | CC0 1.0 |
+| wiese | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 0,192 16×16 | unverändert ausgeschnitten | Boden im Dorf: Wiese, schlicht | CC0 1.0 |
+| wiese_b | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 16,192 16×16 | unverändert ausgeschnitten | Boden im Dorf: Wiese mit Grasbüschel | CC0 1.0 |
+| wiese_c | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 32,192 16×16 | unverändert ausgeschnitten | Boden im Dorf: Wiese mit Grasranke | CC0 1.0 |
+| wiese_d | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 64,192 16×16 | unverändert ausgeschnitten | Boden im Dorf: Wiese mit Halmen | CC0 1.0 |
+| wiese_dunkel | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 176,192 16×16 | unverändert ausgeschnitten | Boden im Dorf: dunkle Wiese unter dem Waldrand | CC0 1.0 |
+| weg_mitte | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 16,128 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Mitte | CC0 1.0 |
+| weg_n | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 16,112 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Gras im Norden | CC0 1.0 |
+| weg_s | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 16,144 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Gras im Süden | CC0 1.0 |
+| weg_w | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 0,128 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Gras im Westen | CC0 1.0 |
+| weg_o | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 32,128 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Gras im Osten | CC0 1.0 |
+| weg_aussen_nw | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 0,112 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Außenecke Nordwest | CC0 1.0 |
+| weg_aussen_no | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 32,112 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Außenecke Nordost | CC0 1.0 |
+| weg_aussen_sw | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 0,144 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Außenecke Südwest | CC0 1.0 |
+| weg_aussen_so | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 32,144 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Außenecke Südost | CC0 1.0 |
+| weg_innen_nw | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 96,144 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Innenecke, Gras nur nordwestlich | CC0 1.0 |
+| weg_innen_no | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 80,144 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Innenecke, Gras nur nordöstlich | CC0 1.0 |
+| weg_innen_sw | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 96,128 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Innenecke, Gras nur südwestlich | CC0 1.0 |
+| weg_innen_so | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 80,128 16×16 | unverändert ausgeschnitten | Boden im Dorf: Weg, Innenecke, Gras nur südöstlich | CC0 1.0 |
+| hof | tiles/dorf.png | Backgrounds/Tilesets/Interior/TilesetInteriorFloor.png | 16,208 16×16 | unverändert ausgeschnitten | Boden im Dorf: Hofboden (Pflaster) vor den Werkstätten | CC0 1.0 |
+| stein | tiles/dorf.png | Backgrounds/Tilesets/Interior/TilesetInteriorFloor.png | 224,144 16×16 | unverändert ausgeschnitten | Boden im Dorf: Steinboden (grüne Platten) vor Dedas Labor | CC0 1.0 |
+| beet | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloor.png | 192,240 16×16 | unverändert ausgeschnitten | Boden im Dorf: Beet-Erde in Omas Garten | CC0 1.0 |
+| blumen_rot | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloorDetail.png | 80,32 16×16 | unverändert ausgeschnitten | Bodendetail: rote Blumen auf der Blumenwiese | CC0 1.0 |
+| blume_weiss | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloorDetail.png | 32,0 16×16 | unverändert ausgeschnitten | Bodendetail: weiße Blüte auf der Blumenwiese | CC0 1.0 |
+| grasbuschel | tiles/dorf.png | Backgrounds/Tilesets/TilesetFloorDetail.png | 0,32 16×16 | unverändert ausgeschnitten | Bodendetail: Grasbüschel auf der Blumenwiese | CC0 1.0 |
+| tanne | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 32,1 32×30 | unverändert ausgeschnitten | Baum: Tanne (alte Varianten pine_*), auch Waldrand | CC0 1.0 |
+| laubbaum | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 48,288 48×48 | unverändert ausgeschnitten | Baum: grüner Laubbaum (oak_green, oak_bare, oak_ice) | CC0 1.0 |
+| laubbaum_herbst | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 144,288 48×48 | unverändert ausgeschnitten | Baum: Laubbaum im Herbst (oak_orange, oak_yellow, oak_red) | CC0 1.0 |
+| rundbaum | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 0,2 32×29 | unverändert ausgeschnitten | Baum: Rundbaum (round_green, round_autumn, round_red) | CC0 1.0 |
+| rundbaum_dunkel | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 96,1 32×31 | unverändert ausgeschnitten | Baum: dunkler Rundbaum (round_dark), auch Waldrand | CC0 1.0 |
+| rosabaum | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 224,2 32×29 | unverändert ausgeschnitten | Baum: rosa Baum (alter maple_tree) | CC0 1.0 |
+| haus_orange | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 0,0 64×48 | unverändert ausgeschnitten | Haus von Mama Tanja hinter der Küche | CC0 1.0 |
+| haus_laden | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 304,0 64×48 | unverändert ausgeschnitten | Haus von Papa Milos hinter der Werkstatt | CC0 1.0 |
+| haus_stein | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 368,0 48×48 | unverändert ausgeschnitten | Haus von Deda hinter dem Alchemie-Kessel | CC0 1.0 |
+| haus_holz | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 416,0 48×48 | unverändert ausgeschnitten | Haus von Opa hinter dem Sägewerk | CC0 1.0 |
+| herd | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 464,160 32×16 | unverändert ausgeschnitten | Station Kochen: Küchentisch mit Tomate und Topf | CC0 1.0 |
+| werkbank | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 464,128 32×16 | unverändert ausgeschnitten | Station Werkbank: Tisch mit Hammer und Axt | CC0 1.0 |
+| amboss | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 464,240 16×16 | unverändert ausgeschnitten | Station Amboss | CC0 1.0 |
+| saegebank | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 496,240 32×16 | unverändert ausgeschnitten | Station Sägewerk: Sägebank mit Sägeblatt | CC0 1.0 |
+| kessel | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 496,160 16×16 | unverändert ausgeschnitten | Station Alchemie: Kessel mit Trank | CC0 1.0 |
+| regal_pokale | props/dorf.png | Backgrounds/Tilesets/TilesetElement.png | 64,113 16×29 | unverändert ausgeschnitten | Trophäenregal neben Mama Tanjas Haus | CC0 1.0 |
+| lagerfeuer | props/dorf.png | Backgrounds/Tilesets/tileset_camp.png + FX/Particle/Fire.png | siehe Änderungen | zusammengesetzt: blit Backgrounds/Tilesets/tileset_camp.png 192,81 32×31 → 0,0; blitOver FX/Particle/Fire.png 12,0 12×12 → 10,4, je Bild 12 px weiter; 3 Bilder | Lagerfeuer: Feuerstelle aus Steinen und Holz, darüber Flammen (drei Bilder) | CC0 1.0 |
+| brunnen | props/dorf.png | Backgrounds/Tilesets/TilesetElement.png | 112,27 16×21 | unverändert ausgeschnitten | Dorfbrunnen auf dem Dorfplatz | CC0 1.0 |
+| wegweiser | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 464,256 16×15 | unverändert ausgeschnitten | Wegweiser an den Ausgängen | CC0 1.0 |
+| truhe | props/dorf.png | Items/Treasure/LittleTreasureChest.png | 0,4 16×11 | unverändert ausgeschnitten | Schatztruhe (geschlossen) | CC0 1.0 |
+| huhn | props/dorf.png | Actor/Animal/Chicken/SpriteSheetWhite.png | siehe Änderungen | blit Actor/Animal/Chicken/SpriteSheetWhite.png 0,0 16×16 → 0,0, je Bild 16 px weiter; 2 Bilder | Huhn in Omas Garten (zwei Bilder) | CC0 1.0 |
+| busch | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 48,162 16×13 | unverändert ausgeschnitten | Grasbusch am Wegrand | CC0 1.0 |
+| blume | props/dorf.png | Backgrounds/Animated/Plant/SpriteSheet16x16.png | siehe Änderungen | blit Backgrounds/Animated/Plant/SpriteSheet16x16.png 0,3 16×13 → 0,0, je Bild 16 px weiter; 4 Bilder | Blume, wiegt sich (vier Bilder) | CC0 1.0 |
+| kiesel | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 288,289 16×14 | unverändert ausgeschnitten | Kiesel im Gras | CC0 1.0 |
+| welke_pflanze | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 64,145 16×15 | unverändert ausgeschnitten | Welke Pflanze, die Emilia heilen kann | CC0 1.0 |
+| setzling | props/dorf.png | Backgrounds/Tilesets/TilesetFloorDetail.png | 96,32 16×16 | unverändert ausgeschnitten | Gartenbeet: Setzling auf der Beet-Erde | CC0 1.0 |
+| kohl | props/dorf.png | Backgrounds/Tilesets/TilesetNature.png | 160,144 16×15 | unverändert ausgeschnitten | Rohstoff Gemüse in Omas Garten | CC0 1.0 |
+| samen | props/dorf.png | Items/Food/SeedLarge.png | 0,0 14×13 | unverändert ausgeschnitten | Rohstoff Samen neben Omas Garten | CC0 1.0 |
+| zaun | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 208,112 16×16 | unverändert ausgeschnitten | Niedriger Gartenzaun | CC0 1.0 |
+| fass | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 256,240 16×16 | unverändert ausgeschnitten | Fass neben den Werkstätten | CC0 1.0 |
+| korb_gemuese | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 272,208 16×16 | unverändert ausgeschnitten | Korb mit Gemüse neben der Küche | CC0 1.0 |
+| korb_aepfel | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 288,208 16×16 | unverändert ausgeschnitten | Korb mit Äpfeln neben der Küche | CC0 1.0 |
+| kiste | props/dorf.png | Backgrounds/Tilesets/TilesetHouse.png | 320,224 16×32 | unverändert ausgeschnitten | Kiste mit Beeren neben den Häusern | CC0 1.0 |
+| buecherregal | props/dorf.png | Backgrounds/Tilesets/TilesetElement.png | 48,113 16×29 | unverändert ausgeschnitten | Bücherregal neben Dedas Labor | CC0 1.0 |
 | emilia | figuren/emilia.png | Actor/Character/Princess/SeparateAnim/Idle.png + Actor/Character/Princess/SeparateAnim/Walk.png | siehe Änderungen | recolor [{"#4e484a":"#695953","#3b3643":"#4e484a","#f1c471":"#ef9597","#d78b4a":"#cf736d","#e0394c":"#ef9597","#a3754e":"#f2ad7d","#965340":"#d3865f"}]; dropRows [[4]] nur Blattzeile 0/1/3; dropRows [[5]] nur Richtung unten/links/rechts, Blattzeile 2/4; dropRows [[3]] nur Richtung oben, Blattzeile 2/4; anchorBottomCenter [16,16] | Spielfigur Emilia: dunkelbraune Haare, rosa Kleid und rosa Schleife | CC0 1.0 |
 | emilia | figuren/emilia-gesicht.png | Actor/Character/Princess/Faceset.png | siehe Änderungen | recolor [{"#4e484a":"#695953","#3b3643":"#4e484a","#f1c471":"#ef9597","#d78b4a":"#cf736d","#e0394c":"#ef9597","#a3754e":"#f2ad7d","#965340":"#d3865f"}] | Spielfigur Emilia: dunkelbraune Haare, rosa Kleid und rosa Schleife | CC0 1.0 |
 | lena | figuren/lena.png | Actor/Character/Woman/SeparateAnim/Idle.png + Actor/Character/Woman/SeparateAnim/Walk.png | siehe Änderungen | recolor [{"#ef914f":"#f2ad7d","#cf736d":"#d3865f"}]; dropRows [[5]] nur Blattzeile 0/1/3; dropRows [[6]] nur Richtung unten/links/rechts, Blattzeile 2/4; dropRows [[5]] nur Richtung oben, Blattzeile 2/4; anchorBottomCenter [16,16] | Cousine Lena: blonde Haare mit Haarband, blaues Kleid | CC0 1.0 |

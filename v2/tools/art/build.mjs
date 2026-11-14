@@ -91,17 +91,64 @@ function buildTiles() {
   writeJson('tiles/dorf.json', index);
 }
 
+/*
+ * Gegenstände: entweder ein Ausschnitt (source, x, y, w, h) oder ein aus Pack-Teilen zusammengesetztes
+ * Bild (parts: [{ source, x, y, w, h, dx, dy }], Größe w×h): das erste Teil wird mit blit gesetzt, jedes
+ * weitere mit blitOver darübergelegt. frames: n erzeugt n Bilder <id>_0 … <id>_(n-1); dabei rückt jedes
+ * Teil (bzw. der Ausschnitt) mit stepX um stepX Pixel im Quellbild weiter. anchorX/anchorY: der Punkt im
+ * Bild, der auf dem Fußpunkt des Objekts steht.
+ */
+const PROP_ATLAS_WIDTH = 512;
+
+function propParts(p) {
+  return p.parts ?? [{ source: p.source, x: p.x, y: p.y, w: p.w, h: p.h, dx: 0, dy: 0, stepX: p.stepX }];
+}
+
+function propFrame(p, parts, i) {
+  const img = png.emptyImage(p.w, p.h);
+  parts.forEach((part, k) => {
+    const cut = png.crop(source(part.source), part.x + i * (part.stepX ?? 0), part.y, part.w, part.h);
+    (k === 0 ? png.blit : png.blitOver)(img, cut, part.dx, part.dy);
+  });
+  return img;
+}
+
+function describeParts(parts, count) {
+  const step = (part) => (count > 1 && part.stepX ? `, je Bild ${part.stepX} px weiter` : '');
+  return parts.map((part, k) => `${k === 0 ? 'blit' : 'blitOver'} ${part.source} ${part.x},${part.y} ${part.w}×${part.h} → ${part.dx},${part.dy}${step(part)}`).join('; ');
+}
+
 function buildProps() {
   if (PROPS.length === 0) return;
-  const width = PROPS.reduce((sum, p) => sum + p.w, 0);
-  const atlas = png.emptyImage(width, Math.max(...PROPS.map((p) => p.h)));
-  const frames = {};
-  let x = 0;
+  // Regale zu je höchstens PROP_ATLAS_WIDTH Pixeln, in fester Reihenfolge der Liste.
+  const placed = [];
+  let x = 0, y = 0, rowHeight = 0;
   for (const p of PROPS) {
-    png.blit(atlas, png.crop(source(p.source), p.x, p.y, p.w, p.h), x, 0);
-    frames[p.id] = { x, y: 0, w: p.w, h: p.h, anchorX: p.anchorX, anchorY: p.anchorY };
-    record(p, 'props/dorf.png', { x: p.x, y: p.y, w: p.w, h: p.h }, 'unverändert ausgeschnitten');
-    x += p.w;
+    const parts = propParts(p);
+    const count = p.frames ?? 1;
+    for (let i = 0; i < count; i++) {
+      if (x + p.w > PROP_ATLAS_WIDTH) {
+        x = 0;
+        y += rowHeight;
+        rowHeight = 0;
+      }
+      placed.push({ name: count > 1 ? `${p.id}_${i}` : p.id, img: propFrame(p, parts, i), x, y, p });
+      x += p.w;
+      rowHeight = Math.max(rowHeight, p.h);
+    }
+    const composite = Boolean(p.parts) || count > 1;
+    record(
+      { ...p, source: [...new Set(parts.map((part) => part.source))].join(' + ') },
+      'props/dorf.png',
+      composite ? null : { x: p.x, y: p.y, w: p.w, h: p.h },
+      composite ? `${p.parts ? 'zusammengesetzt: ' : ''}${describeParts(parts, count)}${count > 1 ? `; ${count} Bilder` : ''}` : 'unverändert ausgeschnitten',
+    );
+  }
+  const atlas = png.emptyImage(PROP_ATLAS_WIDTH, y + rowHeight);
+  const frames = {};
+  for (const f of placed) {
+    png.blit(atlas, f.img, f.x, f.y);
+    frames[f.name] = { x: f.x, y: f.y, w: f.p.w, h: f.p.h, anchorX: f.p.anchorX, anchorY: f.p.anchorY };
   }
   writeImage('props/dorf.png', atlas);
   writeJson('props/dorf.json', frames);

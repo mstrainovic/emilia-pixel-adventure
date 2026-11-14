@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error -- Grafik-Werkzeuge sind untypisiertes JavaScript (laufen nur in Node, nicht im Spiel)
-import { anchorBottomCenter, blit, crop, dropCols, dropRows, recolor } from '../../tools/art/png.mjs';
+import { anchorBottomCenter, blit, blitOver, crop, dropCols, dropRows, recolor } from '../../tools/art/png.mjs';
 
 interface Img {
   width: number;
@@ -89,5 +89,14 @@ describe('png.mjs', () => {
     expect(pixel(dst, 3, 2)).toEqual([1, 1, 7, 255]);
     expect(pixel(dst, 1, 1)).toEqual([0, 0, 0, 0]);
     expect(() => blit(dst, makeImage(2, 2), 3, 3)).toThrow(/außerhalb/);
+  });
+
+  it('blitOver kopiert nur die nicht durchsichtigen Pixel (Teile übereinanderlegen)', () => {
+    const dst: Img = makeImage(3, 1);
+    const src: Img = { width: 2, height: 1, data: new Uint8Array([9, 9, 9, 0, 8, 8, 8, 255]) };
+    blitOver(dst, src, 1, 0);
+    expect(pixel(dst, 1, 0)).toEqual([1, 0, 7, 255]);
+    expect(pixel(dst, 2, 0)).toEqual([8, 8, 8, 255]);
+    expect(() => blitOver(dst, src, 2, 0)).toThrow(/außerhalb/);
   });
 });

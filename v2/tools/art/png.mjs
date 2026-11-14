@@ -50,6 +50,19 @@ export function blit(dst, src, dx, dy) {
   return dst;
 }
 
+/** Wie blit, aber durchsichtige Pixel von src bleiben aus (Teile übereinanderlegen); verändert dst. */
+export function blitOver(dst, src, dx, dy) {
+  checkInside(dst, dx, dy, src.width, src.height, 'Zielbereich');
+  for (let row = 0; row < src.height; row++) {
+    for (let col = 0; col < src.width; col++) {
+      const s = (row * src.width + col) * 4;
+      if (src.data[s + 3] === 0) continue;
+      dst.data.set(src.data.subarray(s, s + 4), ((dy + row) * dst.width + dx + col) * 4);
+    }
+  }
+  return dst;
+}
+
 function parseColor(hex) {
   if (typeof hex !== 'string' || !/^#[0-9a-f]{6}$/i.test(hex)) {
     throw new Error(`Ungültige Farbe „${hex}" (erwartet #rrggbb)`);
