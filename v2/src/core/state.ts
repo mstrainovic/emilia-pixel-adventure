@@ -17,6 +17,7 @@ export interface GameState {
   formatVersion: 1;
   savedAt: number;
   importedLegacyAt: number | null;      // Zeitstempel des alten Stands bei der letzten Übernahme
+  legacyDeclinedAt: number | null;      // Zeitstempel des alten Stands, dessen Übernahme abgelehnt wurde
   player: { map: MapId; x: number; y: number; hp: number };   // x/y: Fußpunkt in Kacheln (Gleitkomma); hp in Lebenspunkten, 4 je Herz
   inventory: { slots: Array<{ itemId: string | null; count: number }>; selectedHotbar: number; coins: number };
   progression: {
@@ -46,6 +47,7 @@ export function createNewGameState(now: number): GameState {
     formatVersion: 1,
     savedAt: now,
     importedLegacyAt: null,
+    legacyDeclinedAt: null,
     player: { ...HUB_START, hp: 20 },
     inventory: {
       slots: Array.from({ length: INVENTORY_SLOTS }, () => ({ itemId: null, count: 0 })),

@@ -28,6 +28,13 @@ const NGPLUS_LAST_QUEST = 'shadow_slayer';
 const NGPLUS_ACHIEVEMENTS_FOR_STAR = 15;
 const UNICORN_MIN_PLANTS = 10;
 
+/** Ergebnis der Übernahme: jeder Ausgang ist benannt, damit das Spiel ihn erklären kann. */
+export type LegacyImportResult =
+  | { kind: 'ok'; state: GameState; report: MigrationReport }
+  | { kind: 'none' }                          // Text fehlt
+  | { kind: 'unreadable' }                    // kein JSON-Objekt
+  | { kind: 'failed'; message: string };      // der Umbau hat geworfen
+
 function parseObject(raw: string | null): Obj | null {
   if (raw === null) return null;
   try {
@@ -36,6 +43,11 @@ function parseObject(raw: string | null): Obj | null {
   } catch {
     return null;
   }
+}
+
+/** Wahr, wenn der Text ein JSON-Objekt ist (also als alter Stand gelesen werden kann). */
+export function isLegacyReadable(raw: string | null): boolean {
+  return parseObject(raw) !== null;
 }
 
 /** Zeitstempel des alten Standes (für „schon übernommen?"), sonst `null`. */
@@ -228,17 +240,16 @@ function build(save: Obj, mutedRaw: string | null, now: number): { state: GameSt
 
 /**
  * Rechnet einen alten Spielstand (JSON-Text) in den neuen Zustand um.
- * Liefert `null`, wenn der Text fehlt, kein JSON oder kein JSON-Objekt ist.
+ * `none`: Text fehlt; `unreadable`: kein JSON-Objekt; `failed`: der Umbau hat geworfen. Wirft nie.
  */
-export function migrateLegacySave(
-  raw: string | null, mutedRaw: string | null, now: number,
-): { state: GameState; report: MigrationReport } | null {
+export function migrateLegacySave(raw: string | null, mutedRaw: string | null, now: number): LegacyImportResult {
+  if (raw === null) return { kind: 'none' };
   const save = parseObject(raw);
-  if (!save) return null;
+  if (!save) return { kind: 'unreadable' };
   try {
-    return build(save, mutedRaw, now);
-  } catch {
+    return { kind: 'ok', ...build(save, mutedRaw, now) };
+  } catch (error) {
     // Sicherheitsnetz: eine unvorhergesehene Form darf nie das Spiel beim Start zum Absturz bringen.
-    return null;
+    return { kind: 'failed', message: error instanceof Error ? error.message : String(error) };
   }
 }

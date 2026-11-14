@@ -134,6 +134,7 @@
       "garden",
       "importedLegacyAt",
       "inventory",
+      "legacyDeclinedAt",
       "openedChests",
       "pet",
       "player",

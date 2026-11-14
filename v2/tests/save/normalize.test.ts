@@ -140,3 +140,19 @@ describe('normalizeState: hartes Minimum', () => {
     expect(s.formatVersion).toBe(1);
   });
 });
+
+describe('normalizeState: legacyDeclinedAt', () => {
+  it('ergänzt ein fehlendes Feld zu null, ohne etwas zu verlieren', () => {
+    const raw = base(); delete raw.legacyDeclinedAt;
+    const { state, report } = run(raw);
+    expect(state.legacyDeclinedAt).toBeNull();
+    expect(report).toEqual(CLEAN);
+  });
+
+  it('behält einen gültigen Wert und verwirft Unfug', () => {
+    const raw = base(); raw.legacyDeclinedAt = 200;
+    expect(run(raw).state.legacyDeclinedAt).toBe(200);
+    raw.legacyDeclinedAt = 'x';
+    expect(run(raw).state.legacyDeclinedAt).toBeNull();
+  });
+});

@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
-  SaveStore, SAVE_KEY, REJECTED_SAVE_KEY, migrateState, serializeForExport, parseImport,
+  SaveStore, SAVE_KEY, REJECTED_SAVE_KEY, BACKUP_SAVE_KEY, migrateState, serializeForExport, parseImport,
 } from '../../src/save/store';
 import { LEGACY_SAVE_KEY, LEGACY_MUTED_KEY, migrateLegacySave } from '../../src/save/legacy';
+import { QUEST_ORDER } from '../../src/data/quests';
 import { createNewGameState, type GameState } from '../../src/core/state';
 import {
   LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_PARTIAL, LEGACY_NGPLUS,
@@ -25,14 +26,25 @@ function throwing() {
   };
 }
 
+/** Speicher, dessen Schreiben mit dem gegebenen Fehler scheitert. */
+function failingWrites(error: unknown, initial: Record<string, string> = {}) {
+  const base = mem(initial);
+  return { ...base, setItem: (): void => { throw error; } };
+}
+
+function quota(extra: Record<string, unknown> = {}): Error {
+  return Object.assign(new Error('voll'), { name: 'QuotaExceededError', ...extra });
+}
+
+function ok(state: GameState, repair: unknown = null) { return { kind: 'ok', state, repair }; }
+
 describe('SaveStore', () => {
-  it('leerer Speicher', () => { expect(new SaveStore(mem()).load()).toBeNull(); });
+  it('leerer Speicher', () => { expect(new SaveStore(mem()).load()).toEqual({ kind: 'empty' }); });
 
   it('speichert und lädt verlustfrei', () => {
     const m = mem(); const store = new SaveStore(m); const s = createNewGameState(1);
-    expect(store.save(s, 99)).toBe(true);
-    expect(store.load()).toEqual({ ...s, savedAt: 99 });
-    expect(store.hasSave()).toBe(true);
+    expect(store.save(s, 99)).toEqual({ kind: 'saved' });
+    expect(store.load()).toEqual(ok({ ...s, savedAt: 99 }));
   });
 
   it('verändert den übergebenen Zustand nicht', () => {
@@ -44,59 +56,197 @@ describe('SaveStore', () => {
   it('schreibt nie in die alten Schlüssel', () => {
     const m = mem({ [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_V3_FULL), [LEGACY_MUTED_KEY]: 'true' });
     const store = new SaveStore(m);
-    const imported = store.importLegacy(10)!; store.save(imported.state, 11);
-    expect(m.writtenKeys).toEqual([SAVE_KEY]);
+    const imported = store.importLegacy(10);
+    expect(imported.kind).toBe('ok');
+    if (imported.kind !== 'ok') return;
+    store.save(imported.state, 11);
+    store.replaceWith(imported.state, 12);
+    expect(m.writtenKeys.every((k) => k === SAVE_KEY || k === BACKUP_SAVE_KEY)).toBe(true);
+    expect(m.writtenKeys).not.toContain(LEGACY_SAVE_KEY);
+    expect(m.writtenKeys).not.toContain(LEGACY_MUTED_KEY);
     expect(m.getItem(LEGACY_SAVE_KEY)).toBe(JSON.stringify(LEGACY_V3_FULL));
   });
 
-  it('importLegacy schreibt selbst nichts', () => {
-    const m = mem({ [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_V3_FULL) });
-    expect(new SaveStore(m).importLegacy(10)).not.toBeNull();
-    expect(m.writtenKeys).toEqual([]);
-    expect(new SaveStore(mem()).importLegacy(10)).toBeNull();
-  });
-
-  it('bietet die erneute Übernahme nur bei neuerem altem Stand an', () => {
-    const m = mem({ [LEGACY_SAVE_KEY]: JSON.stringify({ ...LEGACY_PARTIAL, timestamp: 2000 }) });
-    const store = new SaveStore(m); const s = createNewGameState(1);
-    expect(store.shouldOfferReimport({ ...s, importedLegacyAt: 1000 })).toBe(true);
-    expect(store.shouldOfferReimport({ ...s, importedLegacyAt: 2000 })).toBe(false);
-    expect(new SaveStore(mem()).shouldOfferReimport(s)).toBe(false);
-    expect(new SaveStore(mem({ [LEGACY_SAVE_KEY]: '{kaputt' })).shouldOfferReimport(s)).toBe(false);
-  });
-
-  it('bietet die Übernahme an, wenn noch nie übernommen wurde', () => {
-    const m = mem({ [LEGACY_SAVE_KEY]: JSON.stringify({ ...LEGACY_PARTIAL, timestamp: 2000 }) });
-    const s = createNewGameState(1);
-    expect(s.importedLegacyAt).toBeNull();
-    expect(new SaveStore(m).shouldOfferReimport(s)).toBe(true);
-  });
-
   it('übersteht einen Speicher, der wirft', () => {
-    const store = new SaveStore(throwing());
-    expect(store.load()).toBeNull(); expect(store.hasSave()).toBe(false);
-    expect(store.save(createNewGameState(1), 2)).toBe(false);
-    expect(store.importLegacy(1)).toBeNull();
-    expect(store.shouldOfferReimport(createNewGameState(1))).toBe(false);
+    const m = mem(); const store = new SaveStore({ getItem: throwing().getItem, setItem: m.setItem });
+    expect(store.load()).toEqual({ kind: 'unavailable' });
+    expect(store.save(createNewGameState(1), 2)).toEqual({ kind: 'unavailable' });
+    expect(store.replaceWith(createNewGameState(1), 2)).toEqual({ kind: 'unavailable' });
+    expect(m.writtenKeys).toEqual([]);
+    const all = new SaveStore(throwing());
+    expect(all.importLegacy(1)).toEqual({ kind: 'none' });
+    expect(all.legacyOffer(null)).toBe('none');
+    expect(all.readRejected()).toBeNull();
   });
 
-  it('lädt und überschreibt keinen neueren Stand', () => {
+  it('meldet Müll als kaputt und sichert den Rohtext', () => {
+    for (const garbage of ['{kaputt', '[]', '{"formatVersion":1}', '{"formatVersion":0}', '42', 'null']) {
+      const m = mem({ [SAVE_KEY]: garbage }); const store = new SaveStore(m);
+      expect(store.load()).toEqual({ kind: 'corrupt' });
+      expect(m.getItem(REJECTED_SAVE_KEY)).toBe(garbage);
+      expect(store.readRejected()).toBe(garbage);
+    }
+  });
+
+  it('überschreibt unlesbaren Müll beim Speichern, nachdem er gesichert ist', () => {
+    for (const garbage of ['{kaputt', '[]', '{"formatVersion":1}', '42']) {
+      const m = mem({ [SAVE_KEY]: garbage }); const store = new SaveStore(m);
+      expect(store.save(createNewGameState(1), 5)).toEqual({ kind: 'saved' });
+      expect(m.getItem(REJECTED_SAVE_KEY)).toBe(garbage);
+      expect(store.load()).toEqual(ok({ ...createNewGameState(1), savedAt: 5 }));
+    }
+  });
+
+  it('meldet einen neueren Stand, lädt und überschreibt ihn nicht', () => {
     const newer = JSON.stringify({ ...createNewGameState(1), formatVersion: 2 });
     const m = mem({ [SAVE_KEY]: newer }); const store = new SaveStore(m);
-    expect(store.load()).toBeNull();
-    expect(store.save(createNewGameState(1), 2)).toBe(false);
+    expect(store.load()).toEqual({ kind: 'newer', storedVersion: 2 });
+    expect(store.save(createNewGameState(1), 2)).toEqual({ kind: 'blocked-newer', storedVersion: 2 });
+    expect(m.getItem(SAVE_KEY)).toBe(newer);
+    expect(m.writtenKeys).toEqual([]);
+  });
+
+  it('meldet einen reparierten Stand mit Bericht und sichert bei Verlust den Rohtext', () => {
+    const raw = JSON.parse(JSON.stringify(createNewGameState(1))) as GameState;
+    raw.inventory.slots[2] = { itemId: 'gibt_es_nicht', count: 3 };
+    const text = JSON.stringify(raw);
+    const m = mem({ [SAVE_KEY]: text }); const store = new SaveStore(m);
+    const result = store.load();
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') return;
+    expect(result.repair).toMatchObject({ lossy: true, droppedItems: [{ itemId: 'gibt_es_nicht', count: 3 }] });
+    expect(result.state.inventory.slots[2]).toEqual({ itemId: null, count: 0 });
+    expect(m.getItem(REJECTED_SAVE_KEY)).toBe(text);
+    expect(store.readRejected()).toBe(text);
+  });
+
+  it('meldet einen gültigen Stand ohne Bericht und sichert nichts', () => {
+    const m = mem({ [SAVE_KEY]: JSON.stringify(createNewGameState(1)) });
+    expect(new SaveStore(m).load()).toEqual(ok(createNewGameState(1)));
+    expect(m.writtenKeys).toEqual([]);
+  });
+
+  it('unterscheidet voll von nicht verfügbar beim Schreiben', () => {
+    const s = createNewGameState(1);
+    expect(new SaveStore(failingWrites(quota())).save(s, 1)).toEqual({ kind: 'full' });
+    expect(new SaveStore(failingWrites(Object.assign(new Error('x'), { code: 22 }))).save(s, 1)).toEqual({ kind: 'full' });
+    expect(new SaveStore(failingWrites(Object.assign(new Error('x'), { code: 1014 }))).save(s, 1)).toEqual({ kind: 'full' });
+    expect(new SaveStore(failingWrites(new Error('gesperrt'))).save(s, 1)).toEqual({ kind: 'unavailable' });
+    expect(new SaveStore(failingWrites('kein Fehlerobjekt')).save(s, 1)).toEqual({ kind: 'unavailable' });
+    expect(new SaveStore(failingWrites(null)).save(s, 1)).toEqual({ kind: 'unavailable' });
+  });
+
+  it('schreibt trotzdem, wenn die Sicherung des abgelehnten Eintrags scheitert', () => {
+    const base = mem({ [SAVE_KEY]: '{kaputt' });
+    const store = new SaveStore({
+      getItem: base.getItem,
+      setItem: (k, v) => { if (k === REJECTED_SAVE_KEY) throw new Error('voll'); base.setItem(k, v); },
+    });
+    expect(store.save(createNewGameState(1), 5)).toEqual({ kind: 'saved' });
+    expect(store.load()).toEqual(ok({ ...createNewGameState(1), savedAt: 5 }));
+  });
+
+  it('sichert denselben abgelehnten Text nicht zweimal', () => {
+    const m = mem({ [SAVE_KEY]: '{kaputt', [REJECTED_SAVE_KEY]: '{kaputt' });
+    new SaveStore(m).save(createNewGameState(1), 5);
+    expect(m.writtenKeys).toEqual([SAVE_KEY]);
+  });
+});
+
+describe('Übernahme des alten Stands', () => {
+  it('liest nur und schreibt nichts', () => {
+    const m = mem({ [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_V3_FULL), [LEGACY_MUTED_KEY]: 'true' });
+    const result = new SaveStore(m).importLegacy(10);
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') expect(result.state.settings.muted).toBe(true);
+    expect(m.writtenKeys).toEqual([]);
+  });
+
+  it('unterscheidet fehlend, unlesbar und Fehler beim Umbau', () => {
+    expect(new SaveStore(mem()).importLegacy(10)).toEqual({ kind: 'none' });
+    expect(new SaveStore(mem({ [LEGACY_SAVE_KEY]: '[1,2]' })).importLegacy(10)).toEqual({ kind: 'unreadable' });
+    expect(new SaveStore(mem({ [LEGACY_SAVE_KEY]: '{kaputt' })).importLegacy(10)).toEqual({ kind: 'unreadable' });
+    const spy = vi.spyOn(QUEST_ORDER, 'filter').mockImplementation(() => { throw new Error('Umbau kaputt'); });
+    try {
+      expect(new SaveStore(mem({ [LEGACY_SAVE_KEY]: JSON.stringify(LEGACY_V3_FULL) })).importLegacy(10))
+        .toEqual({ kind: 'failed', message: 'Umbau kaputt' });
+    } finally { spy.mockRestore(); }
+  });
+});
+
+describe('replaceWith', () => {
+  it('sichert den bisherigen Rohtext bytegleich und speichert den neuen Stand', () => {
+    const old = JSON.stringify(createNewGameState(1), null, 3);
+    const m = mem({ [SAVE_KEY]: old }); const store = new SaveStore(m);
+    const next = createNewGameState(2);
+    expect(store.replaceWith(next, 50)).toEqual({ kind: 'saved' });
+    expect(m.getItem(BACKUP_SAVE_KEY)).toBe(old);
+    expect(store.load()).toEqual(ok({ ...next, savedAt: 50 }));
+    expect(m.writtenKeys).toEqual([BACKUP_SAVE_KEY, SAVE_KEY]);
+  });
+
+  it('sichert auch einen unlesbaren bisherigen Eintrag', () => {
+    const m = mem({ [SAVE_KEY]: '{kaputt' });
+    expect(new SaveStore(m).replaceWith(createNewGameState(2), 50)).toEqual({ kind: 'saved' });
+    expect(m.getItem(BACKUP_SAVE_KEY)).toBe('{kaputt');
+  });
+
+  it('ändert bei neuerem Stand nichts', () => {
+    const newer = JSON.stringify({ ...createNewGameState(1), formatVersion: 2 });
+    const m = mem({ [SAVE_KEY]: newer });
+    expect(new SaveStore(m).replaceWith(createNewGameState(2), 50)).toEqual({ kind: 'blocked-newer', storedVersion: 2 });
+    expect(m.writtenKeys).toEqual([]);
     expect(m.getItem(SAVE_KEY)).toBe(newer);
   });
 
-  it('überschreibt unlesbaren Müll, denn da gibt es nichts zu schützen', () => {
-    for (const garbage of ['{kaputt', '[]', '{"formatVersion":1}', '{"formatVersion":0}', '42']) {
-      const m = mem({ [SAVE_KEY]: garbage }); const store = new SaveStore(m);
-      expect(store.load()).toBeNull();
-      expect(store.save(createNewGameState(1), 5)).toBe(true);
-      expect(store.load()).toEqual({ ...createNewGameState(1), savedAt: 5 });
-    }
+  it('speichert nur, wenn es nichts zu sichern gibt', () => {
+    const m = mem(); const store = new SaveStore(m);
+    expect(store.replaceWith(createNewGameState(2), 50)).toEqual({ kind: 'saved' });
+    expect(m.writtenKeys).toEqual([SAVE_KEY]);
+  });
+
+  it('ersetzt nicht, wenn die Sicherung scheitert', () => {
+    const base = mem({ [SAVE_KEY]: JSON.stringify(createNewGameState(1)) });
+    const store = new SaveStore({
+      getItem: base.getItem,
+      setItem: (k, v) => { if (k === BACKUP_SAVE_KEY) throw quota(); base.setItem(k, v); },
+    });
+    expect(store.replaceWith(createNewGameState(2), 50)).toEqual({ kind: 'full' });
+    expect(base.writtenKeys).toEqual([]);
   });
 });
+
+describe('legacyOffer', () => {
+  const legacy = (timestamp?: number) => ({
+    [LEGACY_SAVE_KEY]: JSON.stringify(timestamp === undefined ? LEGACY_PARTIAL : { ...LEGACY_PARTIAL, timestamp }),
+  });
+  const withState = (patch: Partial<GameState>): GameState => ({ ...createNewGameState(1), ...patch });
+
+  it('bietet beim ersten Mal an, wenn es keinen v2-Stand gibt und der alte lesbar ist', () => {
+    expect(new SaveStore(mem(legacy(100))).legacyOffer(null)).toBe('first');
+    expect(new SaveStore(mem(legacy())).legacyOffer(null)).toBe('first');
+    expect(new SaveStore(mem()).legacyOffer(null)).toBe('none');
+    expect(new SaveStore(mem({ [LEGACY_SAVE_KEY]: '{kaputt' })).legacyOffer(null)).toBe('none');
+  });
+
+  it('bietet erneut an, nur wenn der alte Stand neuer ist als Übernahme und Ablehnung', () => {
+    expect(new SaveStore(mem()).legacyOffer(withState({ importedLegacyAt: 100 }))).toBe('none');
+    expect(new SaveStore(mem(legacy(100))).legacyOffer(withState({ importedLegacyAt: 100 }))).toBe('none');
+    expect(new SaveStore(mem(legacy(200))).legacyOffer(withState({ importedLegacyAt: 100 }))).toBe('newer');
+    expect(new SaveStore(mem(legacy(200))).legacyOffer(withState({ importedLegacyAt: 100, legacyDeclinedAt: 200 }))).toBe('none');
+    expect(new SaveStore(mem(legacy(300))).legacyOffer(withState({ importedLegacyAt: 100, legacyDeclinedAt: 200 }))).toBe('newer');
+  });
+
+  it('bietet einen alten Stand ohne Zeitstempel nach der ersten Übernahme nicht mehr an', () => {
+    expect(new SaveStore(mem(legacy())).legacyOffer(withState({ importedLegacyAt: 0 }))).toBe('none');
+    expect(new SaveStore(mem(legacy())).legacyOffer(withState({ importedLegacyAt: null }))).toBe('none');
+  });
+
+  it('bietet bei v2-Stand ohne bisherige Übernahme einen alten Stand mit Zeitstempel an', () => {
+    expect(new SaveStore(mem(legacy(2000))).legacyOffer(createNewGameState(1))).toBe('newer');
+  });
+});
+
 
 describe('migrateState', () => {
   it('prüft die Mindestform', () => {
@@ -133,36 +283,20 @@ describe('Schutz vor Verlust', () => {
   it('schreibt nichts, wenn das Lesen des vorhandenen Eintrags scheitert', () => {
     const m = mem();
     const store = new SaveStore({ getItem: () => { throw new Error('gesperrt'); }, setItem: m.setItem });
-    expect(store.save(createNewGameState(1), 2)).toBe(false);
+    expect(store.save(createNewGameState(1), 2)).toEqual({ kind: 'unavailable' });
     expect(m.writtenKeys).toEqual([]);
   });
 
   it('sichert einen abgelehnten Eintrag vor dem Überschreiben', () => {
     const m = mem({ [SAVE_KEY]: '{kaputt' }); const store = new SaveStore(m);
-    expect(store.save(createNewGameState(1), 5)).toBe(true);
+    expect(store.save(createNewGameState(1), 5)).toEqual({ kind: 'saved' });
     expect(m.getItem(REJECTED_SAVE_KEY)).toBe('{kaputt');
-    expect(store.load()).toEqual({ ...createNewGameState(1), savedAt: 5 });
+    expect(store.load()).toEqual(ok({ ...createNewGameState(1), savedAt: 5 }));
     expect(m.writtenKeys).toEqual([REJECTED_SAVE_KEY, SAVE_KEY]);
-    expect(store.save(createNewGameState(1), 6)).toBe(true);
+    expect(store.save(createNewGameState(1), 6)).toEqual({ kind: 'saved' });
     expect(m.writtenKeys).toEqual([REJECTED_SAVE_KEY, SAVE_KEY, SAVE_KEY]);
   });
-
-  it('sichert denselben abgelehnten Text nicht zweimal', () => {
-    const m = mem({ [SAVE_KEY]: '{kaputt', [REJECTED_SAVE_KEY]: '{kaputt' });
-    new SaveStore(m).save(createNewGameState(1), 5);
-    expect(m.writtenKeys).toEqual([SAVE_KEY]);
-  });
-
-  it('schreibt trotzdem, wenn die Sicherung des abgelehnten Eintrags scheitert', () => {
-    const base = mem({ [SAVE_KEY]: '{kaputt' });
-    const store = new SaveStore({
-      getItem: base.getItem,
-      setItem: (k, v) => { if (k === REJECTED_SAVE_KEY) throw new Error('voll'); base.setItem(k, v); },
-    });
-    expect(store.save(createNewGameState(1), 5)).toBe(true);
-    expect(store.load()?.savedAt).toBe(5);
-  });
-});
+});
 
 function roundTrip<T>(v: T): T { return JSON.parse(JSON.stringify(v)) as T; }
 
@@ -170,7 +304,9 @@ describe('migrateState: Reparatur statt Verwerfen', () => {
   it('ist die Identität auf gültigen Ständen, auch aus der Übernahme', () => {
     const states: GameState[] = [createNewGameState(1)];
     for (const f of [LEGACY_FIRST_COMMIT, LEGACY_V3_FULL, LEGACY_NGPLUS, LEGACY_PARTIAL]) {
-      states.push(migrateLegacySave(JSON.stringify(f), null, 5)!.state);
+      const r = migrateLegacySave(JSON.stringify(f), null, 5);
+      if (r.kind !== 'ok') throw new Error('Vorlage nicht übernehmbar');
+      states.push(r.state);
     }
     for (const s of states) expect(migrateState(roundTrip(s))).toEqual(s);
   });
@@ -214,11 +350,14 @@ describe('migrateState: Reparatur statt Verwerfen', () => {
     for (const b of bad) expect(migrateState(b)).toBeNull();
   });
 
-  it('lädt den reparierten Stand und speichert danach nur den Hauptschlüssel', () => {
+  it('lädt den reparierten Stand, sichert den Rohtext einmal und speichert danach den Hauptschlüssel', () => {
     const m = mem({ [SAVE_KEY]: JSON.stringify(damaged()) }); const store = new SaveStore(m);
-    const loaded = store.load()!;
+    const result = store.load();
+    if (result.kind !== 'ok') throw new Error('nicht geladen');
+    const loaded = result.state;
     expect(loaded.progression.level).toBe(30);
-    expect(store.save(loaded, 9)).toBe(true);
-    expect(m.writtenKeys).toEqual([SAVE_KEY]);
+    expect(m.getItem(REJECTED_SAVE_KEY)).toBe(JSON.stringify(damaged()));
+    expect(store.save(loaded, 9)).toEqual({ kind: 'saved' });
+    expect(m.writtenKeys).toEqual([REJECTED_SAVE_KEY, SAVE_KEY]);
   });
 });

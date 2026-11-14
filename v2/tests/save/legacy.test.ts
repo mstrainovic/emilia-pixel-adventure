@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { migrateLegacySave, legacyTimestamp, LEGACY_SAVE_KEY, LEGACY_MUTED_KEY } from '../../src/save/legacy';
+import { migrateLegacySave as migrateRaw, legacyTimestamp, LEGACY_SAVE_KEY, LEGACY_MUTED_KEY } from '../../src/save/legacy';
 import { QUEST_ORDER } from '../../src/data/quests';
 import { isMapId } from '../../src/data/maps';
 import {
@@ -10,6 +10,11 @@ import {
 } from './legacySaves';
 
 const REAL = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/legacy/emilia-real.json');
+/** Wie migrateLegacySave, aber nur das Ergebnis einer gelungenen Übernahme; sonst null. */
+function migrateLegacySave(raw: string | null, muted: string | null, now: number) {
+  const r = migrateRaw(raw, muted, now);
+  return r.kind === 'ok' ? r : null;
+}
 const run = (o: unknown, muted: string | null = null) => migrateLegacySave(JSON.stringify(o), muted, 5000);
 const EMPTY_SLOT = { itemId: null, count: 0 };
 
@@ -18,9 +23,18 @@ it('kennt die alten Speicherschlüssel', () => {
   expect(LEGACY_MUTED_KEY).toBe('emilia_muted');
 });
 
-it('liefert null bei fehlendem oder kaputtem Stand', () => {
-  for (const raw of [null, '', '{"version":3,"player":', '[]', '"x"', 'null', '42'])
-    expect(migrateLegacySave(raw, null, 5000)).toBeNull();
+it('unterscheidet fehlenden, unlesbaren und gelungenen Stand', () => {
+  expect(migrateRaw(null, null, 5000)).toEqual({ kind: 'none' });
+  for (const raw of ['', '{"version":3,"player":', '[]', '"x"', 'null', '42'])
+    expect(migrateRaw(raw, null, 5000)).toEqual({ kind: 'unreadable' });
+  expect(migrateRaw('{}', null, 5000).kind).toBe('ok');
+});
+
+it('liefert failed mit der Fehlermeldung, wenn der Umbau wirft', () => {
+  const spy = vi.spyOn(QUEST_ORDER, 'filter').mockImplementation(() => { throw new Error('kaputt'); });
+  try {
+    expect(migrateRaw(JSON.stringify(LEGACY_V3_FULL), null, 5000)).toEqual({ kind: 'failed', message: 'kaputt' });
+  } finally { spy.mockRestore(); }
 });
 
 it('übernimmt die Form des ersten Commits', () => {
@@ -111,6 +125,19 @@ it('baut nur bei aktivem New Game Plus auf und meldet nur Neues', () => {
   expect(state.progression.activeQuests).toEqual({});
   const off = run({ ...o, newGamePlus: { active: 'true' } })!;
   expect(off.state.progression.completedQuests).toEqual(['first_steps']);
+});
+
+it('wertet nach New Game Plus abgeschlossene Einträge in activeQuests als erledigt', () => {
+  // Alt-Quelle: Progression.js, _completeQuest setzt completed: true und lässt den Eintrag stehen;
+  // resetQuests leert bei New Game Plus nur completedQuests.
+  const o = { ...LEGACY_NGPLUS, progression: { ...LEGACY_NGPLUS.progression,
+    completedQuests: {}, activeQuests: { crab_problem: { progress: 5, completed: true } } } };
+  const { state } = run(o)!;
+  expect(state.progression.completedQuests).toContain('crab_problem');
+  expect(state.progression.activeQuests).not.toHaveProperty('crab_problem');
+  const off = run({ ...o, newGamePlus: { active: false } })!;
+  expect(off.state.progression.completedQuests).toEqual(['crab_problem']);
+  expect(off.state.progression.activeQuests).toEqual({});
 });
 
 describe('Spielstand in unerwarteter Form', () => {

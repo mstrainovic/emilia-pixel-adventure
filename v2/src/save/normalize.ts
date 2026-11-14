@@ -145,6 +145,7 @@ export function normalizeState(raw: unknown): { state: GameState; report: Repair
     formatVersion: GAME_STATE_VERSION,
     savedAt: finite(raw['savedAt']) ?? 0,
     importedLegacyAt: finite(raw['importedLegacyAt']) ?? null,
+    legacyDeclinedAt: finite(raw['legacyDeclinedAt']) ?? null,
     player: repairedPlayer,
     inventory: {
       slots: defaults.inventory.slots,
