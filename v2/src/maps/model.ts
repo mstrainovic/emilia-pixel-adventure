@@ -52,7 +52,7 @@ export interface WorldMap {
 const FACINGS: readonly Facing[] = ['down', 'up', 'left', 'right'];
 
 function layerMissing(id: MapId, name: string): Error {
-  return new Error(`Karte ${id}: Ebene „${name}" fehlt`);
+  return new Error(`Karte ${id}: Ebene „${name}“ fehlt`);
 }
 
 function tileLayer(id: MapId, tiled: TiledMap, name: string): TiledTileLayer {

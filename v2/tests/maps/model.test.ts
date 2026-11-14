@@ -109,8 +109,8 @@ describe('Kartenmodell', () => {
   });
 
   it('wirft, wenn eine Ebene fehlt', () => {
-    expect(() => buildWorldMap('hub', smallMap('collision'))).toThrow('Karte hub: Ebene „collision" fehlt');
-    expect(() => buildWorldMap('hub', smallMap('npcs'))).toThrow('Karte hub: Ebene „npcs" fehlt');
+    expect(() => buildWorldMap('hub', smallMap('collision'))).toThrow('Karte hub: Ebene „collision“ fehlt');
+    expect(() => buildWorldMap('hub', smallMap('npcs'))).toThrow('Karte hub: Ebene „npcs“ fehlt');
   });
 
   it('liest das echte Dorf', () => {

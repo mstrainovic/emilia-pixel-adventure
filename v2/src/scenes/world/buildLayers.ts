@@ -36,15 +36,15 @@ export function buildLayers(scene: Phaser.Scene, key: string, tiled: TiledMap, l
   const map = scene.make.tilemap({ key });
   const tilesets = tiled.tilesets.map((t) => {
     const textureKey = tilesetKey(t.name);
-    if (!scene.textures.exists(textureKey)) throw new Error(`Karte ${label}: Bild für Kachelsatz „${t.name}" fehlt`);
+    if (!scene.textures.exists(textureKey)) throw new Error(`Karte ${label}: Bild für Kachelsatz „${t.name}“ fehlt`);
     const tileset = map.addTilesetImage(t.name, textureKey);
-    if (!tileset) throw new Error(`Karte ${label}: Kachelsatz „${t.name}" ließ sich nicht anlegen`);
+    if (!tileset) throw new Error(`Karte ${label}: Kachelsatz „${t.name}“ ließ sich nicht anlegen`);
     return tileset;
   });
   for (const { name, depth } of GROUND_LAYERS) {
-    if (!tiled.layers.some((l) => l.name === name && l.type === 'tilelayer')) throw new Error(`Karte ${label}: Ebene „${name}" fehlt`);
+    if (!tiled.layers.some((l) => l.name === name && l.type === 'tilelayer')) throw new Error(`Karte ${label}: Ebene „${name}“ fehlt`);
     const layer = map.createLayer(name, tilesets, 0, 0);
-    if (!layer) throw new Error(`Karte ${label}: Ebene „${name}" ließ sich nicht anlegen`);
+    if (!layer) throw new Error(`Karte ${label}: Ebene „${name}“ ließ sich nicht anlegen`);
     layer.setDepth(depth);
   }
   return map;
