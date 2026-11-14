@@ -87,7 +87,7 @@ async function checkPointer(page: Page, snapshot: Snapshot, css: { width: number
   const mapped = await page.evaluate(
     ([cx, cy, ox, oy]) => {
       const h = (window as any).__emilia2;
-      return { center: h.cssToView(cx, cy), corner: h.cssToView(ox, oy) };
+      return { center: h.cssToView(cx, cy), corner: h.cssToView(ox, oy), outside: h.cssToView((ox as number) - 1 / window.devicePixelRatio, cy as number) };
     },
     [css.width / 2, css.height / 2, offsetX / snapshot.dpr, offsetY / snapshot.dpr],
   );
@@ -95,6 +95,11 @@ async function checkPointer(page: Page, snapshot: Snapshot, css: { width: number
   expect(Math.abs(mapped.center.y - Math.floor(viewHeight / 2))).toBeLessThanOrEqual(1);
   expect(mapped.corner.x).toBeCloseTo(0, 1);
   expect(mapped.corner.y).toBeCloseTo(0, 1);
+  // `inside` gehört zum Vertrag von cssToView: Feldmitte innen, ein Pixel vor dem Feld außen
+  expect(mapped.center.inside).toBe(true);
+  expect(mapped.corner.inside).toBe(true);
+  expect(mapped.outside.inside).toBe(false);
+  expect(mapped.outside.x).toBeLessThan(0);
 }
 
 /**

@@ -91,14 +91,14 @@ export class PixelGrid {
     camera.setZoom(zoom);
   }
 
-  /** Ort im sichtbaren Feld, in Bildpunkten, für eine Zeigerposition in CSS-Pixeln. */
-  cssToView(cssX: number, cssY: number): { x: number; y: number } {
-    const { zoom, offsetX, offsetY } = this.current.layout;
+  /**
+   * Ort im sichtbaren Feld, in Bildpunkten (ungerundet), für eine Zeigerposition in CSS-Pixeln (Seite, wie `pageX`/`pageY`).
+   * Vertrag wie `canvasToView` (pixel.ts): Der Scale Manager rechnet CSS-Pixel in Gerätepixel der Zeichenfläche um,
+   * `inside` gilt genau für das sichtbare Feld, Werte im schwarzen Rand werden nicht gekappt.
+   */
+  cssToView(cssX: number, cssY: number): { x: number; y: number; inside: boolean } {
     const scale = this.game.scale;
-    return {
-      x: (scale.transformX(cssX) - offsetX) / zoom,
-      y: (scale.transformY(cssY) - offsetY) / zoom,
-    };
+    return canvasToView(this.current.layout, scale.transformX(cssX), scale.transformY(cssY));
   }
 
   private deferBegin(): void {

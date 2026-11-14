@@ -42,14 +42,18 @@ const readKey = (page: Page, key: string): Promise<string | null> => page.evalua
  * Hält eine Taste, bis Emilia sich von `from` weg bewegt hat (Bedingung abwarten statt festes Wanduhr-Fenster: Auf dem
  * Rechner der Auslieferung stockt das Bild etwa 1 s nach jedem Seitenstart). Danach loslassen.
  */
-async function holdUntilMoved(page: Page, key: string, from: PlayerInfo): Promise<void> {
-  await page.keyboard.down(key);
+async function holdUntil(page: Page, keys: string[], reached: (p: PlayerInfo) => boolean, message: string): Promise<void> {
+  for (const k of keys) await page.keyboard.down(k);
   try {
-    await expect.poll(async () => (await player(page)).x, { timeout: 5000, message: 'Emilia bewegt sich nicht' }).toBeGreaterThan(from.x + 5);
+    await expect.poll(async () => reached(await player(page)), { timeout: 5000, message }).toBe(true);
   } finally {
-    await page.keyboard.up(key);
+    for (const k of keys) await page.keyboard.up(k);
   }
+  await expect.poll(async () => (await player(page)).moving, { timeout: 5000 }).toBe(false);
 }
+
+const holdUntilMoved = (page: Page, key: string, from: PlayerInfo): Promise<void> =>
+  holdUntil(page, [key], (p) => p.x > from.x + 5, 'Emilia bewegt sich nicht');
 
 /**
  * Hält Tasten und wartet dann, bis Emilia steht. Das Warten ist hier keine Zeitmessung (die steht in walk.spec.ts):
@@ -69,7 +73,7 @@ test('laufen, speichern, neu laden: Emilia steht wieder da', async ({ page }) =>
   await page.goto('./');
   await waitForWorld(page);
   const start = await player(page);
-  await hold(page, ['KeyD', 'KeyS'], 500);
+  await holdUntil(page, ['KeyD', 'KeyS'], (p) => Math.hypot(p.x - start.x, p.y - start.y) > 12, 'Emilia bewegt sich nicht');
   const before = await player(page);
   expect(Math.hypot(before.x - start.x, before.y - start.y)).toBeGreaterThan(10);
   expect((await saveNow(page)).kind).toBe('saved');
@@ -90,7 +94,8 @@ test('direkt an der Wand gespeichert: nach dem Neuladen steht Emilia noch an der
   await waitForWorld(page);
   // Westlicher Waldrand: Kacheln 0 und 1 sind fest, die Wandkante liegt bei x = 32
   await page.evaluate(() => (window as any).__emilia2.teleport(2, 14));
-  await hold(page, ['KeyA'], 1000);
+  // bis an die Wand (Wandkante 32, halbe Körperbreite 5); das Abwarten des Stillstands steht in holdUntil
+  await holdUntil(page, ['KeyA'], (p) => p.x < 37.5, 'Emilia erreicht die Wand nicht');
   const before = await player(page);
   expect(before.x - 5).toBeLessThan(32.5);
   expect((await saveNow(page)).kind).toBe('saved');
