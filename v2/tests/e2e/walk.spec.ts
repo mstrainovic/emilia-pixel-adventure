@@ -56,41 +56,109 @@ async function hold(page: Page, keys: string[], ms: number): Promise<void> {
   for (const k of keys) await page.keyboard.up(k);
 }
 
+/** Längster Zeitschritt des Spiels in Millisekunden (MAX_DT in movement.ts): längere Bildabstände zählen nur so weit. */
+const MAX_STEP_MS = 100;
+
+interface WalkRun {
+  /** Zeit, die die Taste in der Seite gedrückt war, auf der Wanduhr. */
+  heldMs: number;
+  /** Dieselbe Spanne in Spielzeit: Summe der Bildabstände, jeder höchstens MAX_STEP_MS. */
+  heldGameMs: number;
+  frames: number;
+  /** Spielzeit vom Loslassen bis zum ersten Bild, in dem Emilia steht. */
+  stopGameMs: number;
+  longestGapMs: number;
+}
+
+/**
+ * Hält D und misst in der Seite, Bild für Bild. Gemessen wird in Spielzeit, nicht auf der Wanduhr: Stockt das Bild
+ * (auf dem Rechner der Auslieferung kurz nach dem Seitenstart bis etwa 1 s), rückt das Spiel in diesem Bild nur
+ * MAX_DT weiter. Ein Test, der Strecke durch Wanduhr-Zeit teilt oder 200 ms auf den Stillstand wartet, misst dort
+ * das Stocken statt des Spiels (zwei rote Erstversuche auf GitHub am 2026-11-14: 35 px/s; Taste 1500 ms gedrückt).
+ * Zeitlupe bei niedriger Bildrate fällt weiter auf: Bildabstände bis MAX_STEP_MS zählen voll.
+ */
+async function measureWalk(page: Page, holdMs: number, stallMs = 0): Promise<WalkRun> {
+  await page.evaluate((maxStep) => {
+    const w = window as any;
+    const run = { down: null as number | null, up: null as number | null, heldGameMs: 0, frames: 0, stopGameMs: -1, afterUp: 0, longestGapMs: 0, last: performance.now() };
+    w.__walk = run;
+    addEventListener('keydown', (e) => { if (e.code === 'KeyD' && run.down === null) run.down = performance.now(); });
+    addEventListener('keyup', (e) => { if (e.code === 'KeyD' && run.up === null) run.up = performance.now(); });
+    const tick = (): void => {
+      const now = performance.now();
+      const gap = now - run.last;
+      run.last = now;
+      if (run.down !== null && run.up === null) {
+        run.heldGameMs += Math.min(gap, maxStep);
+        run.frames++;
+        run.longestGapMs = Math.max(run.longestGapMs, gap);
+      } else if (run.up !== null && run.stopGameMs < 0) {
+        run.afterUp += Math.min(gap, maxStep);
+        if (w.__emilia2.player().moving === false) run.stopGameMs = run.afterUp;
+      }
+      if (run.stopGameMs < 0) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, MAX_STEP_MS);
+  await page.keyboard.down('KeyD');
+  if (stallMs > 0) {
+    await page.waitForTimeout(200);
+    // Die Seite hängt: kein Bild, keine Eingabe (wie das Stocken auf dem Rechner der Auslieferung). Erst danach
+    // läuft die restliche Haltezeit, damit das Stocken sicher vor dem Loslassen endet.
+    await page.evaluate((ms) => { const until = performance.now() + ms; while (performance.now() < until) { /* warten */ } }, stallMs);
+    await page.waitForTimeout(holdMs - 200);
+  } else {
+    await page.waitForTimeout(holdMs);
+  }
+  await page.keyboard.up('KeyD');
+  // Warten auf den Stillstand ist hier keine Zeitmessung; die Messung steht in stopGameMs
+  await page.waitForFunction(() => (window as any).__walk.stopGameMs >= 0, undefined, { timeout: 10_000 });
+  return page.evaluate(() => {
+    const r = (window as any).__walk;
+    return { heldMs: r.up - r.down, heldGameMs: r.heldGameMs, frames: r.frames, stopGameMs: r.stopGameMs, longestGapMs: r.longestGapMs };
+  });
+}
+
+function checkWalk(label: string, run: WalkRun, walked: number): void {
+  const speed = walked / (run.heldGameMs / 1000);
+  console.log(
+    `${label}: ${walked.toFixed(2)} Bildpunkte in ${run.heldGameMs.toFixed(0)} ms Spielzeit (${run.heldMs.toFixed(0)} ms gedrückt) = ${speed.toFixed(1)} px/s, ` +
+    `${(run.frames / (run.heldMs / 1000)).toFixed(0)} Bilder/s, längster Bildabstand ${run.longestGapMs.toFixed(0)} ms, steht nach ${run.stopGameMs.toFixed(0)} ms Spielzeit`,
+  );
+  expect(run.heldGameMs, `nur ${run.heldGameMs.toFixed(0)} ms Spielzeit gedrückt – der Lauf sagt nichts aus`).toBeGreaterThanOrEqual(300);
+  // Gehtempo 64 Bildpunkte je Sekunde Spielzeit; Spielraum für An- und Auslauf und ein Bild Unschärfe beim Zählen
+  expect(speed).toBeGreaterThanOrEqual(41);
+  expect(speed).toBeLessThanOrEqual(80);
+  // Stillstand nach ACCEL_TIME (100 ms Spielzeit), höchstens ein langes Bild später
+  expect(run.stopGameMs).toBeLessThanOrEqual(250);
+}
+
 test('D gedrückt: Emilia läuft nach rechts und bleibt nach dem Loslassen stehen', async ({ page }) => {
   const errors: string[] = [];
   await openWorld(page, errors);
   const before = await player(page);
   expect(before.moving).toBe(false);
-  // Die Seite merkt sich, wann sie keydown und keyup von D wirklich bekam, und zählt die Bilder dazwischen:
-  // gemessen wird die Geschwindigkeit über die echte Haltezeit, nicht über Playwrights Wartezeit.
-  await page.evaluate(() => {
-    const w = window as any;
-    w.__hold = { down: null, up: null, frames: 0 };
-    addEventListener('keydown', (e) => { if (e.code === 'KeyD' && w.__hold.down === null) w.__hold.down = performance.now(); });
-    addEventListener('keyup', (e) => { if (e.code === 'KeyD' && w.__hold.up === null) w.__hold.up = performance.now(); });
-    const count = (): void => {
-      if (w.__hold.down !== null && w.__hold.up === null) w.__hold.frames++;
-      if (w.__hold.up === null) requestAnimationFrame(count);
-    };
-    requestAnimationFrame(count);
-  });
-  await hold(page, ['KeyD'], 600);
-  // „moving === false binnen 200 ms nach dem Loslassen", danach ist der Ort zur Ruhe gekommen
-  await expect.poll(async () => (await player(page)).moving, { timeout: 200, intervals: [16] }).toBe(false);
+  const run = await measureWalk(page, 600);
   const after = await player(page);
-  const walked = after.x - before.x;
-  const { down, up, frames } = await page.evaluate(() => (window as any).__hold as { down: number; up: number; frames: number });
-  const heldSeconds = (up - down) / 1000;
-  const speed = walked / heldSeconds;
-  console.log(
-    `D: ${walked.toFixed(2)} Bildpunkte in ${(heldSeconds * 1000).toFixed(0)} ms gehalten = ${speed.toFixed(1)} px/s, ` +
-    `${(frames / heldSeconds).toFixed(0)} Bilder/s`,
-  );
-  expect(heldSeconds, `Taste war in der Seite ${(heldSeconds * 1000).toFixed(0)} ms gedrückt – der Lauf sagt nichts aus`).toBeGreaterThanOrEqual(0.5);
-  expect(heldSeconds, `Taste war in der Seite ${(heldSeconds * 1000).toFixed(0)} ms gedrückt – der Lauf sagt nichts aus`).toBeLessThanOrEqual(1);
-  // 25 bis 45 Bildpunkte bei 600 ms Halten
-  expect(speed).toBeGreaterThanOrEqual(41);
-  expect(speed).toBeLessThanOrEqual(75);
+  expect(after.moving).toBe(false);
+  checkWalk('D', run, after.x - before.x);
+  expect(after.facing).toBe('right');
+  expect(after.y).toBe(before.y);
+  expect(errors).toEqual([]);
+});
+
+test('stockt das Bild mitten im Laufen fast eine Sekunde, springt Emilia nicht und läuft danach normal weiter', async ({ page }) => {
+  const errors: string[] = [];
+  await openWorld(page, errors);
+  const before = await player(page);
+  const run = await measureWalk(page, 600, 900);
+  const after = await player(page);
+  expect(after.moving).toBe(false);
+  // das Stocken ist wirklich passiert …
+  expect(run.longestGapMs).toBeGreaterThan(500);
+  // … und zählt als ein Zeitschritt von MAX_DT: Tempo in Spielzeit wie ohne Stocken, kein Sprung über die Strecke
+  checkWalk('D mit Stocken', run, after.x - before.x);
+  expect(after.x - before.x).toBeLessThan(64 * (run.heldGameMs / 1000) + 12);
   expect(after.facing).toBe('right');
   expect(after.y).toBe(before.y);
   expect(errors).toEqual([]);
