@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { ITEMS, REMOVED_ITEMS, ITEM_SUCCESSORS, getItem } from '../../src/data/items';
 import { RECIPES, getRecipesForStation } from '../../src/data/recipes';
-import { QUESTS, QUEST_ORDER } from '../../src/data/quests';
+import { QUESTS, QUEST_ORDER, QUEST_GIVERS } from '../../src/data/quests';
 import { NPCS } from '../../src/data/npcs';
 import { ENEMIES } from '../../src/data/enemies';
 import { BOSSES, isBossUnlocked } from '../../src/data/bosses';
@@ -126,6 +126,18 @@ describe('Aufgaben', () => {
     const ids = [...block.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1]);
     expect(ids.length).toBe(25);
     expect([...QUEST_ORDER]).toEqual(ids);
+  });
+  it('QUEST_GIVERS entspricht QUEST_NPC_MAP in FriendshipSystem.js', () => {
+    const src = readFileSync(new URL('../../../src/systems/FriendshipSystem.js', import.meta.url), 'utf8');
+    const block = /const QUEST_NPC_MAP = \{([\s\S]*?)\};/.exec(src)![1]!;
+    const pairs = [...block.matchAll(/([a-z0-9_]+):\s*'([a-z0-9_]+)'/g)].map((m) => [m[1]!, m[2]!] as const);
+    expect(pairs.length).toBe(25);
+    expect(QUEST_GIVERS).toEqual(Object.fromEntries(pairs));
+    const npcIds = NPCS.map((n) => n.id);
+    for (const [quest, giver] of Object.entries(QUEST_GIVERS)) {
+      expect(QUESTS[quest], quest).toBeDefined();
+      expect(npcIds, quest).toContain(giver);
+    }
   });
 });
 

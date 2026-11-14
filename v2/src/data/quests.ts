@@ -245,3 +245,35 @@ export const QUEST_ORDER: readonly string[] = [
   'coral_healer', 'deep_explorer', 'best_friend', 'collector_page1', 'sunken_treasure',
   'cloud_jumper', 'crystal_puzzle', 'shadow_slayer', 'star_collector', 'emilia_legend', 'secret_heroine',
 ];
+
+/**
+ * Aufgabengeber: Wer erzählt von welcher Aufgabe.
+ * Alt: src/systems/FriendshipSystem.js, QUEST_NPC_MAP (Zeilen 38–64).
+ */
+export const QUEST_GIVERS: Readonly<Record<string, string>> = {
+  first_steps: 'mama_tanja',
+  wood_collector: 'opa',
+  nature_healer: 'oma',
+  slime_hunter: 'marie',
+  lake_visitor: 'liam',
+  dungeon_explorer: 'papa_milos',
+  master_cook: 'mama_tanja',
+  skeleton_slayer: 'papa_milos',
+  unicorn_friend: 'marie',
+  master_crafter: 'opa',
+  meadow_hero: 'papa_milos',
+  shell_collector: 'liam',
+  master_angler: 'liam',
+  crab_problem: 'liam',
+  coral_healer: 'oma',
+  deep_explorer: 'marie',
+  best_friend: 'marie',
+  collector_page1: 'deda',
+  sunken_treasure: 'ferdinand',
+  cloud_jumper: 'deda',
+  crystal_puzzle: 'deda',
+  shadow_slayer: 'papa_milos',
+  star_collector: 'baba',
+  emilia_legend: 'baba',
+  secret_heroine: 'deda',
+};
