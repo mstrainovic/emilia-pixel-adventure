@@ -283,7 +283,7 @@ Angriffstakt von Emilia: etwa alle 0,45 s (heute 0,3 s ohne Animation). Das Edel
 ### 8.1 Pixelraster
 
 - Kachelgröße 16 Pixel. Ein Bildpunkt der Grafik entspricht immer einer ganzzahligen Zahl von Bildschirmpixeln.
-- Zoom: `Z = max(1, floor(min(Breite_physisch / 240, Höhe_physisch / 180)))`. Die Kamera zeigt, was bei diesem Zoom ins Fenster passt (bei Full HD 320×180 Bildpunkte, also 20×11¼ Kacheln).
+- Zoom: `Z = max(1, floor(min(Breite_physisch / B, Höhe_physisch / H)))`. Das Mindestfeld `B × H` ist auf großen Bildschirmen (kürzere Seite ab 500 CSS-Pixel: PC, iPad) 288×216 Bildpunkte, auf Handys 240×180. Die Kamera zeigt, was bei diesem Zoom ins Fenster passt (bei Full HD 384×216 Bildpunkte, also 24×13½ Kacheln; iPad quer 292×219). (Geändert am 2026-11-14: Mit 240×180 für alle war das Bild am PC nach Rückmeldung des Auftraggebers zu nah, am Handy passte es; er wählte aus drei Vergleichsbildern die Stufe „Mittel".)
 - Kamera und laufende Figuren rasten auf ganze **Bildschirmpixel** ein (Vielfache von 1/Z Bildpunkt); stehende Figuren und alles in der Karte stehen auf ganzen Bildpunkten. (Geändert am 2026-11-14 nach der Rückmeldung des Auftraggebers „beim Rennen wackelt alles etwas": Mit ganzen Bildpunkten als Raster rückte die Welt bei Z = 6 je Bild mal 6, mal 12 Bildschirmpixel weiter. Das Bild bleibt scharf; die laufende Figur liegt dadurch um Bruchteile eines Bildpunkts neben dem Raster der Welt.)
 - Keine Weichzeichner über der Pixelgrafik. Stimmung entsteht durch Farbton je Gebiet und Tageszeit sowie durch Lichtflecken im Pixelraster. Tag und Nacht müssen sichtbar wirken (heute wirkungslos).
 - Kein Drehen und kein krummes Skalieren von Sprites.

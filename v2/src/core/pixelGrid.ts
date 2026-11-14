@@ -35,7 +35,7 @@ function currentDpr(): number {
 }
 
 function snapshotOf(deviceWidth: number, deviceHeight: number, dpr: number): PixelGridSnapshot {
-  return { deviceWidth, deviceHeight, dpr, layout: computeLayout(deviceWidth, deviceHeight) };
+  return { deviceWidth, deviceHeight, dpr, layout: computeLayout(deviceWidth, deviceHeight, dpr) };
 }
 
 /**

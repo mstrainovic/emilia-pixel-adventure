@@ -18,7 +18,8 @@ test('zoomt ganzzahlig', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   await page.goto('./');
-  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 4);
+  // großer Bildschirm: mindestens 288×216 Bildpunkte, also floor(720 / 216) = 3
+  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 3);
   const size = await page.evaluate(() => {
     const grid = (window as any).__emilia2.pixelGrid;
     const c = document.querySelector('canvas')!;
@@ -31,7 +32,7 @@ test('zoomt ganzzahlig', async ({ browser, baseURL }) => {
   });
   expect(size).toEqual({ grid: { w: 1280, h: 720 }, canvas: { w: 1280, h: 720 }, css: { w: 1280, h: 720 } });
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 6);
+  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 5);
   const size2 = await page.evaluate(() => {
     const grid = (window as any).__emilia2.pixelGrid;
     const c = document.querySelector('canvas')!;
@@ -74,9 +75,10 @@ test('bleibt bei hoher Pixeldichte ganzzahlig und bildet Zeiger richtig ab', asy
     mapped: { x: 812, y: 200 },
   });
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 8);
+  // iPad: großer Bildschirm, floor(1536 / 216) = 7 (das Handy darüber bleibt bei mindestens 240×180)
+  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 7);
   expect(await read()).toMatchObject({
-    zoom: 8,
+    zoom: 7,
     dpr: 2,
     device: { width: 2048, height: 1536 },
     canvasSize: { width: 2048, height: 1536 },
