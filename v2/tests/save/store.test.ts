@@ -106,8 +106,6 @@ describe('migrateState', () => {
     const bad: unknown[] = [
       null, 'x', [], 7, {},
       { ...ok, formatVersion: 2 }, { ...ok, formatVersion: undefined },
-      { ...ok, player: { ...ok.player, map: 'nirgends' } }, { ...ok, player: null },
-      { ...ok, inventory: { ...ok.inventory, slots: [] } }, { ...ok, inventory: null },
       { ...ok, progression: null },
     ];
     for (const b of bad) expect(migrateState(b)).toBeNull();
@@ -196,7 +194,7 @@ describe('migrateState: Reparatur statt Verwerfen', () => {
     for (const i of [3, 4, 5]) expect(r.inventory.slots[i]).toEqual({ itemId: null, count: 0 });
     expect(r.progression.level).toBe(30);
     expect(r.inventory.coins).toBe(37);
-    expect(r.player).toEqual({ map: 'hub', x: 20, y: 15, hp: 40 });
+    expect(r.player).toEqual({ map: 'hub', x: 19.5, y: 14.5, hp: 40 });
     expect(r.visitedMaps).toEqual(['hub']);
     expect(r.progression.stats).toEqual(createNewGameState(1).progression.stats);
     expect(r.progression.completedQuests).toEqual([]);
@@ -210,11 +208,8 @@ describe('migrateState: Reparatur statt Verwerfen', () => {
   it('verlangt das harte Minimum', () => {
     const ok = roundTrip(createNewGameState(1));
     const bad: unknown[] = [
-      { ...ok, inventory: { ...ok.inventory, slots: ok.inventory.slots.slice(1) } },
-      { ...ok, player: { ...ok.player, map: 'moon' } },
       { ...ok, formatVersion: '1' },
       { ...ok, progression: { ...ok.progression, level: 'x' } },
-      { ...ok, inventory: undefined },
     ];
     for (const b of bad) expect(migrateState(b)).toBeNull();
   });

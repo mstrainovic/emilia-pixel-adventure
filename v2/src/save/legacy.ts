@@ -6,7 +6,7 @@ import { MAX_LEVEL, HP_PER_HEART, heartsForLevel, convertLegacyXp } from '../cor
 import { ITEM_SUCCESSORS, getItem } from '../data/items';
 import { BOSSES } from '../data/bosses';
 import { QUESTS, QUEST_ORDER } from '../data/quests';
-import { isMapId, type MapId } from '../data/maps';
+import { isMapId, HUB_START, type MapId } from '../data/maps';
 import {
   isObj, keysOf, field, finite, counter, nonNegative, stringList, trueKeys, listOrTrueKeys,
   counterRecord, bossRecord, boolRecord, listRecord, type Obj,
@@ -23,7 +23,6 @@ export interface MigrationReport {
   warnings: string[];
 }
 
-const HUB_START = { map: 'hub' as MapId, x: 20, y: 15 };
 const NGPLUS_BOSS = 'shadow_knight';
 const NGPLUS_LAST_QUEST = 'shadow_slayer';
 const NGPLUS_ACHIEVEMENTS_FOR_STAR = 15;

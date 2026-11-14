@@ -2,6 +2,7 @@
 // Regeln: nichts wirft; die alten Schlüssel werden nur gelesen; ein neuerer Stand wird nie überschrieben.
 import { GAME_STATE_VERSION, type GameState } from '../core/state';
 import { normalizeState } from './normalize';
+import { runMigrations, MIGRATIONS } from './migrations';
 import {
   LEGACY_SAVE_KEY, LEGACY_MUTED_KEY, migrateLegacySave, legacyTimestamp,
 } from './legacy';
@@ -17,7 +18,8 @@ export type SaveReason = 'timer' | 'map-change' | 'quest' | 'boss' | 'build' | '
 /** Prüft das harte Minimum und repariert den Rest (siehe normalize.ts); wirft nie. */
 export function migrateState(raw: unknown): GameState | null {
   try {
-    return normalizeState(raw);
+    const migrated = runMigrations(raw, MIGRATIONS, GAME_STATE_VERSION);
+    return migrated.kind === 'ok' ? (normalizeState(migrated.raw)?.state ?? null) : null;
   } catch {
     return null;
   }

@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "maps:export": "node tools/export-legacy-maps.mjs"
+    "maps:export": "node tools/export-legacy-maps.mjs",
+    "save:fingerprint": "node tools/save-fingerprint.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1"

@@ -1,4 +1,4 @@
-import type { MapId } from '../data/maps';
+import { HUB_START, type MapId } from '../data/maps';
 
 export const GAME_STATE_VERSION = 1;
 export const INVENTORY_SLOTS = 48;
@@ -17,7 +17,7 @@ export interface GameState {
   formatVersion: 1;
   savedAt: number;
   importedLegacyAt: number | null;      // Zeitstempel des alten Stands bei der letzten Übernahme
-  player: { map: MapId; x: number; y: number; hp: number };   // hp in Lebenspunkten, 4 je Herz
+  player: { map: MapId; x: number; y: number; hp: number };   // x/y: Fußpunkt in Kacheln (Gleitkomma); hp in Lebenspunkten, 4 je Herz
   inventory: { slots: Array<{ itemId: string | null; count: number }>; selectedHotbar: number; coins: number };
   progression: {
     level: number; xp: number;
@@ -46,7 +46,7 @@ export function createNewGameState(now: number): GameState {
     formatVersion: 1,
     savedAt: now,
     importedLegacyAt: null,
-    player: { map: 'hub', x: 20, y: 15, hp: 20 },
+    player: { ...HUB_START, hp: 20 },
     inventory: {
       slots: Array.from({ length: INVENTORY_SLOTS }, () => ({ itemId: null, count: 0 })),
       selectedHotbar: 0,

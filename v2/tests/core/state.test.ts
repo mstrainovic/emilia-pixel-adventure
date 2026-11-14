@@ -8,7 +8,7 @@ it('Konstanten', () => {
 it('neues Spiel', () => {
   const s = createNewGameState(1000);
   expect(s.formatVersion).toBe(1); expect(s.savedAt).toBe(1000); expect(s.importedLegacyAt).toBeNull();
-  expect(s.player).toEqual({ map: 'hub', x: 20, y: 15, hp: 20 });
+  expect(s.player).toEqual({ map: 'hub', x: 19.5, y: 14.5, hp: 20 });
   expect(s.inventory.slots).toHaveLength(48);
   expect(s.inventory.slots.every((x) => x.itemId === null && x.count === 0)).toBe(true);
   expect(s.progression.level).toBe(1); expect(s.visitedMaps).toEqual(['hub']);

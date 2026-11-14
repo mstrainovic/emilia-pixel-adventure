@@ -78,7 +78,7 @@ it('baut erledigte Aufgaben nach New Game Plus wieder auf', () => {
 
 it('füllt einen lückenhaften Stand mit sicheren Vorgaben', () => {
   const { state } = run(LEGACY_PARTIAL)!;
-  expect(state.player).toEqual({ map: 'hub', x: 20, y: 15, hp: 20 });
+  expect(state.player).toEqual({ map: 'hub', x: 19.5, y: 14.5, hp: 20 });
   expect(state.progression.level).toBe(1);
   expect(state.inventory.slots).toHaveLength(48);
 });
