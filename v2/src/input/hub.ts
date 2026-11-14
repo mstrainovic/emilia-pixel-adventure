@@ -59,6 +59,11 @@ export class InputHub {
     return true;
   }
 
+  /** Verwirft alle gepufferten Drücke; gehaltene Tasten und Bewegung bleiben (anders als `reset`). */
+  clearPresses(): void {
+    this.pending = [];
+  }
+
   reset(): void {
     this.pending = [];
     this.current = { x: 0, y: 0, run: false };

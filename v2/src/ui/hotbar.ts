@@ -7,12 +7,16 @@ import type { Action } from '../input/actions';
 import type { InputHub } from '../input/hub';
 import { hotbarSlots } from '../systems/inventory';
 import { el } from './el';
+// Baukasten vor hud.css: gleich spezifische Regeln aus hud.css (etwa der Innenabstand einer Tafel) gelten nur,
+// wenn kit.css vorher geladen ist – auch wenn dieses Modul vor root.ts geladen wird (etwa über WorldScene).
+import './kit.css';
 import './hud.css';
 
 /** Symbole der Gegenstände (16×16, von art:build aus Items/ des Packs). */
 const ICON_URLS = import.meta.glob<string>('../assets/gfx/ui/*.png', { query: '?url', import: 'default', eager: true });
 
-function iconUrl(name: string): string {
+/** Adresse eines Bildes aus gfx/ui (Name ohne „.png", etwa aus `iconFor`); auch für die Hinweise (toasts.ts). */
+export function iconUrl(name: string): string {
   const url = ICON_URLS[`../assets/gfx/ui/${name}.png`];
   if (!url) throw new Error(`Symbol ${name} fehlt in gfx/ui.`);
   return url;

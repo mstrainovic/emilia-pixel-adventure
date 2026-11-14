@@ -108,6 +108,8 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 | samen_karotte | ui/samen_karotte.png | Items/Food/SeedBig1.png | 0,0 10×13 | mittig in 16×16 gesetzt | Symbol Karottensamen (orange Knolle mit Keim) | CC0 1.0 |
 | samen_tomate | ui/samen_tomate.png | Items/Food/SeedBig3.png | 0,0 10×13 | mittig in 16×16 gesetzt | Symbol Tomatensamen (rote Knolle mit Keim) | CC0 1.0 |
 | beutel | ui/beutel.png | Items/Object/Bag.png | 0,0 16×16 | unverändert ausgeschnitten | Neutrales Symbol für Gegenstände ohne eigenes Bild | CC0 1.0 |
+| taste_e | ui/taste_e.png | Ui/Input/Keyboard/KeyE.png | 0,0 13×13 | unverändert ausgeschnitten | Tasten-Bild „E" über der ansprechbaren Figur (nur mit Tastatur) | CC0 1.0 |
+| hinweis | ui/hinweis.png | Ui/Emote/emote22.png | 0,0 14×13 | unverändert ausgeschnitten | Hinweis-Symbol (rotes Ausrufezeichen) über dem Dorfbewohner, zu dem die aktuelle Aufgabe führt | CC0 1.0 |
 
 ## Schriften
 

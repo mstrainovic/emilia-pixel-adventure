@@ -11,6 +11,8 @@ import type { UiRoot } from '../ui/root';
 import type { WindowManager } from '../ui/windows';
 import type { Hud } from '../ui/hud';
 import type { Hotbar } from '../ui/hotbar';
+import type { DialogueBox } from '../ui/dialogueBox';
+import type { Toasts } from '../ui/toasts';
 
 /** Was beim Start zu erklären ist (die Anzeige dazu kommt in Plan 1b). */
 export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
@@ -97,6 +99,10 @@ export interface Services {
   hud: Hud;
   /** Schnellleiste; die Welt-Szene ruft je Bild `hotbar.handleInput` (Tasten 1–8), wenn das Spiel läuft. */
   hotbar: Hotbar;
+  /** Gesprächsfeld unten Mitte; die Welt-Szene öffnet und schließt es (Task 8 schließt es zusätzlich per Tippen). */
+  dialogue: DialogueBox;
+  /** Kurze Hinweise (3 s sichtbar, höchstens zwei zugleich). */
+  toasts: Toasts;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

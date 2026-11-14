@@ -7,7 +7,7 @@ import { CSP } from './csp';
 const DIST = fileURLToPath(new URL('../../../dist/v2', import.meta.url));
 const MAX_BYTES = 4 * 1024 * 1024;
 /** Test-Zugänge und Prüfhilfen, die im ausgelieferten Paket nichts verloren haben. */
-const FORBIDDEN = ['__emilia2', 'stilprobe', 'lastSaveResult', 'PixelProbe', 'probe=schach', 'openTestWindow', 'consumeInput', 'uiLog', 'setHp', 'setSlot'];
+const FORBIDDEN = ['__emilia2', 'stilprobe', 'lastSaveResult', 'PixelProbe', 'probe=schach', 'openTestWindow', 'consumeInput', 'uiLog', 'setHp', 'setSlot', 'skipTime', 'talkState'];
 const NOT_BUILT = 'dist/v2 fehlt oder ist leer. Erst bauen: npm run build';
 
 function listFiles(dir: string): string[] {

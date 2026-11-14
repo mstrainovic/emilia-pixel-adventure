@@ -107,6 +107,18 @@ describe('Quellenverzeichnis src/assets/gfx', () => {
     expect(size('ui/knopf_gedrueckt.png')).toEqual([16, 8]);
   });
 
+  it('über den Figuren: Tasten-Bild „E" aus Ui/Input, Hinweis-Symbol aus Ui/Emote (Task 7)', () => {
+    const expected: Record<string, { quelle: string; size: [number, number] }> = {
+      'ui/taste_e.png': { quelle: 'Ui/Input/Keyboard/KeyE.png', size: [13, 13] },
+      'ui/hinweis.png': { quelle: 'Ui/Emote/emote22.png', size: [14, 13] },
+    };
+    for (const [ziel, { quelle, size }] of Object.entries(expected)) {
+      expect(sources.eintraege.find((e) => e.ziel === ziel)?.quelle, ziel).toBe(quelle);
+      const png = PNG.sync.read(readFileSync(join(GFX, ziel)));
+      expect([png.width, png.height], ziel).toEqual(size);
+    }
+  });
+
   it('QUELLEN.md nennt beide Schriften mit Herkunft und Lizenz', () => {
     const md = readFileSync(join(GFX, 'QUELLEN.md'), 'utf8');
     expect(md).toContain('Nunito');

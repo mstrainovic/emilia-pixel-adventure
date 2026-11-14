@@ -37,6 +37,23 @@ describe('InputHub', () => {
     expect(hub.consume('interact')).toBe(false);
   });
 
+  it('clearPresses verwirft gepufferte Drücke, lässt gehaltene Bewegung aber stehen', () => {
+    const s = new FakeSource();
+    const hub = hubWith(s);
+    s.queue.push('interact', 'hotbar2');
+    s.move = { x: 1, y: 0 };
+    hub.frame(0.016);
+    hub.clearPresses();
+    expect(hub.consume('interact')).toBe(false);
+    expect(hub.consume('hotbar2')).toBe(false);
+    expect(hub.intent.x).toBe(1);
+    expect(s.resets).toBe(0);
+    // spätere Drücke kommen wieder an
+    s.queue.push('interact');
+    hub.frame(0.016);
+    expect(hub.consume('interact')).toBe(true);
+  });
+
   it('ein Druck wartet höchstens PRESS_BUFFER auf seinen Abnehmer', () => {
     expect(PRESS_BUFFER).toBe(0.3);
     const s = new FakeSource();

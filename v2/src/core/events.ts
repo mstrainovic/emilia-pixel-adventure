@@ -1,6 +1,7 @@
 import type { SaveReason, SaveResult } from '../save/store';
 import type { QuestChange } from '../systems/quests';
 import type { FriendChange } from '../systems/friendship';
+import type { ContextTarget } from '../systems/interaction';
 
 /** Ereignisse des Spiels. */
 export interface GameEvents {
@@ -12,6 +13,8 @@ export interface GameEvents {
   /** Herzen, Level, Erfahrung, Münzen. */
   'stats:changed': Record<string, never>;
   'ui:paused': { paused: boolean };
+  /** Was gerade ansprechbar ist; nur bei Wechsel gemeldet. Bei offenem Gespräch oder angehaltenem Spiel `null`. */
+  'context:changed': { target: ContextTarget | null };
   /** Der Ton selbst zieht in Etappe 7 um. */
   'ui:sound': { name: 'open' | 'close' | 'click' | 'quest' };
 }

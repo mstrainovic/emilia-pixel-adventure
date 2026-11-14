@@ -290,6 +290,9 @@ export const UI = [
   { id: 'samen_karotte', source: 'Items/Food/SeedBig1.png', x: 0, y: 0, w: 10, h: 13, box: 16, use: 'Symbol Karottensamen (orange Knolle mit Keim)' },
   { id: 'samen_tomate', source: 'Items/Food/SeedBig3.png', x: 0, y: 0, w: 10, h: 13, box: 16, use: 'Symbol Tomatensamen (rote Knolle mit Keim)' },
   { id: 'beutel', source: 'Items/Object/Bag.png', x: 0, y: 0, w: 16, h: 16, box: 16, use: 'Neutrales Symbol für Gegenstände ohne eigenes Bild' },
+  // Über den Figuren im Spielbild (Task 7), von der Welt-Szene gezeichnet
+  { id: 'taste_e', source: 'Ui/Input/Keyboard/KeyE.png', x: 0, y: 0, w: 13, h: 13, use: 'Tasten-Bild „E" über der ansprechbaren Figur (nur mit Tastatur)' },
+  { id: 'hinweis', source: 'Ui/Emote/emote22.png', x: 0, y: 0, w: 14, h: 13, use: 'Hinweis-Symbol (rotes Ausrufezeichen) über dem Dorfbewohner, zu dem die aktuelle Aufgabe führt' },
 ];
 
 /** Schriften, die nicht aus dem Pack kommen (für QUELLEN.md); die Lizenzdatei wird beim Bauen geprüft. */

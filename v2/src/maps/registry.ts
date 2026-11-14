@@ -4,6 +4,8 @@ import hubUrl from '../assets/maps/hub.json?url';
 import dorfTilesUrl from '../assets/gfx/tiles/dorf.png?url';
 import dorfPropsUrl from '../assets/gfx/props/dorf.png?url';
 import dorfPropFrames from '../assets/gfx/props/dorf.json';
+import keyHintUrl from '../assets/gfx/ui/taste_e.png?url';
+import questHintUrl from '../assets/gfx/ui/hinweis.png?url';
 
 /*
  * Welche Karten und Bilder das Spiel lädt. Alles über Vite-Importe (?url), damit Basis-Pfad und CSP stimmen.
@@ -48,6 +50,10 @@ export const FIGURE_FILES: Readonly<Record<string, string>> = Object.fromEntries
 
 /** Schatten unter jeder Figur. */
 export const FIGURE_SHADOW_FILE: string = figureUrl(FIGURE_SHADOW);
+
+/** Bilder über den Figuren (Task 7): Tasten-Bild „E" (13×13) und Hinweis-Symbol der Aufgabe (14×13). */
+export const MARKER_FILES = { key: keyHintUrl, quest: questHintUrl } as const;
+export const markerKey = (name: keyof typeof MARKER_FILES): string => `marker:${name}`;
 
 /** Schlüssel in Phasers Caches. */
 export const mapKey = (id: MapId): string => `map:${id}`;

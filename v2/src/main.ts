@@ -15,9 +15,40 @@ import { UiRoot } from './ui/root';
 import { WindowManager } from './ui/windows';
 import { Hud } from './ui/hud';
 import { Hotbar } from './ui/hotbar';
+import { DialogueBox } from './ui/dialogueBox';
+import { Toasts } from './ui/toasts';
 import { el } from './ui/el';
-import { TEXTS } from './data/texts';
+import { TEXTS, fillText } from './data/texts';
+import { QUESTS } from './data/quests';
+import { iconFor } from './data/icons';
+import { advanceClock } from './systems/dayclock';
 import type { Action } from './input/actions';
+
+/**
+ * Hinweise zum Fortschritt: Aufgabe geschafft (mit den Symbolen der Belohnung), neues Level; nach einer erledigten
+ * Aufgabe wird gespeichert. Solange das Spiel angehalten ist (Gespräch, Fenster), warten die Hinweise und erscheinen,
+ * sobald es weiterläuft – so stehen sie nicht neben dem Gesprächsfeld und laufen nicht ungesehen ab.
+ */
+function announceProgress(services: Services): void {
+  const { bus, windows } = services;
+  const waiting: Array<() => void> = [];
+  const announce = (text: string, icons?: readonly string[]): void => {
+    const show = (): void => services.toasts.show(text, icons);
+    if (windows.paused) waiting.push(show);
+    else show();
+  };
+  bus.on('ui:paused', ({ paused }) => {
+    if (!paused) for (const show of waiting.splice(0)) show();
+  });
+  bus.on('quest:changed', (change) => {
+    if (!change.completed) return;
+    const rewards = (QUESTS[change.questId]?.itemReward ?? []).map((r) => iconFor(r.itemId));
+    announce(TEXTS['toast.questDone'], rewards);
+    if (change.levelsGained > 0) announce(fillText('toast.levelUp', { n: services.state.progression.level }));
+    bus.emit('ui:sound', { name: 'quest' });
+    if (services.persist) services.save.saveNow('quest');
+  });
+}
 
 const host = document.getElementById('game');
 if (!host) throw new Error('Spielbereich #game fehlt.');
@@ -93,6 +124,9 @@ const services = {
 services.session.start();
 services.hud = new Hud(uiRoot.element, services);
 services.hotbar = new Hotbar(uiRoot.element, services);
+services.dialogue = new DialogueBox(uiRoot.element, services, windows);
+services.toasts = new Toasts(uiRoot.element);
+announceProgress(services);
 game.registry.set(SERVICES_KEY, services);
 pixelGrid.start();
 // alle 60 s, beim Verstecken und beim Verlassen der Seite (wie Etappe 0)
@@ -136,6 +170,10 @@ if (testHooksEnabled) {
     setSlot: (index: number, itemId: string | null, count: number) => {
       services.state.inventory.slots[index] = { itemId, count };
       bus.emit('inventory:changed', {});
+    },
+    // Uhr des Spieltags vorstellen (in Schritten, wie sie session.tick macht): 750 s = ein Spieltag
+    skipTime: (seconds: number) => {
+      for (let left = seconds; left > 0; left -= 1) advanceClock(services.state, Math.min(1, left));
     },
   });
 }

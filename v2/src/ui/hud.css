@@ -237,11 +237,113 @@
   pointer-events: none;
 }
 
+/* absolut im Platz, innerhalb des Rahmens: rechts und unten 1 Bildpunkt Rahmen (kit.css), dazu 1 Bildpunkt Luft rechts */
 .hotbar__count {
   position: absolute;
-  right: var(--hud-px);
-  bottom: 0;
+  right: calc(2 * var(--hud-px));
+  bottom: var(--hud-px);
   font-size: round(nearest, var(--fs-2), calc(9 * var(--px)));
   line-height: 1;
   pointer-events: none;
+}
+
+/* ---------- unten Mitte über der Schnellleiste: Gesprächsfeld (Task 7) ---------- */
+
+/*
+ * Die Hülle liegt über der Schnellleiste (deren Abstand zum Rand, ein Platz, Luft) und setzt das Feld mittig; das Feld
+ * wächst nach oben. Lage und Größe des Felds zieht grid.ts auf ganze Bildpunkte nach (dialogueBox.ts).
+ */
+.dialogue {
+  position: absolute;
+  right: 0;
+  bottom: calc(max(var(--sp-3), env(safe-area-inset-bottom)) + max(var(--tap), calc(20 * var(--hud-px))) + var(--sp-3));
+  left: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 max(var(--sp-3), env(safe-area-inset-right)) 0 max(var(--sp-3), env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.dialogue[hidden] {
+  display: none;
+}
+
+.dialogue__box {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: min(100%, 560px);
+  padding: calc(5 * var(--hud-px) + var(--sp-2)) calc(5 * var(--hud-px) + var(--sp-3));
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.dialogue__face {
+  flex: 0 0 auto;
+  width: calc(38 * var(--hud-px));
+  height: calc(38 * var(--hud-px));
+  image-rendering: pixelated;
+}
+
+.dialogue__face[hidden] {
+  display: none;
+}
+
+.dialogue__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dialogue__name {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--fs-2);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* nie abgeschnitten: kein overflow, keine Zeilengrenze; der Satz ist schon auf höchstens zwei Zeilen umbrochen */
+.dialogue__lines {
+  margin: 0;
+}
+
+.dialogue__line {
+  display: block;
+  font-size: var(--fs-2);
+  line-height: 1.3;
+}
+
+/* ---------- oben Mitte: kurze Hinweise (Task 7) ---------- */
+
+/* unter der Zeile mit Herzen und Aufgabe, über der Bildmitte; jeder Hinweis wird einzeln eingerastet (toasts.ts) */
+.toasts {
+  position: absolute;
+  top: 28%;
+  right: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: calc(5 * var(--hud-px) + var(--sp-1)) calc(5 * var(--hud-px) + var(--sp-3));
+}
+
+.toast__icon {
+  flex: 0 0 auto;
+  width: calc(16 * var(--hud-px));
+  height: calc(16 * var(--hud-px));
+  image-rendering: pixelated;
+}
+
+.toast__text {
+  align-self: center;
+  font-size: var(--fs-2);
+  font-weight: 700;
+  line-height: 1.2;
 }

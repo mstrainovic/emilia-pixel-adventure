@@ -25,6 +25,10 @@ export const TEXTS = {
   /** Gegenstand mit unbekannter Kennung (Review Focus 5): neutral benannt, mit Beutel-Symbol. */
   'hud.slot.unknown': 'Gegenstand',
   'hud.slot.count': '{name}, {n} Stück',
+  // Hinweise beim Reden im Dorf (Task 7); Level als Muster mit der neuen Zahl
+  'toast.questDone': 'Aufgabe geschafft!',
+  'toast.levelUp': 'Level {n}!',
+  'toast.exitSoon': 'Hier geht es bald weiter.',
   /** Probefenster der Browser-Tests (nur über den Test-Zugang erreichbar). */
   'test.title': 'Probefenster',
   'test.body': 'Hier steht später etwas Schönes.',

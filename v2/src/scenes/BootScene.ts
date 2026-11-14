@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { HUB_START, MAP_IDS } from '../data/maps';
 import {
-  FIGURE_FILES, FIGURE_SHADOW_FILE, FIGURE_SHADOW_KEY, MAP_FILES, PROP_ATLAS, PROP_TEXTURE, TILESET_FILES,
-  figureKey, mapKey, tilesetKey,
+  FIGURE_FILES, FIGURE_SHADOW_FILE, FIGURE_SHADOW_KEY, MAP_FILES, MARKER_FILES, PROP_ATLAS, PROP_TEXTURE, TILESET_FILES,
+  figureKey, mapKey, markerKey, tilesetKey,
 } from '../maps/registry';
 import { FIGURE_FRAME } from '../data/sprites';
 import { servicesOf } from '../core/services';
@@ -26,6 +26,8 @@ export class BootScene extends Phaser.Scene {
       this.load.spritesheet(figureKey(id), url, { frameWidth: FIGURE_FRAME.width, frameHeight: FIGURE_FRAME.height });
     }
     this.load.image(FIGURE_SHADOW_KEY, FIGURE_SHADOW_FILE);
+    this.load.image(markerKey('key'), MARKER_FILES.key);
+    this.load.image(markerKey('quest'), MARKER_FILES.quest);
     for (const id of MAP_IDS) {
       const url = MAP_FILES[id];
       if (url) this.load.tilemapTiledJSON(mapKey(id), url);

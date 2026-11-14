@@ -113,4 +113,9 @@ describe('fillText', () => {
     expect(fillText('hud.slot.count', { name: 'Beere', n: 5 })).toBe('Beere, 5 Stück');
     expect(fillText('hud.level', {})).toBe('Level {n}');
   });
+  it('Hinweise beim Reden im Dorf', () => {
+    expect(TEXTS['toast.questDone']).toBe('Aufgabe geschafft!');
+    expect(fillText('toast.levelUp', { n: 2 })).toBe('Level 2!');
+    expect(TEXTS['toast.exitSoon']).toBe('Hier geht es bald weiter.');
+  });
 });
