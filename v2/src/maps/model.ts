@@ -128,8 +128,9 @@ export function resolveStart(map: WorldMap, saved: { map: MapId; x: number; y: n
   const tileWidth = map.widthPx / map.solid.width;
   const tileHeight = map.heightPx / map.solid.height;
   const start = { x: saved.x * tileWidth, y: saved.y * tileHeight };
-  // Der Fußpunkt selbst liegt in der Karte (nicht auf ihrem Rand); außerhalb gilt isSolid ohnehin als fest.
-  const inside = start.x >= 0 && start.y >= 0 && start.x < map.widthPx && start.y < map.heightPx;
+  // Der Fußpunkt darf auch genau auf der unteren oder rechten Kante liegen (dort bleibt die Figur in der Lücke eines
+  // Ausgangs stehen); ob der Körper dort passt, entscheidet bodyFits – außerhalb gilt isSolid ohnehin als fest.
+  const inside = start.x >= 0 && start.y >= 0 && start.x <= map.widthPx && start.y <= map.heightPx;
   return inside && bodyFits(map.solid, start.x, start.y) ? start : fallback;
 }
 

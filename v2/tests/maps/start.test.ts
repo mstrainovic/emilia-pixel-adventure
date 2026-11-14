@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { HUB_START } from '../../src/data/maps';
 import { buildWorldMap, resolveStart } from '../../src/maps/model';
-import { stepMover, type Mover } from '../../src/systems/movement';
+import { bodyFits, stepMover, type Mover } from '../../src/systems/movement';
 import { loadGameMaps } from './loadMaps';
 
 const hub = buildWorldMap('hub', loadGameMaps().hub);
@@ -88,6 +88,29 @@ describe('resolveStart (Review Focus 4)', () => {
       });
       expect(moved, `aus ${saved.x}/${saved.y}`).toBe(true);
     }
+  });
+
+  describe('Fuß auf der unteren oder rechten Kartenkante', () => {
+    it('in der Lücke des Süd-Ausgangs (y = Kartenhöhe) bleibt der Ort', () => {
+      // Süd-Ausgang: Kacheln 18–21 (x 288–352); moveAndSlide lässt die Figur genau auf der Kante stehen
+      expect(bodyFits(hub.solid, 320, hub.heightPx)).toBe(true);
+      expect(resolveStart(hub, { map: 'hub', x: 320 / 16, y: hub.heightPx / 16 })).toEqual({ x: 320, y: hub.heightPx });
+    });
+
+    it('knapp hinter der unteren Kante (+0,01) → Startpunkt', () => {
+      expect(resolveStart(hub, { map: 'hub', x: 320 / 16, y: (hub.heightPx + 0.01) / 16 })).toEqual(hub.spawn);
+    });
+
+    it('auf der unteren Kante, aber vor der Wand neben der Lücke → Startpunkt', () => {
+      expect(bodyFits(hub.solid, 100, hub.heightPx)).toBe(false);
+      expect(resolveStart(hub, { map: 'hub', x: 100 / 16, y: hub.heightPx / 16 })).toEqual(hub.spawn);
+    });
+
+    it('rechte Kante (x = Kartenbreite) im Ost-Ausgang: der Körper ragt hinaus, passt nicht → Startpunkt', () => {
+      // Ost-Ausgang: Kachelzeilen 13–16; die halbe Körperbreite (5) läge außerhalb der Karte
+      expect(bodyFits(hub.solid, hub.widthPx, 232)).toBe(false);
+      expect(resolveStart(hub, { map: 'hub', x: hub.widthPx / 16, y: 232 / 16 })).toEqual(hub.spawn);
+    });
   });
 
   it('liefert eine Kopie, nie das Objekt der Karte', () => {
