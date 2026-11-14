@@ -56,7 +56,7 @@ const game = new Phaser.Game({
 
 const pixelGrid = new PixelGrid(game, host);
 const input = new InputHub();
-const keyboard = new KeyboardSource(window);
+const keyboard = new KeyboardSource(window, document);
 keyboard.attach();
 input.add(keyboard);
 const save = new SaveService(store, () => services.state, () => Date.now(), (reason, result) => {

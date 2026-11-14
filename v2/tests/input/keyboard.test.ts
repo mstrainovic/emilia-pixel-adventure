@@ -17,12 +17,18 @@ class FakeTarget {
     return [...this.listeners.values()].reduce((n, s) => n + s.size, 0);
   }
   /** Verteilt ein Ereignis; liefert, ob `preventDefault()` aufgerufen wurde. */
-  fire(type: string, init: { code?: string; repeat?: boolean } = {}): boolean {
+  fire(
+    type: string,
+    init: { code?: string; repeat?: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean } = {},
+  ): boolean {
     let prevented = false;
     const event = {
       type,
       code: init.code ?? '',
       repeat: init.repeat ?? false,
+      ctrlKey: init.ctrlKey ?? false,
+      metaKey: init.metaKey ?? false,
+      altKey: init.altKey ?? false,
       preventDefault: () => {
         prevented = true;
       },
@@ -166,7 +172,7 @@ describe('KeyboardSource', () => {
   it('detach entfernt die Zuhörer und lässt alles los; attach zweimal hängt nicht doppelt ein', () => {
     const { target, keys } = setup();
     keys.attach();
-    expect(target.count()).toBe(3);
+    expect(target.count()).toBe(5);
     target.down('KeyD');
     keys.detach();
     expect(target.count()).toBe(0);
@@ -182,5 +188,90 @@ describe('KeyboardSource', () => {
     keys.reset();
     expect(keys.move).toEqual({ x: 0, y: 0 });
     expect(keys.drainPressed()).toEqual([]);
+  });
+
+  describe('klebende Tasten', () => {
+    /** Seite mit eigenem Ziel für `visibilitychange`; `hidden` lässt sich umschalten. */
+    function setupWithPage(): { target: FakeTarget; page: FakeTarget & { hidden: boolean }; keys: KeyboardSource } {
+      const target = new FakeTarget();
+      const page = Object.assign(new FakeTarget(), { hidden: false });
+      const keys = new KeyboardSource(
+        target as unknown as Pick<Window, 'addEventListener' | 'removeEventListener'>,
+        page as unknown as Pick<Document, 'addEventListener' | 'removeEventListener' | 'hidden'>,
+      );
+      keys.attach();
+      return { target, page, keys };
+    }
+
+    it.each(['MetaLeft', 'MetaRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight'])(
+      '%s gedrückt lässt alle gehaltenen Tasten los',
+      (mod) => {
+        const { target, keys } = setup();
+        target.down('KeyD');
+        target.down('ShiftLeft');
+        target.fire('keydown', {
+          code: mod,
+          metaKey: mod.startsWith('Meta'),
+          ctrlKey: mod.startsWith('Control'),
+          altKey: mod.startsWith('Alt'),
+        });
+        expect(keys.move.x).toBe(0);
+        expect(keys.run).toBe(false);
+      },
+    );
+
+    it.each(['ctrlKey', 'metaKey', 'altKey'] as const)('keydown mit %s wird weder gemerkt noch unterdrückt', (flag) => {
+      const { target, keys } = setup();
+      for (const code of ['KeyD', 'KeyE', 'KeyA']) {
+        expect(target.fire('keydown', { code, [flag]: true })).toBe(false);
+      }
+      expect(keys.move).toEqual({ x: 0, y: 0 });
+      expect(keys.drainPressed()).toEqual([]);
+    });
+
+    it('Shift zählt nicht als Zusatztaste: Shift + D rennt', () => {
+      const { target, keys } = setup();
+      target.down('ShiftLeft');
+      expect(target.down('KeyD')).toBe(true);
+      expect(keys.run).toBe(true);
+      expect(keys.move.x).toBe(1);
+    });
+
+    it('contextmenu lässt alles los', () => {
+      const { target, keys } = setup();
+      target.down('KeyD');
+      target.fire('contextmenu');
+      expect(keys.move.x).toBe(0);
+    });
+
+    it('pagehide lässt alles los', () => {
+      const { target, keys } = setup();
+      target.down('KeyD');
+      target.fire('pagehide');
+      expect(keys.move.x).toBe(0);
+    });
+
+    it('visibilitychange bei verborgener Seite lässt los, bei sichtbarer nicht', () => {
+      const { target, page, keys } = setupWithPage();
+      target.down('KeyD');
+      page.fire('visibilitychange');
+      expect(keys.move.x).toBe(1);
+      page.hidden = true;
+      page.fire('visibilitychange');
+      expect(keys.move.x).toBe(0);
+    });
+
+    it('detach meldet alle Empfänger ab und die Quelle reagiert auf nichts mehr', () => {
+      const { target, page, keys } = setupWithPage();
+      expect(target.count() + page.count()).toBe(6);
+      keys.detach();
+      expect(target.count() + page.count()).toBe(0);
+      target.down('KeyD');
+      page.hidden = true;
+      page.fire('visibilitychange');
+      target.fire('contextmenu');
+      target.fire('pagehide');
+      expect(keys.move).toEqual({ x: 0, y: 0 });
+    });
   });
 });
