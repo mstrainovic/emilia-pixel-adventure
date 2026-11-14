@@ -153,3 +153,78 @@ describe('Laufbild', () => {
     expect(walkFrameRow(-1, false)).toBe(1);
   });
 });
+
+describe('Eckenrutschen im Spiel (stepMover, 60 Bilder/s)', () => {
+  const tile = gridOf((x, y) => x === 8 && y === 5); // 128..144 × 80..96
+  const DT = 1 / 60;
+
+  /** Läuft bis zu `maxFrames` Bilder; liefert alle Zustände. */
+  function walk(start: Partial<Mover>, intent: MoveIntent, maxFrames: number, done: (m: Mover) => boolean): Mover[] {
+    let m = still(start);
+    const states: Mover[] = [];
+    for (let i = 0; i < maxFrames; i++) {
+      m = stepMover(m, intent, DT, tile);
+      states.push(m);
+      if (done(m)) break;
+    }
+    return states;
+  }
+
+  it('nach rechts, 4 Bildpunkte Überlappung (frei oben): kein Stocken, in unter 0,5 s vorbei', () => {
+    // Kastenunterkante 84 überlappt die Kachel (Oberkante 80) um 4.
+    const states = walk({ x: 122, y: 84, facing: 'right' }, go(1, 0), 30, (m) => m.x - 5 >= 144);
+    const last = states[states.length - 1]!;
+    expect(last.x - 5).toBeGreaterThanOrEqual(144);
+    expect(states.length).toBeLessThanOrEqual(30);
+    for (const m of states) {
+      expect(m.moving).toBe(true);
+      expect(m.vx).toBeGreaterThan(0);
+    }
+    expect(last.y).toBeLessThanOrEqual(80); // über die Kachel gerutscht
+  });
+
+  it('nach unten, 4 Bildpunkte Überlappung (frei links): kein Stocken, in unter 0,5 s vorbei', () => {
+    // Kasten rechts 132 überlappt die Kachel (linke Kante 128) um 4.
+    const states = walk({ x: 127, y: 76, facing: 'down' }, go(0, 1), 30, (m) => m.y - 6 >= 96);
+    const last = states[states.length - 1]!;
+    expect(last.y - 6).toBeGreaterThanOrEqual(96);
+    for (const m of states) {
+      expect(m.moving).toBe(true);
+      expect(m.vy).toBeGreaterThan(0);
+    }
+    expect(last.x + 5).toBeLessThanOrEqual(128);
+  });
+
+  it('nach links, 4 Bildpunkte Überlappung (frei unten): kein Stocken, in unter 0,5 s vorbei', () => {
+    // Kastenoberkante 92 überlappt die Kachel (Unterkante 96) um 4.
+    const states = walk({ x: 150, y: 98, facing: 'left' }, go(-1, 0), 30, (m) => m.x + 5 <= 128);
+    const last = states[states.length - 1]!;
+    expect(last.x + 5).toBeLessThanOrEqual(128);
+    for (const m of states) {
+      expect(m.moving).toBe(true);
+      expect(m.vx).toBeLessThan(0);
+    }
+    expect(last.y - 6).toBeGreaterThanOrEqual(96);
+  });
+
+  it('nach oben, 4 Bildpunkte Überlappung (frei rechts): kein Stocken, in unter 0,5 s vorbei', () => {
+    // Kasten links 140 überlappt die Kachel (rechte Kante 144) um 4.
+    const states = walk({ x: 145, y: 106, facing: 'up' }, go(0, -1), 30, (m) => m.y <= 80);
+    const last = states[states.length - 1]!;
+    expect(last.y).toBeLessThanOrEqual(80);
+    for (const m of states) {
+      expect(m.moving).toBe(true);
+      expect(m.vy).toBeLessThan(0);
+    }
+    expect(last.x - 5).toBeGreaterThanOrEqual(144);
+  });
+
+  it('6 Bildpunkte Überlappung (mehr als CORNER_NUDGE): bleibt an der Kachel stehen', () => {
+    const states = walk({ x: 122, y: 86, facing: 'right' }, go(1, 0), 60, () => false);
+    const last = states[states.length - 1]!;
+    expect(last.x + 5).toBe(128);
+    expect(last.y).toBe(86);
+    expect(last.vx).toBe(0);
+    expect(last.moving).toBe(false);
+  });
+});
