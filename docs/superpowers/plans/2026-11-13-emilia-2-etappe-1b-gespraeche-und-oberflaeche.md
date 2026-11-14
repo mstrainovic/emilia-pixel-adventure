@@ -66,6 +66,94 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 9. **Tests nachziehen:** Einheit von `distanceWalked` nach oben begrenzen; Browser-Test für einen Speicher, dessen `getItem` wirft; gespeicherter v2-Ort in einer Wand im Browser; eine Vorlage in echter New-Game-Plus-Form in die Verstümmelungs-Schleife; Fingerabdruck des Spielstands erfasst nur oberste Schlüssel (verschachtelte neue Felder lösen keinen Alarm aus).
 10. **Liste der serbischen Sätze** (`test-artifacts/texte/serbisch.md`, 25 Sätze): Der Satz „Bravo! Du bist mutig! Deda ist stolz!" fehlt dort ohne Vermerk; beim Gegenlesen am Ende dieses Plans mit vorlegen. Offen für den Auftraggeber: ekavisch oder ijekavisch („dve", „na svetu"), Schreibung von „Pita".
 
+**Ausgearbeitet am 2026-11-14 (vor der Ausführung):** Punkte 1–3 und die Speicher-Tests aus Punkt 9 sind **Task 0a**; Punkte 6, 7 und die übrigen Tests aus Punkt 9 sind **Task 0b**. Punkt 4 steht jetzt im Text von Task 9 und Task 10 (`save.stop()` vor dem Neuladen, mit Test). Punkt 5 steht in Task 8 (der Stick rastet nahe der Achsen ein). Punkt 8 ist entschieden (Stil-Prüfung 1a, 2026-11-14: Zäune, Truhen, Wegweiser, Büsche fest; Hühner durchlaufbar) und umgesetzt. Punkt 10 bleibt beim Abschluss.
+
+**Folgen aus dem Abschluss von 1a für diesen Plan (2026-11-14):**
+- **Zoom:** Große Bildschirme zeigen seit 1a mindestens 288×216 Bildpunkte (Full HD: Zoom 5, 1280×720: Zoom 3, iPad quer: Zoom 7; Handys unverändert). Damit die Anzeige so groß bleibt wie geplant, gilt in Task 5 `--hud-px = ceil(zoom / 2)` Gerätepixel (statt `floor`).
+- **Bildschirmpixel:** Kamera und laufende Figur rasten auf Bildschirmpixel ein (`snapToScreen`); stehende Figuren und Kartenobjekte auf ganze Bildpunkte. Was in Task 7 über Figuren schwebt (Tasten-Bild, Hinweis-Symbol), hängt an der stehenden Figur und rastet wie sie.
+- **Feste Gegenstände:** Die Truhe 9/9 sperrt eine Wegkachel vor der Küche; Zäune, Wegweiser und Büsche sind fest. Wege in den Browser-Tests (Task 7, Task 11) daran prüfen.
+- **Zeit in Browser-Tests:** Der Rechner der Auslieferung stockt etwa 1 s nach jedem Seitenstart bis zu 1 s lang. Kein neuer Browser-Test darf kurz nach dem Start eine Grenze auf der Wanduhr unter 5 s setzen; Dauer und Tempo werden in Spielzeit gemessen oder über Bedingungen abgewartet (`expect.poll`, `waitForFunction`), Muster: `measureWalk` in `tests/e2e/walk.spec.ts`.
+
+---
+
+### Task 0a: Speichern absichern (zwei Tabs, stille Verluste, Start-Bericht)
+
+**Files:**
+- Modify: `v2/src/save/store.ts`, `v2/src/save/normalize.ts`, `v2/src/save/legacy.ts`, `v2/src/core/services.ts`, `v2/src/main.ts`, `v2/tools/save-fingerprint.mjs`, `v2/tests/save/format-fingerprint.json`
+- Test: `v2/tests/save/store.test.ts`, `v2/tests/save/normalize.test.ts`, `v2/tests/save/legacy.test.ts`, `v2/tests/save/legacySaves.ts`, `v2/tests/core/services.test.ts`, `v2/tests/core/state.test.ts` (oder wo der Fingerabdruck heute geprüft wird), `v2/tests/e2e/persist.spec.ts`
+
+**Interfaces:**
+- Produces:
+  ```ts
+  // store.ts
+  export type SaveResult =
+    | { kind: 'saved' } | { kind: 'blocked-newer'; storedVersion: number }
+    | { kind: 'blocked-other-tab' }            // neu: der Eintrag wurde seit unserem letzten Lesen/Schreiben von jemand anderem geschrieben
+    | { kind: 'full' } | { kind: 'unavailable' };
+  // normalize.ts
+  export interface RepairReport {
+    droppedItems: Array<{ itemId: string; count: number }>;   // jetzt auch: gekürzte Stapel (der abgeschnittene Rest)
+    droppedQuests: string[];
+    resetQuests: string[];       // neu: aktive Aufgaben, deren Stand ungültig war und auf 0 gesetzt wurde (kein Verlust)
+    relocated: boolean; resizedInventory: boolean; lossy: boolean;
+  }
+  // services.ts
+  export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
+    | 'storage-unavailable' | 'legacy-imported' | 'legacy-failed';
+  export interface GameStart {
+    state: GameState; notice: StartNotice | null; persist: boolean; legacyNewer: boolean;
+    repair: RepairReport | null;      // Bericht des Ladens, wenn etwas repariert wurde
+    importSave: SaveResult | null;    // Ergebnis des Sofort-Speicherns nach einer Übernahme; null ohne Übernahme
+  }
+  export interface Services { /* wie bisher */ startRepair: RepairReport | null; importSave: SaveResult | null }
+  ```
+- **Zwei Tabs (Vorab 1):** `SaveStore` merkt sich den `savedAt`-Wert, den es zuletzt selbst gelesen (`load`) oder geschrieben (`save`, `replaceWith`) hat. `save()` liest den Eintrag ohnehin: Trägt er einen endlichen `savedAt`, der vom gemerkten abweicht, wird **nicht** geschrieben und `blocked-other-tab` gemeldet. Kein Eintrag (gelöscht) oder ein Eintrag ohne lesbaren `savedAt` (kaputt) → schreiben wie bisher. Ein `SaveStore`, der noch nie geladen oder geschrieben hat, schreibt und merkt sich den Wert (so bleiben die bestehenden Tests gültig). `replaceWith` prüft den fremden Stempel nicht (ausdrücklicher Wunsch, der ersetzte Rohtext wird gesichert), merkt sich aber seinen Zeitstempel. Die Prüfung auf eine neuere Version hat Vorrang vor der auf einen fremden Stempel.
+- **Ein Speicher in `main.ts`:** Heute legt `main.ts` zwei `SaveStore` an (einen für `startGame`, einen für die Sitzung); der gemerkte Stempel ginge dabei verloren. Künftig **ein** `SaveStore` über einem Speicher-Hüllobjekt, dessen `setItem` wirft, sobald `start.persist` falsch ist (dieselbe Wirkung wie heute, Meldung „In dieser Sitzung wird nicht gespeichert.").
+- **Stille Verluste (Vorab 2):** (a) Eine aktive Aufgabe mit ungültigem `progress` (keine endliche Zahl oder negativ) bleibt aktiv mit `progress: 0` und steht in `resetQuests` — kein `lossy`. (b) `readInventory` meldet jede Kürzung auf `stackSize` (Rest als Stückzahl) und jeden Platz mit bekannter Kennung, aber ungültiger Stückzahl; `normalizeState` führt beides in `droppedItems` und setzt `lossy` (ungültige Stückzahl: `count: 0` im Bericht). (c) Überzählige Plätze: schon heute wandern sie in freie Plätze; passt etwas nicht, steht es in `droppedItems` — Test ergänzen, dass das auch für Plätze ab 96 gilt. (d) `inspect` in `store.ts`: ein Bericht mit nicht leerem `resetQuests` gilt als „repariert" (`repair` nicht `null`).
+- **Start-Bericht (Vorab 3):** `startGame` liefert bei `ok` mit `repair.lossy` den Hinweis `save-repaired` und immer `repair`; bei „kaputt + Übernahme gelungen" `save-corrupt-legacy` (statt `save-corrupt`); bei „kaputt" ohne oder mit gescheiterter Übernahme weiter `save-corrupt`. `importSave` ist das Ergebnis von `store.save` direkt nach der Übernahme. Der Test-Zugang bekommt `startRepair` und `importSave`.
+- **Fingerabdruck (Vorab 9):** `save-fingerprint.mjs` schreibt `stateKeys` als sortierte Liste **aller** Schlüsselpfade von `createNewGameState(0)` (verschachtelt mit Punkt, z. B. `player.hp`, `progression.stats.npcsSpoken`; Felder werden nicht in Listen hinein verfolgt, `inventory.slots` ist ein Pfad). Der bestehende Vergleichstest prüft dieselbe Form.
+
+- [ ] **Step 1: Tests schreiben.**
+  - `store.test.ts`, zwei Tabs: Zwei `SaveStore` A und B über demselben Speicher, beide `load()`; B speichert zur Zeit 2000 → `saved`; A speichert zur Zeit 3000 → `blocked-other-tab`, der Eintrag ist bytegleich der von B. B speichert noch einmal → `saved`. A nach erneutem `load()` → `saved`. Eintrag wird von außen gelöscht → A speichert → `saved`. Eintrag ist `kaputt` → `saved`, Rohtext unter `REJECTED_SAVE_KEY`. Eintrag mit `formatVersion: 2` und fremdem `savedAt` → `blocked-newer`. `replaceWith` bei fremdem Stempel → `saved`, danach `save` desselben Speichers → `saved`. Ein `SaveStore` ohne `load()` → erstes `save` `saved`.
+  - `normalize.test.ts`: aktive Aufgabe `wood_collector` mit `progress: 'x'`, `-3`, `NaN`, fehlend → bleibt mit `progress: 0`, steht in `resetQuests`, `lossy` falsch. Platz mit `berry` und `count: stackSize + 7` → im Stand `stackSize`, im Bericht `{ berry, 7 }`, `lossy` wahr. Platz mit `berry` und `count: 0`, `-1`, `'viel'` → Platz leer, Bericht `{ berry, 0 }`, `lossy` wahr. 100 Plätze, alle 48 vorderen belegt, Platz 97 hält `wood` 3 → Bericht `{ wood, 3 }`, `lossy` wahr. Gültiger Stand → Bericht leer, Stand unverändert (Identität bleibt).
+  - `services.test.ts`: v2-Stand mit unbekanntem Gegenstand → `notice: 'save-repaired'`, `repair.lossy` wahr, `persist` wahr. v2-Stand kaputt + alter Stand `LEGACY_FIRST_COMMIT` → `save-corrupt-legacy`, `importSave.kind === 'saved'`, Level aus dem alten Stand. v2-Stand kaputt, kein alter → `save-corrupt`, `importSave` `null`. Leer + alter Stand, `setItem` wirft `QuotaExceededError` → `legacy-imported`, `importSave.kind === 'full'`. Gültiger Stand → `notice` `null`, `repair` `null`.
+  - `legacySaves.ts` und `legacy.test.ts`: Vorlage `LEGACY_NGPLUS_REAL` in der Form, die das alte Spiel nach „Neues Spiel Plus" wirklich schreibt (aus `src/systems/Progression.js`, `resetQuests`, und `src/systems/SaveManager.js` ablesen; Fundstellen mit Zeilen im Kommentar) — sie läuft in der bestehenden Verstümmelungs-Schleife mit.
+  - Fingerabdruck: Der Vergleichstest schlägt fehl, wenn im frischen Stand ein verschachteltes Feld dazukommt (Test mit einer Kopie der Pfadliste, der ein Pfad fehlt).
+  - `persist.spec.ts`: (1) Speicher, dessen `getItem` wirft (per `addInitScript` `Storage.prototype.getItem` ersetzen) → Spiel startet, `startNotice === 'storage-unavailable'`, Emilia läuft, keine Seitenfehler, `saveNow()` meldet nicht `saved`. (2) v2-Stand mit Ort mitten in einer Wand (Kachel 20/13, Dorfbrunnen) → Emilia steht nach dem Start auf dem Startpunkt 19/14, keine Fehler. (3) Zwei Seiten im selben Kontext: beide laden; Seite 2 `saveNow()` → `saved`; Seite 1 `saveNow()` → `blocked-other-tab`, der Eintrag stammt von Seite 2.
+- [ ] **Step 2: Tests schlagen fehl** — `cd v2 && npx vitest run tests/save tests/core`
+- [ ] **Step 3: Umsetzen**, danach `npm run save:fingerprint`.
+- [ ] **Step 4: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
+- [ ] **Step 5: Commit** — `git add v2/src/save v2/src/core/services.ts v2/src/main.ts v2/tools/save-fingerprint.mjs v2/tests` · `fix(v2): Speichern gegen zweiten Tab und stille Verluste gesichert, Start meldet Reparaturen`
+
+---
+
+### Task 0b: Tastatur neben HTML-Knöpfen, Zeiger-Abbildung, nachgezogene Tests
+
+**Files:**
+- Modify: `v2/src/input/keyboard.ts`, `v2/src/core/pixel.ts`, `v2/src/core/pixelGrid.ts`
+- Test: `v2/tests/input/keyboard.test.ts`, `v2/tests/core/pixel.test.ts`, `v2/tests/e2e/keys.spec.ts`, `v2/tests/e2e/walk.spec.ts`
+
+**Interfaces:**
+- Produces:
+  ```ts
+  // pixel.ts
+  /** Ort im sichtbaren Feld (Bildpunkte, ungerundet) für einen Ort auf der Zeichenfläche (Gerätepixel). */
+  export function canvasToView(layout: PixelLayout, canvasX: number, canvasY: number): { x: number; y: number; inside: boolean };
+  // pixelGrid.ts — cssToView liefert jetzt dasselbe Objekt (mit `inside`)
+  cssToView(cssX: number, cssY: number): { x: number; y: number; inside: boolean };
+  ```
+- **Tastatur und HTML-Knöpfe (Vorab 6):** `KeyboardSource` lässt `Enter` und `Space` dem Browser, wenn das Ziel des Ereignisses in einem Bedienelement liegt (`target.closest('button, a[href], input, select, textarea, [contenteditable="true"]')` trifft): kein `preventDefault`, keine Handlung `confirm`, die Taste gilt nicht als gehalten. Alle anderen Tasten (Laufen, Esc, E, M, H, 1–8) wirken unverändert, auch wenn ein Knopf den Fokus hat. In Eingabefeldern (`input`, `textarea`, `select`, `contenteditable`) gehört **jede** Taste außer `Escape` dem Feld. So lösen Enter und Leertaste HTML-Knöpfe aus, und kein Tastendruck zählt doppelt.
+- **Zeiger-Abbildung (Vorab 7):** `canvasToView` ist die reine Rechnung hinter `PixelGrid.cssToView`: `x = (canvasX − offsetX) / zoom`, `y` ebenso; ungerundet; `inside` ist wahr genau für `0 ≤ x < viewWidth` und `0 ≤ y < viewHeight`. Werte außerhalb werden **nicht** gekappt (der schwarze Rand liefert negative Werte oder Werte ab der Feldbreite); nicht endliche Eingaben → `{ x: NaN, y: NaN, inside: false }`. Der Vertrag steht als Kommentar an beiden Stellen.
+
+- [ ] **Step 1: Tests schreiben.**
+  - `keyboard.test.ts`: `Enter` und `Space` mit Ziel in einem `button` → kein `preventDefault`, `drainPressed()` leer; dieselben Tasten mit Ziel `body` → `confirm`, `preventDefault` gerufen. `KeyD` mit Ziel in einem `button` → `move.x === 1`. `KeyD` und `KeyE` mit Ziel in einem `input` → keine Bewegung, keine Handlung, kein `preventDefault`; `Escape` dort → `cancel`. Ziel ohne `closest` (z. B. `window`) → wie `body`.
+  - `pixel.test.ts`: Layout Zoom 5, Rand 0/0, Feld 384×216: `(0, 0)` → `{ 0, 0, inside: true }`; `(1919, 1079)` → `x` 383,8, `inside` wahr; `(1920, 500)` → `x` 384, `inside` falsch. Layout mit Rand 3/7: `(2, 7)` → `x` negativ, `inside` falsch; `(3, 7)` → `{ 0, 0, true }`. `NaN` → `inside` falsch.
+  - `keys.spec.ts`: Ein im Test eingefügter `<button>` bekommt den Fokus; `Enter` löst seinen `click` aus (Zähler 1), `Space` ebenso (Zähler 2); `D` bewegt Emilia trotz Fokus auf dem Knopf.
+  - `walk.spec.ts`: Nach einem gemessenen Lauf über `walked` Bildpunkte ist der Zuwachs von `state().progression.stats.distanceWalked` zwischen `walked / 16 × 0,9` und `walked / 16 × 1,1` (Einheit Kacheln, nach oben begrenzt).
+- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
+- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
+- [ ] **Step 4: Commit** — `git add v2/src/input/keyboard.ts v2/src/core/pixel.ts v2/src/core/pixelGrid.ts v2/tests` · `fix(v2): Enter und Leertaste lösen HTML-Knöpfe aus, Zeiger-Abbildung mit Vertrag und Tests`
+
 ---
 
 ### Task 1: Rucksack, Erfahrung und Herzen (reine Logik)
@@ -92,6 +180,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   ```
 - Alt-Quelle Rucksack: `src/systems/Inventory.js`, `addItem` Zeilen 23–52 (erst vorhandene Stapel bis `stackSize` füllen, dann leere Plätze von vorn), `selectHotbar` Zeilen 143–148. Alt-Quelle Startausrüstung: `src/core/Game.js` Zeile 368 (`addItem('sword_wood', 1)`).
 - Ein neues Spiel beginnt mit dem Holzschwert auf Platz 0. Bei einem Stufenaufstieg werden die Herzen ganz aufgefüllt.
+- **Achtung, Folge für Laden und Übernahme:** `normalize.ts` (`defaults`, `scratch`) und `legacy.ts` benutzen `createNewGameState(0)` als leere Ablage. Mit dem Schwert im frischen Stand bekäme jeder geladene oder übernommene Stand mit leerem Platz 0 ein Schwert geschenkt, und überzählige Plätze brächten eines mit. Diese Stellen müssen mit **leeren** Plätzen arbeiten (eine kleine Hilfsfunktion, die die 48 Plätze leert, oder ein eigener leerer Ausgangsstand); `normalizeState` bleibt auf einem gültigen Stand die Identität.
 
 - [ ] **Step 1: Tests schreiben.**
   - `addItem(state, 'berry', 5)` in ein neues Spiel → Rest 0, Platz 1 = `{ berry, 5 }` (Platz 0 hält das Schwert).
@@ -103,6 +192,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   - `heartQuarters`: Level 1, `hp` 20 → `[4, 4, 4, 4, 4]`; `hp` 9 → `[4, 4, 1, 0, 0]`; Level 5, `hp` 24 → sechs Einträge.
   - `addXp`: Level 1, `xp` 0, `+20` → Level 1, `xp` 20; `+60` → Level 2, `xp` 10 (Bedarf 50), `levelsGained: 1`, `hp === maxHp`; `+10000` von Level 29 → Level 30, `xp` 0; negative oder nicht endliche Menge → nichts.
   - `createNewGameState`: Platz 0 = `{ sword_wood, 1 }`, `pendingItems` = `[]`. `normalizeState` ergänzt ein fehlendes `pendingItems` zu `[]` und entfernt Einträge mit unbekannter Kennung (als `droppedItems`).
+  - Kein geschenktes Schwert: ein gespeicherter Stand mit leerem Platz 0 hat nach `normalizeState` weiter einen leeren Platz 0; ein Stand mit 60 Plätzen (Platz 0 leer, 12 überzählige mit Beeren) bekommt kein Schwert; ein alter Stand (`LEGACY_FIRST_COMMIT`) ohne Schwert hat nach der Übernahme keines.
 - [ ] **Step 2: Tests schlagen fehl** — `cd v2 && npx vitest run tests/systems tests/core tests/save`
 - [ ] **Step 3: Umsetzen**, danach `npm run save:fingerprint` (neues Feld mit Vorgabe: Regel 1, keine neue Version).
 - [ ] **Step 4: Alles grün** — `cd v2 && npm run typecheck && npm test`
@@ -246,7 +336,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   ```ts
   // root.ts
   export class UiRoot { constructor(host: HTMLElement, pixelGrid: PixelGrid); readonly element: HTMLElement; destroy(): void }
-  // setzt auf host: --px (CSS-Länge eines Gerätepixels = 1/dpr px), --hud-px (= max(1, floor(zoom / 2)) Gerätepixel),
+  // setzt auf host: --px (CSS-Länge eines Gerätepixels = 1/dpr px), --hud-px (= ceil(zoom / 2) Gerätepixel, mindestens 1),
   // --view-x/-y/-w/-h (Kamera-Ausschnitt in CSS-Pixeln); hält sie bei jeder Änderung des Rasters aktuell
   // el.ts
   export function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K];
@@ -271,6 +361,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   - Schriften: `--font-text: 'Nunito'` (400 und 700, Teilsätze `latin` und `latin-ext` für die serbischen Zeichen); `--font-num: 'EmiliaZahlen'` = `Ui/Font/NormalFont.ttf` aus dem Pack, per `unicode-range` auf Ziffern, `/` und `×` begrenzt.
   - Ein Fenster-Stil (Rahmen aus `Ui/Theme/Theme Wood/nine_path_panel.png` als neunteiliger Rand, Titel links oben, Schließen-Knopf ✕ immer rechts oben), ein Knopf-Stil (`button_normal.png`, gedrückt `button_pressed.png`), ein Platz-Stil (`inventory_cell.png`). Pixelbilder mit `image-rendering: pixelated`, Größen nur als ganzzahlige Vielfache von `--hud-px`.
 - Fenster-Verhalten (Spec 10): schließt mit ✕, Esc und Tippen daneben; hält das Spiel an (`ui:paused`); blendet 120 ms ein und aus (bei `prefers-reduced-motion` ohne Blende); meldet `ui:sound`; der Tastaturfokus liegt im Fenster und kehrt danach zurück; beim Öffnen wird `input.reset()` gerufen, damit keine Taste klebt.
+- Tastatur in der Oberfläche (aus Task 0b): Enter und Leertaste auf einem HTML-Knopf mit Fokus gehören dem Browser und lösen den Knopf aus; `KeyboardSource` meldet dafür kein `confirm`. Knöpfe außerhalb von Fenstern (Anzeige, Schnellleiste, Touch) geben den Fokus nach einem Zeiger-Klick wieder ab (`blur()`), damit die Leertaste danach nicht den Knopf, sondern das Spiel bedient.
 
 - [ ] **Step 1: Farben wählen.** Skill `ui-ux-pro-max` heranziehen: aus `Palette.png` des Packs die acht Farben so wählen, dass `--c-ink` auf `--c-paper` ein Kontrastverhältnis von mindestens 7:1 hat und `--c-accent` auf `--c-paper` mindestens 3:1; die Verhältnisse als Kommentar in `tokens.css` festhalten.
 - [ ] **Step 2: Schrift einbinden.** Paket `@fontsource/nunito` installieren; in `node_modules/@fontsource/nunito/` die Lizenzdatei lesen (erwartet: SIL Open Font License 1.1) und die Dateinamen der Teilsätze nachsehen; `fonts.css` bindet nur `latin` und `latin-ext` in 400 und 700 ein. `art:build` kopiert `NormalFont.ttf` nach `gfx/ui/zahlen.ttf` und schreibt beide Schriften mit Herkunft und Lizenz nach `QUELLEN.md`. Weicht die Lizenz ab: anhalten und den Auftraggeber fragen.
@@ -278,7 +369,8 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   - `ui-rules.test.ts` (liest `v2/src/ui/**`): Farbwerte (`#…`, `rgb(`, `hsl(`) stehen nur in `tokens.css`; `tokens.css` definiert genau die acht Farb-Variablen; `font-size` kommt nur als `var(--fs-1…4)` vor; `font-family` nur als `var(--font-text)` oder `var(--font-num)`; kein Emoji in `src/ui` und `src/data/texts.ts`; `kit.css` verwendet `env(safe-area-inset-top)`, `-right`, `-bottom` und `-left`.
   - `text.test.ts`: `TEXTS` wird mitgesammelt (Umlaut-Regeln gelten); die Wörter „Quest", „Item", „Inventar", „Crafting", „Achievement" kommen als ganze Wörter in keinem Text aus `TEXTS` vor.
   - `ui.spec.ts`: nach dem Start ist `document.fonts.check('16px Nunito')` wahr und alle Anfragen gingen an die eigene Adresse. Testfenster über den Test-Zugang öffnen (`openTestWindow()`): sichtbar, Titel in `--fs-3`, ✕ rechts oben mit mindestens 48 × 48 CSS-Pixeln; `D` bewegt Emilia nicht; Esc schließt, danach bewegt `D` wieder; erneut öffnen, daneben klicken → zu; erneut öffnen, ✕ → zu. Während das Fenster offen ist, Fenstergröße auf 1024×768 und danach auf 811×375 ändern → das Fenster bleibt jedes Mal ganz im Bild, das Spiel bleibt angehalten, Esc schließt weiter (Review Focus 4).
-  - `ui.spec.ts`, Maßstab: bei Dichte 1, 1,25 und 1,5 ist `--hud-px × devicePixelRatio` eine ganze Zahl ≥ 1 (± 0,01).
+  - `ui.spec.ts`, Maßstab: bei Dichte 1, 1,25 und 1,5 ist `--hud-px × devicePixelRatio` eine ganze Zahl ≥ 1 (± 0,01); bei 1920×1080 (Zoom 5) ist sie 3, bei 1280×720 (Zoom 3) ist sie 2.
+  - `ui.spec.ts`, Tastatur: Im offenen Testfenster hat ✕ den Fokus; `Enter` schließt das Fenster (der Knopf wird ausgelöst), und danach liegt kein `confirm` im Eingabe-Puffer (`E` neben niemandem tut nichts, `D` bewegt Emilia).
 - [ ] **Step 4: Tests schlagen fehl**, dann umsetzen. `WorldScene.update`: Schritt 2 der Reihenfolge aus Plan 1a ist jetzt `windows.handleInput(input)`; bei `windows.paused` entfallen Spielerin und Uhr, Kamera und Zeichnen laufen weiter.
 - [ ] **Step 5: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
 - [ ] **Step 6: Commit** — `git add v2/src/ui v2/src/data/texts.ts v2/index.html v2/src/main.ts v2/src/scenes v2/tools/art/selection.mjs v2/src/assets/gfx v2/tests v2/package.json v2/package-lock.json` · `feat(v2): Oberflächen-Baukasten mit Fenster-Verwalter und lokalen Schriften`
@@ -304,6 +396,8 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   export class Hotbar { constructor(root: HTMLElement, services: Services); refresh(): void; destroy(): void }
   ```
 - Bildschirmzonen (Spec 10): oben links Herzen, darunter Level und Münzen; oben rechts die Aufgabe und der Menü-Knopf; unten Mitte die Schnellleiste. Ränder `max(var(--sp-3), env(safe-area-inset-…))`.
+- Der Menü-Knopf gehört zur Anzeige und ist immer sichtbar (PC und Touch), mindestens 48 × 48 CSS-Pixel, `aria-label` „Menü". Er ruft `hud.onMenu` (`onMenu: (() => void) | null`, Vorgabe `null`); das Menü selbst hängt Task 9 dort ein. Task 8 legt keinen zweiten Menü-Knopf an.
+- Anzeige, Schnellleiste und (ab Task 7) Gesprächsfeld und Hinweise legt `main.ts` an und in `Services` ab (flache Felder: `windows`, `hud`, `hotbar`, später `dialogue`, `toasts`), damit die Welt-Szene sie erreicht.
 - Herzen aus `Ui/Receptacle/Heart.png` (80×16, fünf Zustände zu 16×16; Reihenfolge auf dem Kontaktbogen prüfen): je Herz der Zustand aus `heartQuarters`. Level: Zahl in der Ziffernschrift mit schmalem Fortschrittsbalken. Münzen: Münzbild aus `Items/Treasure/` und Zahl. Aufgabe: Gesicht des Aufgabengebers, Name der Aufgabe (`--fs-2`), Beschreibung (`--fs-1`, höchstens zwei Zeilen), bei Bedarf > 1 der Stand „0/5". Ohne aktive Aufgabe ist das Feld weg.
 - Schnellleiste: acht Plätze, Symbol und (ab 2) Anzahl, der gewählte Platz mit Rahmen in `--c-accent`; Tasten 1–8 und Klick wählen; `title` und `aria-label` nennen den Namen des Gegenstands.
 - Symbole in dieser Etappe für: `sword_wood`, `berry`, `wood`, `magic_herb`, `seed_carrot`, `seed_tomato` (Start und Belohnungen der ersten drei Aufgaben), aus `Items/` des Packs gewählt. Alles andere zeigt `beutel` (ein Beutel-Bild aus dem Pack). Die übrigen Symbole kommen mit dem Rucksack in Etappe 2.
@@ -340,7 +434,11 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
     show(view: TalkView, faceImage: string): void; hide(): void; get isOpen(): boolean }
   // toasts.ts
   export class Toasts { constructor(root: HTMLElement); show(text: string, icon?: string): void }   // 3 s sichtbar, höchstens zwei zugleich
+  // events.ts (neu in GameEvents; Task 8 zeigt damit das Symbol des Kontext-Knopfs)
+  'context:changed': { target: ContextTarget | null };   // nur bei Wechsel gemeldet
+  // services.ts: Services bekommt `dialogue: DialogueBox` und `toasts: Toasts` (angelegt in main.ts)
   ```
+- Zusätzlich geändert: `v2/src/core/events.ts`, `v2/src/core/services.ts`, `v2/src/main.ts`.
 - Regeln: Ansprechbar ist der nächste bekannte Dorfbewohner innerhalb von 26 Bildpunkten (das alte Spiel nahm 2 Kacheln, `src/systems/DialogSystem.js` Zeile 18; der Bildausschnitt ist jetzt kleiner); bei Gleichstand der in Blickrichtung. Steht Emilia in einem Ausgang, ist das Ziel der Ausgang. `interact` startet das Gespräch; während es offen ist, hält das Spiel an; `interact`, `confirm`, `cancel` oder Tippen beendet es; danach ist 0,3 s lang kein neues Gespräch möglich (Alt-Quelle derselben Sperre: `DialogSystem.js` Zeile 114).
 - Gesprächsfeld: unten Mitte über der Schnellleiste, links das Gesicht der Figur, Name (`--fs-2`, fett), darunter die Zeilen (`--fs-2`); wächst bei Bedarf nach oben, schneidet nie Text ab. Am PC zeigt ein kleines Tasten-Bild „E" über der ansprechbaren Figur (Bild aus `Ui/Input/` des Packs), dass man reden kann.
 - Dorfbewohner: dreht sich beim Gespräch zur Spielerin (`facingToward`) und danach zurück. Über dem Kopf des Dorfbewohners, zu dem die aktuelle `talk`-Aufgabe führt, schwebt ein Hinweis-Symbol aus `Ui/Emote/` (Spec 6.7).
@@ -370,6 +468,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   ```ts
   // touch.ts
   export const STICK_RADIUS = 40; export const STICK_DEAD_ZONE = 8; export const STICK_RUN_AT = 0.95;   // CSS-Pixel bzw. Anteil
+  export const STICK_AXIS_SNAP = 0.2;   // ist die kleinere Komponente kleiner als 0,2 × die größere, wird sie 0 (Betrag bleibt)
   export function stickVector(originX: number, originY: number, x: number, y: number): { x: number; y: number; magnitude: number };
   export class TouchSource implements InputSource {   // device: 'touch'
     stickStart(pointerId: number, x: number, y: number): void; stickMove(pointerId: number, x: number, y: number): void;
@@ -380,6 +479,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Handy im Hochformat (`(orientation: portrait) and (max-width: 600px) and (pointer: coarse)`): ein freundlicher Dreh-Hinweis über dem ganzen Bild, das Spiel hält an (`windows.setPaused('rotate', true)`). Tablets laufen in beiden Lagen.
 
 - [ ] **Step 1: Tests schreiben.**
+  - `touch.test.ts`, Einrasten (Vorab 5: sonst kriecht Emilia mit laufender Animation an einer Wand entlang, wenn der Daumen fast gerade auf die Wand zeigt): `stickVector(100, 100, 104, 140)` (Queranteil 0,1) → `x` genau 0, `y` 1; `stickVector(100, 100, 120, 140)` (Queranteil 0,5) → `x` > 0. Mit dem Bewegungsmodell (`stepMover`, festes Gitter mit einer Wand unter der Figur, außerhalb der Rutschzone): Absicht aus `stickVector(100, 100, 104, 140)` → nach 30 Schritten `moving === false` und kein Versatz in x.
   - `touch.test.ts`: `stickVector(100, 100, 104, 100)` → Betrag 0; `(100, 100, 124, 100)` → `x` 0,5 (± 0,02), `y` 0; `(100, 100, 300, 100)` → `x` 1, Betrag 1; schräg → Betrag höchstens 1. Quelle: nach `stickStart(1, …)` und `stickMove(1, …)` liefert `move` den Vektor; `stickMove(2, …)` eines fremden Fingers ändert nichts; `stickEnd(1)` → `move` 0/0; `press('interact')` ist genau einmal in `drainPressed()`; Auslenkung 0,96 → `run === true`.
   - `touch.spec.ts` (läuft in `chromium` und `webkit`, je in einem eigenen Kontext 1080×810, Dichte 2, `hasTouch`; Berührungen als `PointerEvent` mit `pointerType: 'touch'` und eigener `pointerId` je Finger, im Seitenkontext ausgelöst — das geht in beiden Browsern): Finger 1 setzt links unten auf und zieht 40 Pixel nach rechts → Emilia läuft nach rechts; halbe Auslenkung → halbes Tempo (± 20 %). Neben Mama: Finger 1 hält den Stick, Finger 2 tippt den Kontext-Knopf → Gespräch öffnet (Review Focus 3). Berührung abbrechen (`pointercancel`) → `moving === false` binnen 200 ms. Finger rutscht 300 Pixel aus der Zone → Stick bleibt bei Betrag 1 und lässt beim Abheben los.
   - Alle Knöpfe und alle acht Plätze der Schnellleiste messen mindestens 48 × 48 CSS-Pixel und überlappen einander nicht.
@@ -401,11 +501,12 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 **Interfaces:**
 - Consumes: `WindowManager`, `Toasts`, `Services.startNotice`, `Services.legacyNewer`, `SaveStore.importLegacy`, `SaveStore.replaceWith`, Ereignis `save:result`, `SaveService.consecutiveFailures`, `hint`.
 - Verhalten: `menu` (Taste M, Menü-Knopf) öffnet das Fenster „Menü" mit großen Knöpfen; in dieser Etappe gibt es genau einen: „Hilfe". `help` (Taste H) öffnet die Hilfe direkt. Die Hilfe zeigt je Gerät die Bedienung als Bild mit einem Wort: am PC Tasten-Bilder aus `Ui/Input/` des Packs (laufen, rennen, reden, Schnellleiste, schließen), mit Touch Stick und Knöpfe.
-- Hinweise beim Start (aus `startNotice`): `save-corrupt` → „Dein Spielstand war kaputt. Wir fangen neu an."; `save-newer` → „Bitte lade die Seite neu, damit dein Spielstand passt."; `storage-unavailable` → „Hier kann das Spiel nicht speichern."; `legacy-imported` → „Dein Spielstand aus dem alten Spiel ist da!"; `legacy-failed` → „Der alte Spielstand konnte nicht geholt werden.".
-- Ist `services.legacyNewer` wahr (im alten Spiel wurde seit der letzten Übernahme weitergespielt; Spec 11.1, „Übergangszeit"), fragt beim Start ein Fenster „Im alten Spiel bist du weitergekommen. Den Stand von dort holen?" mit „Ja" und „Nein". „Ja": `importLegacy`, dann `store.replaceWith` (der bisherige v2-Stand liegt danach unter `BACKUP_SAVE_KEY`), Seite neu laden. „Nein" oder Schließen: `legacyDeclinedAt` wird der Zeitstempel des alten Stands, es wird gespeichert; gefragt wird erst wieder, wenn sich der alte Stand erneut ändert. Nach zwei fehlgeschlagenen Speicherversuchen in Folge einmal je Sitzung: „Speichern hat nicht geklappt.".
-- Bildraten-Anzeige (Spec 9): Taste F2 blendet oben in der Mitte die Bilder je Sekunde ein und aus (Ziffernschrift); aus beim Start.
+- Hinweise beim Start (aus `startNotice`): `save-corrupt` → „Dein Spielstand war kaputt. Wir fangen neu an."; `save-corrupt-legacy` → „Dein Spielstand war kaputt. Wir haben den aus dem alten Spiel geholt."; `save-repaired` → „Dein Spielstand wurde repariert. Vielleicht fehlt etwas."; `save-newer` → „Bitte lade die Seite neu, damit dein Spielstand passt."; `storage-unavailable` → „Hier kann das Spiel nicht speichern."; `legacy-imported` → „Dein Spielstand aus dem alten Spiel ist da!"; `legacy-failed` → „Der alte Spielstand konnte nicht geholt werden.". Ist `services.importSave` gesetzt und nicht `saved`, kommt zusätzlich sofort „Speichern hat nicht geklappt.".
+- Ist `services.legacyNewer` wahr (im alten Spiel wurde seit der letzten Übernahme weitergespielt; Spec 11.1, „Übergangszeit"), fragt beim Start ein Fenster „Im alten Spiel bist du weitergekommen. Den Stand von dort holen?" mit „Ja" und „Nein". „Ja": `importLegacy`, dann `store.replaceWith` (der bisherige v2-Stand liegt danach unter `BACKUP_SAVE_KEY`), **dann `save.stop()`** (sonst schreibt das Speichern beim Verlassen der Seite den alten Stand aus dem Arbeitsspeicher über den gerade ersetzten), dann Seite neu laden. „Nein" oder Schließen: `legacyDeclinedAt` wird der Zeitstempel des alten Stands, es wird gespeichert; gefragt wird erst wieder, wenn sich der alte Stand erneut ändert. Nach zwei fehlgeschlagenen Speicherversuchen in Folge einmal je Sitzung: „Speichern hat nicht geklappt.". Meldet ein Speicherversuch `blocked-other-tab` (Task 0a), einmal je Sitzung stattdessen: „Das Spiel ist noch in einem anderen Fenster offen. Bitte lade die Seite neu." — dieser Fall zählt nicht als „hat nicht geklappt".
+- Bildraten-Anzeige (Spec 9): Taste F2 blendet oben in der Mitte die Bilder je Sekunde ein und aus (Ziffernschrift); aus beim Start. Dafür bekommt `Action` den Wert `'fps'` und `KeyboardSource` die Taste `F2` (zusätzlich geändert: `v2/src/input/actions.ts`, `v2/src/input/keyboard.ts`, `v2/tests/input/keyboard.test.ts`).
+- Das Menü öffnet über `hud.onMenu` (Task 6) und über die Handlung `menu`.
 
-- [ ] **Step 1: Tests schreiben** (`menu.spec.ts`): `M` → Fenster „Menü" mit Knopf „Hilfe"; Klick → Fenster „Hilfe" mit dem Bild der Taste E und dem Wort „reden"; Esc → zu, Emilia läuft wieder. `H` öffnet die Hilfe direkt. Nach einer Berührung: Menü-Knopf → Menü → Hilfe zeigt den Stick statt der Tasten. Stand mit `formatVersion: 2` → Hinweis `save-newer` als Text sichtbar. `setItem` wirft → nach dem zweiten `saveNow()` genau ein Hinweis „Speichern hat nicht geklappt.", auch nach dem vierten Versuch nur einer. `F2` → eine Zahl zwischen 1 und 240 erscheint, `F2` → weg. Alter Stand (`LEGACY_FIRST_COMMIT` mit späterem `timestamp`) neuer als die letzte Übernahme → das Fenster mit der Frage erscheint; „Nein" → `legacyDeclinedAt` gesetzt, nach dem Neuladen keine Frage; `timestamp` des alten Stands noch einmal erhöht → die Frage kommt wieder; „Ja" → nach dem Neuladen Level 3, der vorige v2-Stand liegt unter `BACKUP_SAVE_KEY`, der alte Schlüssel ist bytegleich.
+- [ ] **Step 1: Tests schreiben** (`menu.spec.ts`): `M` → Fenster „Menü" mit Knopf „Hilfe"; Klick → Fenster „Hilfe" mit dem Bild der Taste E und dem Wort „reden"; Esc → zu, Emilia läuft wieder. `H` öffnet die Hilfe direkt. Nach einer Berührung: Menü-Knopf → Menü → Hilfe zeigt den Stick statt der Tasten. Stand mit `formatVersion: 2` → Hinweis `save-newer` als Text sichtbar. `setItem` wirft → nach dem zweiten `saveNow()` genau ein Hinweis „Speichern hat nicht geklappt.", auch nach dem vierten Versuch nur einer. `F2` → eine Zahl zwischen 1 und 240 erscheint, `F2` → weg. Alter Stand (`LEGACY_FIRST_COMMIT` mit späterem `timestamp`) neuer als die letzte Übernahme → das Fenster mit der Frage erscheint; „Nein" → `legacyDeclinedAt` gesetzt, nach dem Neuladen keine Frage; `timestamp` des alten Stands noch einmal erhöht → die Frage kommt wieder; „Ja" → nach dem Neuladen Level 3, der vorige v2-Stand liegt unter `BACKUP_SAVE_KEY`, der alte Schlüssel ist bytegleich; der gespeicherte Stand ist nach dem Neuladen der geholte, nicht der alte aus dem Arbeitsspeicher (Vorab 4). Hinweise `save-repaired` und `save-corrupt-legacy` erscheinen mit ihrem Text. Zwei Seiten im selben Kontext: Seite 2 speichert, Seite 1 `saveNow()` zweimal → auf Seite 1 genau ein Hinweis „… in einem anderen Fenster offen …" und kein „Speichern hat nicht geklappt.".
 - [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
 - [ ] **Step 3: Alles grün**, **Commit** — `git add v2/src v2/tools/art/selection.mjs v2/src/assets/gfx v2/tests` · `feat(v2): Menü, Hilfe, Hinweise zu Start und Speichern`
 
@@ -431,7 +532,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   ```
 - Alt-Quelle für Dateiname und Download: `src/utils/SaveExport.js` (Dateiname aus dem lokalen Datum, Zeilen 9–14; Download über Blob und unsichtbaren Link, Zeilen 17–28; die Adresse bleibt 60 s gültig, weil iOS vor dem Download nachfragt, Zeilen 5–6).
 - Grund für diesen Task schon in Etappe 1: Safari auf dem iPad kann `localStorage` nach längerer Nichtnutzung löschen (Spec 11.1, „Schutz vor Verlust").
-- Verhalten: Das Menü bekommt zwei weitere Knöpfe. „Spielstand sichern": speichert, lädt die Datei herunter, setzt `lastBackupAt`, Hinweis „Gesichert!". „Spielstand laden": Dateiauswahl (`.json`) → `parseImport`; passt die Datei nicht, Hinweis „Diese Datei passt nicht." und nichts ändert sich; passt sie, fragt ein Fenster „Diesen Spielstand laden? Der jetzige wird ersetzt." mit „Ja" und „Nein"; bei „Ja" `replaceWith` und Seite neu laden. Erinnerung einmal je Sitzung als Hinweis „Zeit für eine Sicherung: Menü, dann Spielstand sichern", wenn `shouldRemind` wahr ist: noch nie gesichert und mindestens 30 Minuten gespielt (`dayNight.totalTime ≥ 1800`), oder die letzte Sicherung ist älter als 7 Tage.
+- Verhalten: Das Menü bekommt zwei weitere Knöpfe. „Spielstand sichern": speichert, lädt die Datei herunter, setzt `lastBackupAt`, Hinweis „Gesichert!". „Spielstand laden": Dateiauswahl (`.json`) → `parseImport`; passt die Datei nicht, Hinweis „Diese Datei passt nicht." und nichts ändert sich; passt sie, fragt ein Fenster „Diesen Spielstand laden? Der jetzige wird ersetzt." mit „Ja" und „Nein"; bei „Ja" `replaceWith`, dann `save.stop()` (Vorab 4, wie in Task 9) und Seite neu laden. Erinnerung einmal je Sitzung als Hinweis „Zeit für eine Sicherung: Menü, dann Spielstand sichern", wenn `shouldRemind` wahr ist: noch nie gesichert und mindestens 30 Minuten gespielt (`dayNight.totalTime ≥ 1800`), oder die letzte Sicherung ist älter als 7 Tage.
 
 - [ ] **Step 1: Tests schreiben.**
   - `backupFilename(new Date(2026, 10, 13))` → `'emilia2-spielstand-2026-11-13.json'`.
@@ -453,7 +554,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Produces: `walkToTile(page, tileX, tileY, timeoutMs)` — hält echte Richtungstasten, bis `player()` höchstens 6 Bildpunkte neben der Kachelmitte steht (liest nur den Ort über den Test-Zugang, bewegt nicht selbst).
 
 - [ ] **Step 1: Test schreiben.** Frischer Browser-Kontext: starten → mit `walkToTile` vom Startpunkt (19/14) über den Weg zu Mama (Kachel 8/12, eine Kachel unter ihr) → `E` → Gespräch → `E` → Aufgabe „Opas Auftrag" → `3` wählt Platz 3 → `H` → Hilfe → Esc → Seite neu laden → Ort höchstens eine Kachel daneben, Aufgabe und Beeren unverändert, Platz 3 gewählt. Über den ganzen Lauf: keine Konsolenfehler, keine fremden Anfragen, beide alten Schlüssel unverändert.
-- [ ] **Step 2: Derselbe Ablauf gegen das gebaute Paket** (`playthrough.preview.spec.ts`, ohne Test-Zugang): nur Tasten und sichtbare Texte; Emilia wird mit festen Tastendauern zu Mama geführt, geprüft wird am Text der Anzeige.
+- [ ] **Step 2: Derselbe Ablauf gegen das gebaute Paket** (`playthrough.preview.spec.ts`, ohne Test-Zugang): nur Tasten und sichtbare Texte; Emilia wird mit festen Tastendauern zu Mama geführt, geprüft wird am Text der Anzeige. Der Weg ist so gewählt, dass Wände und feste Gegenstände Emilia ausrichten (jede Strecke endet an etwas Festem, die Taste wird reichlich länger gehalten als nötig), denn der Rechner der Auslieferung stockt nach dem Seitenstart bis zu 1 s; vor dem ersten Tastendruck wartet der Test, bis die Anzeige sichtbar ist.
 - [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
 - [ ] **Step 4: Commit** — `git add v2/tests/e2e` · `test(v2): Durchspiel-Test für das Dorf`
 
