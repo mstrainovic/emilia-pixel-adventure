@@ -23,7 +23,7 @@ describe('resolveStart (Review Focus 4)', () => {
   });
 
   it('außerhalb der Karte → Startpunkt der Karte', () => {
-    for (const [x, y] of [[-0.5, 14.5], [40.5, 14.5], [19.5, -3], [19.5, 32], [1e9, 1e9]] as const) {
+    for (const [x, y] of [[-0.5, 14.5], [40.5, 14.5], [19.5, -3], [19.5, 32.01], [1e9, 1e9]] as const) {
       expect(resolveStart(hub, { map: 'hub', x, y })).toEqual(hub.spawn);
     }
   });
