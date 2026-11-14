@@ -713,7 +713,7 @@ Stichwortliste im Kopfkommentar von `v2/src/scenes/world/buildLayers.ts` (Tilema
 
 - Gefällt das Dorf (Erdweg statt Sandweg; Tannen wirken wie Büsche; Gartenecke mit Blumen unter den Zäunen unruhig)? **Antwort 2026-11-14 (anhand von Bildern, unterwegs): „ja, gefällt mir", mit einer Änderung: Das Lagerfeuer stand auf dem Weg und ist versetzt (siehe Punkt 15 oben).**
 - Größen: Kinder sind meist nur einen Bildpunkt kleiner als Erwachsene; Oma ist so hoch wie Emilia. **Antwort 2026-11-14: „passt" – die Größen bleiben, wie sie sind.**
-- Zuordnung der Figuren (Tabelle oben): Papa ohne Hemd in Blau, Marie in Grün, Baba wirkt jung; Emilia und Mama ähneln sich am meisten. Sind Marie und Liam Kinder oder Erwachsene?
+- Zuordnung der Figuren (Tabelle oben): Papa ohne Hemd in Blau, Marie in Grün, Baba wirkt jung; Emilia und Mama ähneln sich am meisten. **Antwort 2026-11-14 (anhand des Figurenbilds, die vier Punkte waren genannt): „ja" – alle zwölf Zuordnungen bleiben.** Sind Marie und Liam Kinder oder Erwachsene? (Noch offen; beide sind derzeit 16 Bildpunkte hoch wie die Erwachsenen.)
 - Schatten der Figuren ist kaum zu sehen (liegt fast ganz unter der Figur).
 - Zäune, Truhen, Wegweiser, Büsche und Hühner sind wie im alten Spiel durchlaufbar; mit der neuen Tiefensortierung wirkt das wie ein Fehler. Sperren?
 - Lena (Stilprobe) und Deda stehen dicht unter Brunnen und Kessel.
