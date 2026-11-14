@@ -1,8 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-
-const CSP =
-  "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; script-src 'self'";
+import { CSP } from './csp';
 
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 

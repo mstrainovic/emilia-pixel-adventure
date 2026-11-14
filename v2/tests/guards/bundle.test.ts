@@ -2,9 +2,13 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { CSP } from './csp';
 
 const DIST = fileURLToPath(new URL('../../../dist/v2', import.meta.url));
 const MAX_BYTES = 4 * 1024 * 1024;
+/** Test-Zugänge und Prüfhilfen, die im ausgelieferten Paket nichts verloren haben. */
+const FORBIDDEN = ['__emilia2', 'stilprobe', 'lastSaveResult', 'PixelProbe', 'probe=schach'];
+const NOT_BUILT = 'dist/v2 fehlt oder ist leer. Erst bauen: npm run build';
 
 function listFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -12,26 +16,36 @@ function listFiles(dir: string): string[] {
   );
 }
 
+const files = existsSync(DIST) ? listFiles(DIST) : [];
+const rel = (p: string): string => relative(DIST, p).split(sep).join('/');
+
+/** Jeder Test beginnt hier: ohne gebautes Paket schlägt er mit einer klaren Meldung fehl, statt leer durchzulaufen. */
+function requireBuild(): void {
+  if (!existsSync(join(DIST, 'index.html')) || files.length === 0) throw new Error(NOT_BUILT);
+}
+
 describe('gebautes Paket dist/v2', () => {
-  it('ist vorhanden (zuerst npm run build)', () => {
+  it('ist vorhanden', () => {
+    requireBuild();
     expect(existsSync(join(DIST, 'index.html'))).toBe(true);
   });
 
-  const files = existsSync(DIST) ? listFiles(DIST) : [];
-  const rel = (p: string): string => relative(DIST, p).split(sep).join('/');
-
-  it('index.html trägt die Content-Security-Policy', () => {
+  it('index.html trägt genau die Content-Security-Policy mit dem vorgegebenen Wortlaut', () => {
+    requireBuild();
     const html = readFileSync(join(DIST, 'index.html'), 'utf8');
-    expect(html).toContain('http-equiv="Content-Security-Policy"');
-    expect(html).toContain("script-src 'self'");
+    const metas = html.match(/<meta[^>]+http-equiv="Content-Security-Policy"[^>]*>/gi) ?? [];
+    expect(metas).toHaveLength(1);
+    expect(metas[0]).toContain(`content="${CSP}"`);
   });
 
-  it('enthält den Test-Zugang nicht', () => {
-    const leaks = files.filter((f) => f.endsWith('.js') && readFileSync(f, 'utf8').includes('__emilia2')).map(rel);
+  it.each(FORBIDDEN)('enthält die Zeichenfolge „%s“ nicht in einer JavaScript-Datei', (needle) => {
+    requireBuild();
+    const leaks = files.filter((f) => f.endsWith('.js') && readFileSync(f, 'utf8').includes(needle)).map(rel);
     expect(leaks).toEqual([]);
   });
 
   it('enthält keine Altdaten für Entwicklung und Tests', () => {
+    requireBuild();
     const leaks = files
       .filter((f) => rel(f).split('/').includes('legacy-maps') || readFileSync(f).includes('legacy-tiles'))
       .map(rel);
@@ -39,6 +53,7 @@ describe('gebautes Paket dist/v2', () => {
   });
 
   it('bleibt unter 4 MB', () => {
+    requireBuild();
     const total = files.reduce((sum, f) => sum + statSync(f).size, 0);
     expect(total).toBeLessThan(MAX_BYTES);
   });
