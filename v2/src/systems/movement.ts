@@ -1,5 +1,5 @@
 import type { Facing } from '../data/types';
-import { moveAndSlide, type SolidGrid } from './collision';
+import { boxFits, moveAndSlide, type Box, type SolidGrid } from './collision';
 
 /** Tempo in Bildpunkten je Sekunde (altes Spiel: 4 und 7 Kacheln je Sekunde). */
 export const WALK_SPEED = 64;
@@ -10,6 +10,16 @@ export const ACCEL_TIME = 0.1;
 export const MAX_DT = 0.1;
 /** Kollisionskasten 10×6, Unterkante am Fußpunkt. */
 export const PLAYER_BODY = { halfW: 5, halfH: 3, footOffset: 3 } as const;
+
+/** Kollisionskasten der Spielerin für einen Fußpunkt (Bildpunkte). */
+function playerBox(footX: number, footY: number): Box {
+  return { x: footX, y: footY - PLAYER_BODY.footOffset, halfW: PLAYER_BODY.halfW, halfH: PLAYER_BODY.halfH };
+}
+
+/** Passt der Körper der Spielerin an diesen Fußpunkt, ohne eine feste Kachel zu berühren? */
+export function bodyFits(grid: SolidGrid, footX: number, footY: number): boolean {
+  return boxFits(grid, playerBox(footX, footY));
+}
 
 /** Absicht der Eingabe; der Betrag ist höchstens 1. */
 export interface MoveIntent {
@@ -73,7 +83,7 @@ export function stepMover(m: Mover, intent: MoveIntent, dt: number, grid: SolidG
   }
 
   const r = moveAndSlide(
-    { x: m.x, y: m.y - PLAYER_BODY.footOffset, halfW: PLAYER_BODY.halfW, halfH: PLAYER_BODY.halfH },
+    playerBox(m.x, m.y),
     vx * step,
     vy * step,
     grid,

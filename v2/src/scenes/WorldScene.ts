@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { HUB_START, isMapId, type MapId } from '../data/maps';
+import { isMapId, type MapId } from '../data/maps';
 import { servicesOf, type Services } from '../core/services';
 import { installTestHooks } from '../core/testHooks';
 import { InputController } from '../entities/controller';
@@ -13,7 +13,7 @@ import { buildProps } from './world/buildProps';
 
 export interface WorldSceneData {
   map: MapId;
-  /** Fußpunkt aus dem Spielstand in Kacheln; fehlt er, gilt der Start eines neuen Spiels. */
+  /** Fußpunkt aus dem Spielstand in Kacheln; fehlt er, beginnt die Spielerin am Startpunkt der Karte. */
   player?: { map: MapId; x: number; y: number };
 }
 
@@ -52,7 +52,7 @@ export class WorldScene extends Phaser.Scene {
     const objects = buildProps(this, world.objects, tiled.tileheight, id);
 
     // Figuren nach den Objekten anlegen: bei gleicher Standlinie stehen sie davor (depth.ts)
-    const start = resolveStart(world, data.player ?? HUB_START);
+    const start = data.player ? resolveStart(world, data.player) : { ...world.spawn };
     this.player = new Player(this, world.solid, start.x, start.y, new InputController(this.services.input));
 
     const { pixelGrid } = this.services;

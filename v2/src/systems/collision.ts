@@ -50,6 +50,12 @@ function hits(grid: SolidGrid, x: number, y: number, halfW: number, halfH: numbe
   return false;
 }
 
+/** Steht der Kasten frei, ohne eine feste Kachel zu berühren (Kante genau auf der Kachelgrenze zählt nicht)? */
+export function boxFits(grid: SolidGrid, box: Box): boolean {
+  if (![box.x, box.y].every(Number.isFinite)) return false;
+  return !hits(grid, box.x, box.y, box.halfW, box.halfH);
+}
+
 function hitsAt(grid: SolidGrid, b: Box, dx: number, dy: number): boolean {
   return hits(grid, b.x + dx, b.y + dy, b.halfW, b.halfH);
 }

@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
 import { blockProblems, readPng, type GridSnapshot } from './helpers/png';
+import { LOOKAHEAD } from '../../src/systems/camera';
 
 type PlayerInfo = { x: number; y: number; facing: string; moving: boolean };
 type CameraInfo = { scrollX: number; scrollY: number };
@@ -9,8 +10,14 @@ type Depths = { player: number; objects: Record<number, number> };
 
 const ARTIFACTS = fileURLToPath(new URL('../../../test-artifacts/etappe-1a/', import.meta.url));
 const hub = JSON.parse(readFileSync(fileURLToPath(new URL('../../src/assets/maps/hub.json', import.meta.url)), 'utf8')) as {
+  width: number;
+  height: number;
+  tilewidth: number;
+  tileheight: number;
   layers: { name: string; objects?: { id: number; type: string; x: number; y: number }[] }[];
 };
+const MAP_WIDTH = hub.width * hub.tilewidth;
+const MAP_HEIGHT = hub.height * hub.tileheight;
 /** Baum mitten im Dorf, Stamm auf Kachel 13/6 (Kacheln darüber und darunter sind frei). */
 const TREE = hub.layers.find((l) => l.name === 'objects')!.objects!.find((o) => o.type === 'tree' && o.x === 13 * 16 && o.y === 6 * 16)!;
 /** Westlicher Waldrand: Kacheln 0 und 1 sind fest, die Wandkante liegt bei x = 32. */
@@ -168,22 +175,47 @@ function blackPixelsInView(png: ReturnType<typeof readPng>, snapshot: GridSnapsh
   return black;
 }
 
-test('Fenstergröße ändern, während D gehalten wird: kein Fehler, Emilia im Bild', async ({ page }) => {
+test('Fenstergröße ändern, während D gehalten wird: kein Fehler, Bild bleibt scharf, Kamera folgt Emilia', async ({ page }) => {
   const errors: string[] = [];
   await openWorld(page, errors);
+  expect((await grid(page)).deviceWidth).not.toBe(Math.round(1367 * (await page.evaluate(() => window.devicePixelRatio))));
   await page.keyboard.down('KeyD');
   await page.waitForTimeout(200);
+  // Läuft mit der Standard-Pixeldichte des Projekts (Chromium 1, iPad 2): 1367×769 ergibt dort ganze
+  // Gerätepixel, avoidHalfDevicePixels (pixelgrid.spec.ts) ist nur bei gebrochener Dichte nötig.
   await page.setViewportSize({ width: 1367, height: 769 });
-  await page.waitForFunction(() => (window as any).__emilia2.pixelGrid.deviceWidth === Math.round(1367 * window.devicePixelRatio));
+  // neue Messung des Pixelrasters abwarten (vorher 1280×720 bzw. iPad-Größe)
+  await page.waitForFunction(() => {
+    const g = (window as any).__emilia2.pixelGrid;
+    return g.deviceWidth === Math.round(1367 * window.devicePixelRatio) && g.deviceHeight === Math.round(769 * window.devicePixelRatio);
+  });
+  await nextFrames(page);
   await page.waitForTimeout(300);
-  const p = await player(page);
-  const c = await camera(page);
-  const { layout } = await grid(page);
+  const shot = await page.screenshot({ scale: 'device' });
+  const snapshot = await grid(page);
+  const { p, c } = await page.evaluate(() => ({ p: (window as any).__emilia2.player(), c: (window as any).__emilia2.camera() }));
   await page.keyboard.up('KeyD');
-  expect(p.x - c.scrollX).toBeGreaterThanOrEqual(0);
-  expect(p.x - c.scrollX).toBeLessThanOrEqual(layout.viewWidth);
-  expect(p.y - c.scrollY).toBeGreaterThanOrEqual(0);
-  expect(p.y - c.scrollY).toBeLessThanOrEqual(layout.viewHeight);
+
+  // neues Raster wirklich angewandt: jeder Block einfarbig, kein Schwarz im Ausschnitt
+  const png = readPng(shot);
+  expect(blockProblems(png, snapshot)).toEqual([]);
+  expect(blackPixelsInView(png, snapshot)).toBe(0);
   expect(Number.isInteger(c.scrollX) && Number.isInteger(c.scrollY)).toBe(true);
+
+  const { viewWidth, viewHeight } = snapshot.layout;
+  const clampedX = c.scrollX === 0 || c.scrollX + viewWidth === MAP_WIDTH;
+  const clampedY = c.scrollY === 0 || c.scrollY + viewHeight === MAP_HEIGHT;
+  if (clampedX) {
+    expect(p.x - c.scrollX).toBeGreaterThanOrEqual(0);
+    expect(p.x - c.scrollX).toBeLessThanOrEqual(viewWidth);
+  } else {
+    expect(Math.abs(p.x - (c.scrollX + viewWidth / 2))).toBeLessThanOrEqual(LOOKAHEAD + 2);
+  }
+  if (clampedY) {
+    expect(p.y - c.scrollY).toBeGreaterThanOrEqual(0);
+    expect(p.y - c.scrollY).toBeLessThanOrEqual(viewHeight);
+  } else {
+    expect(Math.abs(p.y - (c.scrollY + viewHeight / 2))).toBeLessThanOrEqual(LOOKAHEAD + 2);
+  }
   expect(errors).toEqual([]);
 });
