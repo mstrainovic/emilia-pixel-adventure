@@ -1,8 +1,9 @@
+import { snapToScreen } from '../core/pixel';
 import { WALK_SPEED } from './movement';
 
 /*
  * Weich folgende Kamera, ohne Phaser. Gerechnet wird mit Gleitkomma (Mittelpunkt des Ausschnitts in
- * Bildpunkten); erst cameraScroll rundet auf die ganzzahlige linke obere Ecke, die die Szene setzt.
+ * Bildpunkten); erst cameraScroll rundet auf die linke obere Ecke, die die Szene setzt.
  */
 
 /** Sekunden bis zur halben Strecke. */
@@ -57,20 +58,23 @@ export function stepCamera(
 }
 
 /**
- * Ganzzahlige linke obere Ecke des Ausschnitts.
+ * Linke obere Ecke des Ausschnitts, eingerastet auf ganze Bildschirmpixel (Vielfache von 1/`zoom` Bildpunkt;
+ * ohne `zoom` auf ganze Bildpunkte). Ganze Bildpunkte als Raster ließen die Welt beim Rennen ruckeln: bei Zoom 6
+ * und 112 Bildpunkten je Sekunde rückte sie je Bild mal 12, mal 6 Bildschirmpixel weiter.
  *
  * Mit `anchor` (Fußpunkt der Figur, dieselben Gleitkommawerte, aus denen die Figur gerundet gezeichnet wird)
  * wird die Ecke so gerundet, dass die Figur im Bild dort steht, wo sie aus dem Abstand zur Kamera gerundet
  * hingehört: Ecke = rund(Figur) − rund(Figur − Ecke). Laufen Figur und Kamera gleich schnell, steht die Figur
- * damit ruhig im Bild, statt um einen Bildpunkt zu zittern. Die Ecke weicht höchstens unter einem Bildpunkt
- * vom ungerundeten Wert ab; liegt dieser auf einem ganzen Bildpunkt (Kartenrand), gilt er genau.
+ * damit ruhig im Bild, statt um einen Bildschirmpixel zu zittern. Die Ecke weicht höchstens einen
+ * Bildschirmpixel vom ungerundeten Wert ab; liegt dieser auf einem ganzen Bildpunkt (Kartenrand), gilt er genau.
  */
-export function cameraScroll(cam: CameraState, view: Size, anchor?: { x: number; y: number }): { scrollX: number; scrollY: number } {
+export function cameraScroll(cam: CameraState, view: Size, anchor?: { x: number; y: number }, zoom = 1): { scrollX: number; scrollY: number } {
   const left = cam.x - view.width / 2;
   const top = cam.y - view.height / 2;
-  if (!anchor || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return { scrollX: Math.round(left), scrollY: Math.round(top) };
+  const snap = (v: number): number => snapToScreen(v, zoom);
+  if (!anchor || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return { scrollX: snap(left), scrollY: snap(top) };
   return {
-    scrollX: Math.round(anchor.x) - Math.round(anchor.x - left),
-    scrollY: Math.round(anchor.y) - Math.round(anchor.y - top),
+    scrollX: snap(snap(anchor.x) - snap(anchor.x - left)),
+    scrollY: snap(snap(anchor.y) - snap(anchor.y - top)),
   };
 }

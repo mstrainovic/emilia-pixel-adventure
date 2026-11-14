@@ -16,6 +16,16 @@ export function computeZoom(physicalWidth: number, physicalHeight: number): numb
   return Math.max(1, zoom);
 }
 
+/**
+ * Rundet einen Ort in Bildpunkten auf ganze Bildschirmpixel, also auf Vielfache von 1/Zoom Bildpunkt.
+ * Bewegtes (Kamera, laufende Figur) rastet so ein: Das Bild bleibt scharf, rückt aber gleichmäßig weiter statt
+ * in Sprüngen von einem ganzen Bildpunkt (bei Zoom 6 sechs Bildschirmpixel). Unbrauchbarer Zoom → ganze Bildpunkte.
+ */
+export function snapToScreen(value: number, zoom: number): number {
+  if (!Number.isInteger(zoom) || zoom < 1) return Math.round(value);
+  return Math.round(value * zoom) / zoom;
+}
+
 /** Aufteilung der Zeichenfläche: ganzzahliger Zoom, sichtbares Feld und schwarzer Rand. */
 export interface PixelLayout {
   zoom: number;

@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
-import { blockProblems, readPng, type GridSnapshot } from './helpers/png';
+import { blockProblems, figureRect, readPng, type GridSnapshot } from './helpers/png';
 import { LOOKAHEAD } from '../../src/systems/camera';
 
 type PlayerInfo = { x: number; y: number; facing: string; moving: boolean };
@@ -136,7 +136,10 @@ test('hinter dem Baum liegt Emilia dahinter, davor davor', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('beim Laufen steht die Kamera auf ganzen Bildpunkten, das Bild bleibt pixelgenau', async ({ page }) => {
+/** Liegt der Wert auf einem ganzen Bildschirmpixel (Vielfaches von 1/Zoom Bildpunkt)? */
+const onScreenPixel = (v: number, zoom: number): boolean => Math.abs(v * zoom - Math.round(v * zoom)) < 1e-6;
+
+test('beim Laufen steht die Kamera auf ganzen Bildschirmpixeln, das Bild bleibt pixelgenau', async ({ page }) => {
   const errors: string[] = [];
   await openWorld(page, errors);
   await page.keyboard.down('KeyD');
@@ -148,18 +151,57 @@ test('beim Laufen steht die Kamera auf ganzen Bildpunkten, das Bild bleibt pixel
   }
   const shot = await page.screenshot({ scale: 'device' });
   const snapshot = await grid(page);
+  const at = await page.evaluate(() => ({ p: (window as any).__emilia2.player() as PlayerInfo, c: (window as any).__emilia2.camera() as CameraInfo }));
   await page.keyboard.up('KeyD');
+  const { zoom } = snapshot.layout;
   for (const c of cams) {
-    expect(Number.isInteger(c.scrollX)).toBe(true);
-    expect(Number.isInteger(c.scrollY)).toBe(true);
+    expect(onScreenPixel(c.scrollX, zoom), `scrollX ${c.scrollX}`).toBe(true);
+    expect(onScreenPixel(c.scrollY, zoom), `scrollY ${c.scrollY}`).toBe(true);
   }
   // die Kamera folgt wirklich
   expect(cams[cams.length - 1]!.scrollX).toBeGreaterThan(cams[0]!.scrollX);
   const png = readPng(shot);
-  expect(blockProblems(png, snapshot)).toEqual([]);
+  // Die Welt liegt auf einem Raster aus ganzen Blöcken; die laufende Figur rastet für sich auf Bildschirmpixel ein
+  expect(blockProblems(png, snapshot, figureRect(snapshot, at.p, at.c))).toEqual([]);
   // Die Kamera zeigt nie über die Karte hinaus und der Boden ist gezeichnet: kein Schwarz im Ausschnitt
   // (kein Bild des Dorfs enthält reines Schwarz; schwarz ist nur der Rand außerhalb des Ausschnitts).
   expect(blackPixelsInView(png, snapshot)).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('beim Rennen gleitet das Bild in Bildschirmpixeln, nicht in Sprüngen ganzer Bildpunkte', async ({ page }) => {
+  // Meldung des Auftraggebers (2026-11-14): beim Rennen „wackelt alles etwas". Ursache war das Einrasten der Kamera
+  // auf ganze Bildpunkte (bei Zoom 6 Sprünge von 6 und 12 Bildschirmpixeln); die Rechnung prüft camera.test.ts.
+  const errors: string[] = [];
+  await openWorld(page, errors);
+  await teleport(page, 8, 15);
+  await page.keyboard.down('ShiftLeft');
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(400);
+  const frames = await page.evaluate(() => new Promise<{ cam: number; foot: number; drawn: number }[]>((resolve) => {
+    const h = (window as any).__emilia2;
+    const out: { cam: number; foot: number; drawn: number }[] = [];
+    const tick = (): void => {
+      out.push({ cam: h.camera().scrollX, foot: h.player().x, drawn: h.playerPose().x });
+      if (out.length < 40) requestAnimationFrame(tick);
+      else resolve(out);
+    };
+    requestAnimationFrame(tick);
+  }));
+  await page.keyboard.up('KeyD');
+  await page.keyboard.up('ShiftLeft');
+  const { zoom } = (await grid(page)).layout;
+  expect(zoom).toBeGreaterThan(1);
+  expect(frames[frames.length - 1]!.cam).toBeGreaterThan(frames[0]!.cam + 20);
+  for (const f of frames) {
+    expect(onScreenPixel(f.cam, zoom), `Kamera ${f.cam}`).toBe(true);
+    expect(onScreenPixel(f.drawn, zoom), `Figur ${f.drawn}`).toBe(true);
+    // gezeichnet wird der Fußpunkt, höchstens einen halben Bildschirmpixel daneben
+    expect(Math.abs(f.drawn - f.foot)).toBeLessThanOrEqual(0.5 / zoom + 1e-9);
+  }
+  // Kamera und Figur nutzen die Zwischenschritte wirklich (bei 40 Bildern nie zufällig alle auf ganzen Bildpunkten)
+  expect(frames.some((f) => !Number.isInteger(f.cam))).toBe(true);
+  expect(frames.some((f) => !Number.isInteger(f.drawn))).toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -198,9 +240,9 @@ test('Fenstergröße ändern, während D gehalten wird: kein Fehler, Bild bleibt
 
   // neues Raster wirklich angewandt: jeder Block einfarbig, kein Schwarz im Ausschnitt
   const png = readPng(shot);
-  expect(blockProblems(png, snapshot)).toEqual([]);
+  expect(blockProblems(png, snapshot, figureRect(snapshot, p, c))).toEqual([]);
   expect(blackPixelsInView(png, snapshot)).toBe(0);
-  expect(Number.isInteger(c.scrollX) && Number.isInteger(c.scrollY)).toBe(true);
+  expect(onScreenPixel(c.scrollX, snapshot.layout.zoom) && onScreenPixel(c.scrollY, snapshot.layout.zoom)).toBe(true);
 
   const { viewWidth, viewHeight } = snapshot.layout;
   const clampedX = c.scrollX === 0 || c.scrollX + viewWidth === MAP_WIDTH;

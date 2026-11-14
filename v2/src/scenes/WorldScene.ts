@@ -23,8 +23,8 @@ export interface WorldSceneData {
  * BaseCamera.js): Der Zoom wirkt um die Mitte des Ausschnitts (origin 0,5). worldView, nach dem Phaser auch die
  * Kachel-Ebenen zuschneidet, rechnet immer mit der Mitte; ein anderer origin verschöbe nur das Bild, nicht
  * worldView (dann fehlt der Boden). Darum: centerOn(Ecke + halbes Feld) – die linke obere Ecke des sichtbaren
- * Felds liegt dann genau auf der ganzzahligen Ecke aus cameraScroll, auch wenn scrollX selbst ein halber Wert
- * ist. PixelGrid.applyTo setzt Ausschnitt und Zoom, nicht scroll.
+ * Felds liegt dann genau auf der Ecke aus cameraScroll (ganze Bildschirmpixel), auch wenn scrollX selbst ein
+ * halber Wert ist. PixelGrid.applyTo setzt Ausschnitt und Zoom, nicht scroll.
  */
 
 /** Allgemeine Welt-Szene: zeichnet jede Karte aus ihren Daten, Emilia läuft darin, die Kamera folgt. */
@@ -105,6 +105,8 @@ export class WorldScene extends Phaser.Scene {
         },
         // Linke obere Ecke des zuletzt gezeichneten Felds, wie Phaser sie rechnet
         camera: () => ({ scrollX: camera.worldView.x, scrollY: camera.worldView.y }),
+        // Wo die Spielfigur gezeichnet ist (eingerastet), im Unterschied zum gerechneten Fußpunkt aus player()
+        playerPose: () => this.player.pose,
         villagers: () => this.villagers.map((v) => ({ npcId: v.npcId, ...v.pose })),
         depths: () => ({
           player: this.player.depth,
@@ -120,8 +122,8 @@ export class WorldScene extends Phaser.Scene {
    * 2. Abnehmer der Oberfläche (Plan 1b) nehmen ihre Drücke ab
    * 3. Spielerin rechnen, ihren Ort und die gelaufene Strecke in den Spielstand schreiben
    * 4. Kamera rechnen
-   * 5. Tiefe und Zeichenposition setzen – erst hier wird auf ganze Bildpunkte gerundet, Figur und Kamera aus
-   *    denselben Gleitkommawerten dieses Bildes.
+   * 5. Tiefe und Zeichenposition setzen – erst hier wird gerundet (auf ganze Bildschirmpixel), Figur und Kamera
+   *    aus denselben Gleitkommawerten dieses Bildes.
    */
   override update(_time: number, delta: number): void {
     const dt = delta / 1000;
@@ -157,10 +159,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private draw(): void {
-    const { viewWidth, viewHeight } = this.services.pixelGrid.snapshot.layout;
+    const { viewWidth, viewHeight, zoom } = this.services.pixelGrid.snapshot.layout;
     const m = this.player.state;
-    this.player.draw();
-    const { scrollX, scrollY } = cameraScroll(this.cam, { width: viewWidth, height: viewHeight }, m);
+    // Figur und Kamera rasten auf dasselbe Raster ein: ganze Bildschirmpixel (1/Zoom Bildpunkt)
+    this.player.draw(zoom);
+    const { scrollX, scrollY } = cameraScroll(this.cam, { width: viewWidth, height: viewHeight }, m, zoom);
     this.cameras.main.centerOn(scrollX + viewWidth / 2, scrollY + viewHeight / 2);
   }
 }

@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { FIGURES, IDLE_ROW, figureFrame } from '../data/sprites';
 import type { Facing } from '../data/types';
+import { snapToScreen } from '../core/pixel';
 import { FIGURE_SHADOW_KEY, figureKey } from '../maps/registry';
 import { DEPTH, depthForFoot } from '../systems/depth';
 
@@ -11,7 +12,7 @@ import { DEPTH, depthForFoot } from '../systems/depth';
  * auf einem ganzen Bildpunkt, damit sitzt das Bild bei ganzzahligem Fußpunkt pixelgenau.
  */
 
-/** Gezeichneter Stand einer Figur: Bildschlüssel, Bildnummer im Blatt, Fußpunkt in ganzen Bildpunkten. */
+/** Gezeichneter Stand einer Figur: Bildschlüssel, Bildnummer im Blatt, Fußpunkt in Bildpunkten (eingerastet). */
 export interface ActorPose {
   texture: string;
   frame: number;
@@ -22,7 +23,8 @@ export interface ActorPose {
 /**
  * Eine stehende Figur: Bild unten mittig am Fußpunkt, darunter der Schatten auf DEPTH.flat. Tiefe und Bildunterkante
  * sind beide der (gerundete) Fußpunkt, siehe depth.ts. Gerechnet wird außerhalb mit Gleitkomma; hier wird beim
- * Zeichnen auf ganze Bildpunkte gerundet.
+ * Zeichnen gerundet: ohne Zoom auf ganze Bildpunkte (stehende Figuren), mit Zoom auf ganze Bildschirmpixel
+ * (laufende Figur, passend zur Kamera aus cameraScroll – sonst zitterte sie gegen das gleitende Bild).
  */
 export class Actor {
   private readonly sprite: Phaser.GameObjects.Sprite;
@@ -35,10 +37,10 @@ export class Actor {
     this.setPose(x, y, facing, IDLE_ROW);
   }
 
-  /** Fußpunkt in Bildpunkten (Gleitkomma), Blickrichtung und Zeile im Figurenblatt. */
-  setPose(x: number, y: number, facing: Facing, row: number): void {
-    const footX = Math.round(x);
-    const footY = Math.round(y);
+  /** Fußpunkt in Bildpunkten (Gleitkomma), Blickrichtung, Zeile im Figurenblatt und Zoom des Pixelrasters. */
+  setPose(x: number, y: number, facing: Facing, row: number, zoom = 1): void {
+    const footX = snapToScreen(x, zoom);
+    const footY = snapToScreen(y, zoom);
     this.sprite.setFrame(figureFrame(facing, row));
     this.sprite.setPosition(footX, footY).setDepth(depthForFoot(footY));
     this.shadow.setPosition(footX, footY);

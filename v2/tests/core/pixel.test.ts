@@ -1,5 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { computeZoom, computeLayout } from '../../src/core/pixel';
+import { computeZoom, computeLayout, snapToScreen } from '../../src/core/pixel';
+
+describe('snapToScreen', () => {
+  it('rundet auf ganze Bildschirmpixel: Vielfache von 1/Zoom Bildpunkt', () => {
+    expect(snapToScreen(10.4, 1)).toBe(10);
+    expect(snapToScreen(10.26, 4)).toBe(10.25);
+    expect(snapToScreen(10.1, 6) * 6).toBeCloseTo(61, 9);
+    for (const zoom of [1, 2, 3, 4, 5, 6, 7, 8, 12]) {
+      for (const v of [0, 0.49, 17.3333, 311.99, 333.5, -4.2]) {
+        const s = snapToScreen(v, zoom);
+        expect(Math.abs(s * zoom - Math.round(s * zoom)), `${v} bei Zoom ${zoom}`).toBeLessThan(1e-9);
+        expect(Math.abs(s - v)).toBeLessThanOrEqual(0.5 / zoom + 1e-9);
+      }
+    }
+  });
+
+  it('ganze Bildpunkte bleiben bei jedem Zoom genau', () => {
+    for (const zoom of [1, 3, 5, 6, 7]) for (const v of [0, 1, 232, 312, 640]) expect(snapToScreen(v, zoom)).toBe(v);
+  });
+
+  it('unbrauchbarer Zoom → ganze Bildpunkte', () => {
+    for (const zoom of [0, -2, Number.NaN, Number.POSITIVE_INFINITY, 2.5]) expect(snapToScreen(10.4, zoom)).toBe(10);
+  });
+});
 
 describe('computeZoom', () => {
   it.each([

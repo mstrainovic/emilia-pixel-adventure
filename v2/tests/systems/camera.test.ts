@@ -119,6 +119,82 @@ describe('cameraScroll', () => {
   it('mit Anker: ganzzahlige Ecke (Kartenrand) bleibt genau', () => {
     for (const px of [10, 10.3, 10.5, 11.9]) {
       expect(cameraScroll({ x: VIEW.width / 2, y: VIEW.height / 2 }, VIEW, { x: px, y: px })).toEqual({ scrollX: 0, scrollY: 0 });
+      expect(cameraScroll({ x: VIEW.width / 2, y: VIEW.height / 2 }, VIEW, { x: px, y: px }, 6)).toEqual({ scrollX: 0, scrollY: 0 });
+    }
+  });
+});
+
+/*
+ * Meldung des Auftraggebers am 2026-11-14: „wenn man schnell rennt, dann wackelt alles etwas". Gemessen bei Zoom 6:
+ * Die Kamera rastete auf ganze Bildpunkte ein; bei 112 Bildpunkten je Sekunde sind das je Bild mal 2, mal 1
+ * Bildpunkt, also mal 12, mal 6 Bildschirmpixel. Mit dem Zoom rastet die Ecke auf ganze Bildschirmpixel ein.
+ */
+describe('cameraScroll mit Zoom: Einrasten auf Bildschirmpixel', () => {
+  const onScreenPixel = (v: number, zoom: number) => Math.abs(v * zoom - Math.round(v * zoom)) < 1e-6;
+
+  /** Kamera folgt einer Figur, die gleichmäßig nach rechts läuft; liefert die Ecke je Bild in Bildschirmpixeln. */
+  function follow(speed: number, zoom: number, fps: number, frames: number): { corner: number[]; figure: number[] } {
+    const wide = { width: 20000, height: 512 };
+    let cam: CameraState = { x: 300, y: 200 };
+    const corner: number[] = [];
+    const figure: number[] = [];
+    for (let i = 0; i < frames; i++) {
+      const px = 300 + (i * speed) / fps;
+      cam = stepCamera(cam, { x: px, y: 200, vx: speed, vy: 0 }, 1 / fps, VIEW, wide);
+      const s = cameraScroll(cam, VIEW, { x: px, y: 200 }, zoom);
+      expect(onScreenPixel(s.scrollX, zoom), `Bild ${i}`).toBe(true);
+      expect(onScreenPixel(s.scrollY, zoom), `Bild ${i}`).toBe(true);
+      corner.push(Math.round(s.scrollX * zoom));
+      figure.push(Math.round((Math.round(px * zoom) / zoom - s.scrollX) * zoom));
+    }
+    return { corner, figure };
+  }
+
+  it.each([
+    ['Rennen, Zoom 6, 60 Bilder/s', 112, 6, 60],
+    ['Gehen, Zoom 6, 60 Bilder/s', 64, 6, 60],
+    ['Rennen, Zoom 4, 60 Bilder/s', 112, 4, 60],
+    ['Rennen, Zoom 5, 60 Bilder/s', 112, 5, 60],
+    ['Rennen, Zoom 6, 144 Bilder/s', 112, 6, 144],
+    ['Rennen, Zoom 12, 60 Bilder/s', 112, 12, 60],
+  ])('%s: die Welt rückt je Bild gleichmäßig weiter (höchstens 1 Bildschirmpixel Unterschied)', (_name, speed, zoom, fps) => {
+    const { corner } = follow(speed, zoom, fps, 600);
+    // eingeschwungen: die zweite Hälfte
+    const steps = corner.slice(301).map((c, i) => c - corner[300 + i]!);
+    expect(Math.max(...steps) - Math.min(...steps)).toBeLessThanOrEqual(1);
+    // und im Mittel so schnell wie die Figur
+    const mean = steps.reduce((a, b) => a + b, 0) / steps.length;
+    expect(Math.abs(mean - (speed * zoom) / fps)).toBeLessThan(0.05);
+  });
+
+  it('ohne Zoom (ganze Bildpunkte) wären es bei Zoom 6 Sprünge von 6 und 12 Bildschirmpixeln', () => {
+    const wide = { width: 20000, height: 512 };
+    let cam: CameraState = { x: 300, y: 200 };
+    const corner: number[] = [];
+    for (let i = 0; i < 600; i++) {
+      const px = 300 + (i * 112) / 60;
+      cam = stepCamera(cam, { x: px, y: 200, vx: 112, vy: 0 }, 1 / 60, VIEW, wide);
+      corner.push(cameraScroll(cam, VIEW, { x: px, y: 200 }).scrollX * 6);
+    }
+    const steps = new Set(corner.slice(301).map((c, i) => c - corner[300 + i]!));
+    expect([...steps].sort((a, b) => a - b)).toEqual([6, 12]);
+  });
+
+  it('die Figur steht beim gleichmäßigen Laufen ruhig im Bild (ein fester Ort in Bildschirmpixeln)', () => {
+    for (const [speed, zoom] of [[112, 6], [64, 6], [112, 5], [112, 4]] as const) {
+      const { figure } = follow(speed, zoom, 60, 600);
+      expect(new Set(figure.slice(300)).size, `Tempo ${speed}, Zoom ${zoom}`).toBe(1);
+    }
+  });
+
+  it('die Ecke weicht höchstens einen Bildschirmpixel vom ungerundeten Wert ab', () => {
+    for (const zoom of [1, 4, 6]) {
+      for (let i = 0; i < 200; i++) {
+        const px = 300 + i * 0.37;
+        const camX = px + 11.3;
+        const s = cameraScroll({ x: camX, y: 200 }, VIEW, { x: px, y: 200 }, zoom);
+        expect(Math.abs(s.scrollX - (camX - VIEW.width / 2))).toBeLessThanOrEqual(1 / zoom + 1e-9);
+      }
     }
   });
 });

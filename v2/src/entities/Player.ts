@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import { IDLE_ROW } from '../data/sprites';
 import type { SolidGrid } from '../systems/collision';
 import { stepMover, walkFrameRow, type Mover } from '../systems/movement';
-import { Actor } from './Actor';
+import { Actor, type ActorPose } from './Actor';
 import type { Controller } from './controller';
 
 /** Die Spielerin: Bewegung (Mover) aus einer Steuerquelle, gezeichnet als Emilia. */
@@ -29,11 +29,11 @@ export class Player {
     this.mover = stepMover(this.mover, intent, dt, this.grid);
   }
 
-  /** Setzt Bild, Zeichenposition und Tiefe aus dem aktuellen Stand. */
-  draw(): void {
+  /** Setzt Bild, Zeichenposition und Tiefe aus dem aktuellen Stand; `zoom` ist der Zoom des Pixelrasters. */
+  draw(zoom: number): void {
     const m = this.mover;
     const row = m.moving ? walkFrameRow(m.walkTime, this.running) : IDLE_ROW;
-    this.actor.setPose(m.x, m.y, m.facing, row);
+    this.actor.setPose(m.x, m.y, m.facing, row, zoom);
   }
 
   /** Stellt die Figur an einen Fußpunkt (Bildpunkte), stehend, Blickrichtung bleibt. */
@@ -43,6 +43,11 @@ export class Player {
 
   get state(): Readonly<Mover> {
     return this.mover;
+  }
+
+  /** Gezeichneter Stand (eingerastet auf Bildschirmpixel). */
+  get pose(): ActorPose {
+    return this.actor.pose;
   }
 
   get depth(): number {
