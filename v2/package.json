@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:bundle": "vitest run --config vitest.bundle.config.ts",
+    "test:e2e": "npm run build && playwright test",
     "maps:export": "node tools/export-legacy-maps.mjs",
     "save:fingerprint": "node tools/save-fingerprint.mjs"
   },
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
+    "@types/node": "^24.19.2",
     "@types/pngjs": "^6.0.5",
     "pngjs": "^7.0.0",
     "typescript": "^7.0.2",

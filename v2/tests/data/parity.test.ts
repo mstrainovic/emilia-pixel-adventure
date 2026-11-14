@@ -10,15 +10,25 @@ import { FISH_TYPES, getAvailableFish, pickRandomFish } from '../../src/data/fis
 import { SHELL_TYPES } from '../../src/data/shells';
 import { RARE_FIND_PLACEMENTS } from '../../src/data/rareFinds';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES } from '../../src/data/achievements';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { ITEMS as LEGACY_ITEMS, getItem as legacyGetItem } from '../../../src/data/items.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { RECIPES as LEGACY_RECIPES, getRecipesForStation as legacyRecipesFor } from '../../../src/data/recipes.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { QUESTS as LEGACY_QUESTS } from '../../../src/data/quests.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { FAMILY_NPCS as LEGACY_NPCS } from '../../../src/data/npcs.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { MOB_TYPES as LEGACY_MOBS } from '../../../src/data/mobs.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { BOSS_TYPES as LEGACY_BOSSES, isBossUnlocked as legacyIsBossUnlocked } from '../../../src/data/bosses.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { FISH_TYPES as LEGACY_FISH, getAvailableFish as legacyAvailable } from '../../../src/data/fish.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { SHELL_TYPES as LEGACY_SHELLS } from '../../../src/data/shells.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { RARE_FIND_PLACEMENTS as LEGACY_RARE } from '../../../src/data/rare_finds.js';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { ACHIEVEMENTS as LEGACY_ACH, ACHIEVEMENT_CATEGORIES as LEGACY_ACH_CATS } from '../../../src/data/achievements.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Altbestand ist untypisiertes JavaScript */

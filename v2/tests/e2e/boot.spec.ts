@@ -13,8 +13,10 @@ test('startet ohne Fehler und ohne fremde Anfragen', async ({ page }) => {
   expect(foreign).toEqual([]);
 });
 
-test('zoomt ganzzahlig', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
+test('zoomt ganzzahlig', async ({ browser, baseURL }) => {
+  // eigene Dichte 1: das iPad-Gerät bringt sonst Dichte 2 mit, die Zahlen unten gelten für Dichte 1
+  const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  const page = await context.newPage();
   await page.goto('./');
   await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 4);
   const size = await page.evaluate(() => {
@@ -36,6 +38,7 @@ test('zoomt ganzzahlig', async ({ page }) => {
     return { grid: { w: grid.deviceWidth, h: grid.deviceHeight }, canvas: { w: c.width, h: c.height } };
   });
   expect(size2).toEqual({ grid: { w: 1920, h: 1080 }, canvas: { w: 1920, h: 1080 } });
+  await context.close();
 });
 
 test('bleibt bei hoher Pixeldichte ganzzahlig und bildet Zeiger richtig ab', async ({ browser }) => {

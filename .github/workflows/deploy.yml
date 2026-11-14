@@ -66,13 +66,16 @@ jobs:
       - run: npm test
         working-directory: v2
 
-      - run: npx playwright install --with-deps chromium
-        working-directory: v2
-
-      - run: npm run test:e2e
-        working-directory: v2
-
       - run: npm run build
+        working-directory: v2
+
+      - run: npm run test:bundle
+        working-directory: v2
+
+      - run: npx playwright install --with-deps chromium webkit
+        working-directory: v2
+
+      - run: npx playwright test
         working-directory: v2
 
       - run: test -f dist/v2/index.html

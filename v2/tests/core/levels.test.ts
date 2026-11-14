@@ -49,6 +49,7 @@ describe('XP-Umrechnung ganzzahlig', () => {
     for (let level = 1; level < MAX_LEVEL; level++) {
       const need = xpToNext(level);
       const legacyNeed = LEGACY_XP_TO_NEXT[level - 1];
+      if (legacyNeed === undefined) throw new Error(`Altwert für Level ${level} fehlt`);
       let previous = -1;
       for (let xp = 0; xp <= legacyNeed; xp++) {
         const result = convertLegacyXp(level, xp);

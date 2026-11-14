@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { convertLegacyMap, seededRandom } from '../../tools/legacy-maps/convert.mjs';
 
 const legacy = {

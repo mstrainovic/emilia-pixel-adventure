@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+// @ts-expect-error -- Altbestand ist untypisiertes JavaScript (Grenze zum Altspiel)
 import { convertLegacyMap } from '../../tools/legacy-maps/convert.mjs';
 import { validateMap } from '../../src/maps/validate';
 import type { MapId } from '../../src/data/maps';
