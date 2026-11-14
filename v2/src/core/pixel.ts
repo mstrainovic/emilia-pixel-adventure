@@ -16,11 +16,34 @@ export function computeZoom(physicalWidth: number, physicalHeight: number): numb
   return Math.max(1, zoom);
 }
 
-/** Zoom und sichtbares Feld in Bildpunkten (Breite = physische Breite / Zoom). */
-export function computeView(
-  physicalWidth: number,
-  physicalHeight: number,
-): { zoom: number; width: number; height: number } {
-  const zoom = computeZoom(physicalWidth, physicalHeight);
-  return { zoom, width: physicalWidth / zoom, height: physicalHeight / zoom };
+/** Aufteilung der Zeichenfläche: ganzzahliger Zoom, sichtbares Feld und schwarzer Rand. */
+export interface PixelLayout {
+  zoom: number;
+  /** Sichtbare Bildpunkte: floor(Gerätepixel / Zoom). */
+  viewWidth: number;
+  viewHeight: number;
+  /** Rand in Gerätepixeln: floor(Rest / 2). */
+  offsetX: number;
+  offsetY: number;
+}
+
+/**
+ * Teilt eine Zeichenfläche von Gerätepixeln in ganze Bildpunkte auf. Der Rest (höchstens
+ * Zoom − 1 Pixel) wird auf beide Seiten verteilt. Unbrauchbare Größen ergeben ein Feld aus einem Bildpunkt.
+ */
+export function computeLayout(deviceWidth: number, deviceHeight: number): PixelLayout {
+  const usable = Number.isFinite(deviceWidth) && Number.isFinite(deviceHeight) && deviceWidth > 0 && deviceHeight > 0;
+  if (!usable) return { zoom: 1, viewWidth: 1, viewHeight: 1, offsetX: 0, offsetY: 0 };
+  const width = Math.max(1, Math.floor(deviceWidth));
+  const height = Math.max(1, Math.floor(deviceHeight));
+  const zoom = computeZoom(width, height);
+  const viewWidth = Math.max(1, Math.floor(width / zoom));
+  const viewHeight = Math.max(1, Math.floor(height / zoom));
+  return {
+    zoom,
+    viewWidth,
+    viewHeight,
+    offsetX: Math.max(0, Math.floor((width - viewWidth * zoom) / 2)),
+    offsetY: Math.max(0, Math.floor((height - viewHeight * zoom) / 2)),
+  };
 }

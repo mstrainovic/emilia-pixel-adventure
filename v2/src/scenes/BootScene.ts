@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { computeZoom } from '../core/pixel';
+import { servicesOf } from '../core/services';
 import { installTestHooks } from '../core/testHooks';
 
 export class BootScene extends Phaser.Scene {
@@ -8,33 +8,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor('#2d5a27');
-    this.applyPixelGrid();
-    const onResize = (): void => this.applyPixelGrid();
-    window.addEventListener('resize', onResize);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('resize', onResize));
+    const camera = this.cameras.main;
+    camera.setBackgroundColor('#2d5a27');
+    const { pixelGrid } = servicesOf(this);
+    pixelGrid.applyTo(camera);
+    const unsubscribe = pixelGrid.onChange(() => pixelGrid.applyTo(camera));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, unsubscribe);
     installTestHooks({ ready: true });
-  }
-
-  /** Zeichenfläche = Fenster in physischen Pixeln, Anzeige = volles Fenster, Kamerazoom ganzzahlig. */
-  private applyPixelGrid(): void {
-    const dpr = window.devicePixelRatio || 1;
-    const physicalWidth = Math.max(1, Math.round(window.innerWidth * dpr));
-    const physicalHeight = Math.max(1, Math.round(window.innerHeight * dpr));
-    const scale = this.scale;
-    scale.resize(physicalWidth, physicalHeight);
-    const canvas = this.game.canvas;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
-    // Anzeigemaßstab und Grenzen für die Zeigerabbildung neu berechnen (liest die CSS-Größe der Zeichenfläche)
-    scale.refresh();
-    const zoom = computeZoom(physicalWidth, physicalHeight);
-    this.cameras.main.setZoom(zoom);
-    installTestHooks({
-      zoom,
-      canvasSize: { width: canvas.width, height: canvas.height },
-      pointerScale: { x: scale.displayScale.x, y: scale.displayScale.y },
-      toCanvas: (cssX: number, cssY: number) => ({ x: scale.transformX(cssX), y: scale.transformY(cssY) }),
-    });
   }
 }

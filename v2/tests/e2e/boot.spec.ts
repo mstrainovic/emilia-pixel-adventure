@@ -16,20 +16,26 @@ test('startet ohne Fehler und ohne fremde Anfragen', async ({ page }) => {
 test('zoomt ganzzahlig', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('./');
-  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 4);
+  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 4);
   const size = await page.evaluate(() => {
+    const grid = (window as any).__emilia2.pixelGrid;
     const c = document.querySelector('canvas')!;
     const r = c.getBoundingClientRect();
-    return { w: c.width, h: c.height, cw: Math.round(r.width), ch: Math.round(r.height) };
+    return {
+      grid: { w: grid.deviceWidth, h: grid.deviceHeight },
+      canvas: { w: c.width, h: c.height },
+      css: { w: Math.round(r.width), h: Math.round(r.height) },
+    };
   });
-  expect(size).toEqual({ w: 1280, h: 720, cw: 1280, ch: 720 });
+  expect(size).toEqual({ grid: { w: 1280, h: 720 }, canvas: { w: 1280, h: 720 }, css: { w: 1280, h: 720 } });
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 6);
+  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 6);
   const size2 = await page.evaluate(() => {
+    const grid = (window as any).__emilia2.pixelGrid;
     const c = document.querySelector('canvas')!;
-    return { w: c.width, h: c.height };
+    return { grid: { w: grid.deviceWidth, h: grid.deviceHeight }, canvas: { w: c.width, h: c.height } };
   });
-  expect(size2).toEqual({ w: 1920, h: 1080 });
+  expect(size2).toEqual({ grid: { w: 1920, h: 1080 }, canvas: { w: 1920, h: 1080 } });
 });
 
 test('bleibt bei hoher Pixeldichte ganzzahlig und bildet Zeiger richtig ab', async ({ browser }) => {
@@ -39,39 +45,38 @@ test('bleibt bei hoher Pixeldichte ganzzahlig und bildet Zeiger richtig ab', asy
     deviceScaleFactor: 2,
   });
   const page = await context.newPage();
-  type Hooks = {
-    zoom: number;
-    canvasSize: { width: number; height: number };
-    pointerScale: { x: number; y: number };
-    toCanvas: (x: number, y: number) => { x: number; y: number };
-  };
   const read = () =>
     page.evaluate(() => {
-      const h = (window as any).__emilia2 as Hooks;
-      const r = document.querySelector('canvas')!.getBoundingClientRect();
+      const h = (window as any).__emilia2;
+      const grid = h.pixelGrid;
+      const c = document.querySelector('canvas')!;
+      const r = c.getBoundingClientRect();
       return {
-        zoom: h.zoom,
-        canvasSize: h.canvasSize,
-        pointerScale: h.pointerScale,
+        zoom: grid.layout.zoom,
+        dpr: grid.dpr,
+        device: { width: grid.deviceWidth, height: grid.deviceHeight },
+        canvasSize: { width: c.width, height: c.height },
         css: { width: Math.round(r.width), height: Math.round(r.height) },
         mapped: h.toCanvas(406, 100),
       };
     });
   await page.goto('./');
-  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 4);
+  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 4);
   expect(await read()).toEqual({
     zoom: 4,
+    dpr: 2,
+    device: { width: 1624, height: 750 },
     canvasSize: { width: 1624, height: 750 },
-    pointerScale: { x: 2, y: 2 },
     css: { width: 812, height: 375 },
     mapped: { x: 812, y: 200 },
   });
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.waitForFunction(() => (window as any).__emilia2?.zoom === 8);
+  await page.waitForFunction(() => (window as any).__emilia2?.pixelGrid?.layout.zoom === 8);
   expect(await read()).toMatchObject({
     zoom: 8,
+    dpr: 2,
+    device: { width: 2048, height: 1536 },
     canvasSize: { width: 2048, height: 1536 },
-    pointerScale: { x: 2, y: 2 },
     css: { width: 1024, height: 768 },
   });
   await context.close();
