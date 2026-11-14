@@ -7,6 +7,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // Zwei Worker: WebGL-Seiten mit Pixelprüfungen (bis Pixeldichte 3) in drei Projekten überlasten die Maschine
+  // bei der Standardzahl; Zeit-Tests messen dann die Last statt des Spiels.
+  workers: 2,
   outputDir: '../test-artifacts/v2-e2e',
   reporter: 'list',
   webServer: [

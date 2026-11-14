@@ -54,22 +54,38 @@ test('D gedrückt: Emilia läuft nach rechts und bleibt nach dem Loslassen stehe
   await openWorld(page, errors);
   const before = await player(page);
   expect(before.moving).toBe(false);
-  // Wie lange die Taste in der Seite wirklich gedrückt war (zur Einordnung bei langsamer Maschine)
+  // Die Seite merkt sich, wann sie keydown und keyup von D wirklich bekam, und zählt die Bilder dazwischen:
+  // gemessen wird die Geschwindigkeit über die echte Haltezeit, nicht über Playwrights Wartezeit.
   await page.evaluate(() => {
     const w = window as any;
-    w.__keyTimes = [];
-    for (const type of ['keydown', 'keyup']) addEventListener(type, () => w.__keyTimes.push(performance.now()), { once: true });
+    w.__hold = { down: null, up: null, frames: 0 };
+    addEventListener('keydown', (e) => { if (e.code === 'KeyD' && w.__hold.down === null) w.__hold.down = performance.now(); });
+    addEventListener('keyup', (e) => { if (e.code === 'KeyD' && w.__hold.up === null) w.__hold.up = performance.now(); });
+    const count = (): void => {
+      if (w.__hold.down !== null && w.__hold.up === null) w.__hold.frames++;
+      if (w.__hold.up === null) requestAnimationFrame(count);
+    };
+    requestAnimationFrame(count);
   });
   await hold(page, ['KeyD'], 600);
+  // „moving === false binnen 200 ms nach dem Loslassen", danach ist der Ort zur Ruhe gekommen
+  await expect.poll(async () => (await player(page)).moving, { timeout: 200, intervals: [16] }).toBe(false);
   const after = await player(page);
   const walked = after.x - before.x;
-  const [down, up] = await page.evaluate(() => (window as any).__keyTimes as number[]);
-  console.log(`600 ms D: ${walked.toFixed(2)} Bildpunkte, Taste in der Seite ${(up! - down!).toFixed(0)} ms gedrückt`);
-  expect(walked).toBeGreaterThanOrEqual(25);
-  expect(walked).toBeLessThanOrEqual(45);
+  const { down, up, frames } = await page.evaluate(() => (window as any).__hold as { down: number; up: number; frames: number });
+  const heldSeconds = (up - down) / 1000;
+  const speed = walked / heldSeconds;
+  console.log(
+    `D: ${walked.toFixed(2)} Bildpunkte in ${(heldSeconds * 1000).toFixed(0)} ms gehalten = ${speed.toFixed(1)} px/s, ` +
+    `${(frames / heldSeconds).toFixed(0)} Bilder/s`,
+  );
+  expect(heldSeconds, `Taste war in der Seite ${(heldSeconds * 1000).toFixed(0)} ms gedrückt – der Lauf sagt nichts aus`).toBeGreaterThanOrEqual(0.5);
+  expect(heldSeconds, `Taste war in der Seite ${(heldSeconds * 1000).toFixed(0)} ms gedrückt – der Lauf sagt nichts aus`).toBeLessThanOrEqual(1);
+  // 25 bis 45 Bildpunkte bei 600 ms Halten
+  expect(speed).toBeGreaterThanOrEqual(41);
+  expect(speed).toBeLessThanOrEqual(75);
   expect(after.facing).toBe('right');
   expect(after.y).toBe(before.y);
-  await expect.poll(async () => (await player(page)).moving, { timeout: 200, intervals: [16] }).toBe(false);
   expect(errors).toEqual([]);
 });
 
