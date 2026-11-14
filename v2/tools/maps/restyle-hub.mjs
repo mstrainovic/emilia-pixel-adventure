@@ -58,8 +58,21 @@ const OLD_WELL_ROCK = { x: 19, y: 14 };
  */
 export const BONFIRE = { from: [20, 19], to: [22, 20] };
 
-/** Objekte, die ihren Platz wechseln (nur Schmuck und Bäume, nie etwas aus der festen Liste). */
+/**
+ * Im alten Spiel lief Emilia durch Zäune, Truhen, Wegweiser und Büsche hindurch. Seit der Stil-Prüfung
+ * (Antwort des Auftraggebers, 2026-11-14) sind sie fest: Ihre Kachel ist gesperrt. Hühner bleiben durchlaufbar.
+ */
+export const SOLID_TYPES = ['real_fence', 'chest', 'signpost', 'bush'];
+
+/** Gartentor: Wo der Weg zum Garten auf Omas Zaun trifft, entfallen die Zaunstücke, sonst endete der Weg an einer Wand. */
+export const GARDEN_GATE = [[10, 21], [11, 21]];
+
+/** Der Wegweiser zur Höhle stand mitten auf dem Ostweg; als festes Hindernis steht er neben dem Weg, wie die anderen vier. */
+export const SIGNPOST_MOVE = { from: [37, 14], to: [37, 13] };
+
+/** Objekte, die ihren Platz wechseln (Schmuck, Bäume und der Wegweiser aus SIGNPOST_MOVE, sonst nichts aus der festen Liste). */
 const MOVES = [
+  { type: 'signpost', from: SIGNPOST_MOVE.from, to: SIGNPOST_MOVE.to, reason: 'stand auf dem Ostweg und versperrte als festes Hindernis den halben Weg zum Ausgang' },
   { type: 'tree', from: [23, 3], to: [24, 3], reason: 'Krone würde den Wegweiser 22/3 halb verdecken' },
   { type: 'tree', from: [23, 28], to: [24, 28], reason: 'Laubkrone würde den Wegweiser 22/27 verdecken' },
   { type: 'tree', from: [13, 24], to: [14, 24], reason: 'Tannenkrone würde die Samen 12/23 und 12/24 verdecken' },
@@ -175,7 +188,7 @@ function buildGround(map, ground, mask, edgeMask, plots, tileIndex) {
   return { base, detail };
 }
 
-function buildCollision(map, collision) {
+function buildCollision(map, collision, objects) {
   const data = collision.map((v) => (v !== 0 ? 1 : 0));
   const seen = new Set();
   for (const c of COLLISION_CHANGES) {
@@ -184,6 +197,13 @@ function buildCollision(map, collision) {
     seen.add(i);
     if ((data[i] === 1) === c.blocked) throw new Error(`COLLISION_CHANGES ${c.x}/${c.y}: keine Abweichung von der Vorlage`);
     data[i] = c.blocked ? 1 : 0;
+  }
+  // Feste Objekte sperren ihre Kachel (Regel statt Einzeleinträgen in COLLISION_CHANGES).
+  for (const o of objects) {
+    if (!SOLID_TYPES.includes(o.type)) continue;
+    const i = tileY(o) * map.width + tileX(o);
+    if (seen.has(i) && data[i] === 0) throw new Error(`${o.type} ${tileX(o)}/${tileY(o)} steht auf einer Kachel, die COLLISION_CHANGES freigibt`);
+    data[i] = 1;
   }
   return data;
 }
@@ -233,6 +253,7 @@ function restyleObjects(map, objectsLayer, exits) {
   for (const o of objectsLayer.objects) {
     if (o.type === 'house') continue; // neue Häuser siehe HOUSES
     if (o.type === 'rock' && at(o, OLD_WELL_ROCK.x, OLD_WELL_ROCK.y)) continue; // wird der Brunnen
+    if (o.type === 'real_fence' && GARDEN_GATE.some(([x, y]) => at(o, x, y))) continue; // Gartentor
     const copy = { ...o, properties: [...(o.properties ?? [])] };
     const move = MOVES.find((m) => m.type === o.type && at(o, m.from[0], m.from[1]));
     if (move) {
@@ -277,7 +298,7 @@ function checkConsistency(map, collision, objects, mask, edgeMask) {
     for (let y = h.y - HOUSE_ROWS + 1; y <= h.y; y++) for (let x = h.x; x < h.x + h.w; x++) if (!blocked(x, y)) problems.push(`Haus ${h.variant}: ${x}/${y} frei`);
   }
   for (const o of objects) {
-    const mustBlock = ['tree', 'station', 'well', 'decor', 'bonfire', 'trophy_shelf'].includes(o.type);
+    const mustBlock = ['tree', 'station', 'well', 'decor', 'bonfire', 'trophy_shelf', ...SOLID_TYPES].includes(o.type);
     for (let x = tileX(o); x < tileX(o) + o.width / TILE; x++) if (mustBlock && !blocked(x, tileY(o))) problems.push(`${o.type} auf ${x}/${tileY(o)} steht auf freier Kachel`);
   }
   for (const r of PATH_WIDEN) {
@@ -287,9 +308,20 @@ function checkConsistency(map, collision, objects, mask, edgeMask) {
     const found = objects.filter((o) => o.type === m.type && at(o, m.to[0], m.to[1])).length;
     if (found !== 1) problems.push(`MOVES ${m.type} ${m.from.join('/')}: am Ziel ${m.to.join('/')} ${found} statt 1 Objekt`);
   }
-  // Schmuck, der am Boden steht oder läuft, und das Lagerfeuer gehören nicht auf den Weg.
+  // Schmuck, der am Boden steht oder läuft, das Lagerfeuer und die Wegweiser gehören nicht auf den Weg.
   for (const o of objects) {
-    if (['flower', 'bush', 'rock', 'chicken', 'bonfire'].includes(o.type) && edgeMask[tileY(o)][tileX(o)]) problems.push(`${o.type} ${tileX(o)}/${tileY(o)} steht auf Weg oder Hof`);
+    if (['flower', 'bush', 'rock', 'chicken', 'bonfire', 'signpost'].includes(o.type) && edgeMask[tileY(o)][tileX(o)]) problems.push(`${o.type} ${tileX(o)}/${tileY(o)} steht auf Weg oder Hof`);
+  }
+  // Gartentor: Die Zaunstücke der Vorlage sind fort, die Kacheln frei, und der Weg endet direkt darüber.
+  for (const [x, y] of GARDEN_GATE) {
+    if (!TEMPLATE_DATA.layers.find((l) => l.name === 'objects').objects.some((o) => o.type === 'real_fence' && at(o, x, y))) problems.push(`Gartentor ${x}/${y}: in der Vorlage steht dort kein Zaun`);
+    if (blocked(x, y) || objects.some((o) => at(o, x, y))) problems.push(`Gartentor ${x}/${y} ist nicht frei`);
+    if (!mask[y - 1][x]) problems.push(`Gartentor ${x}/${y}: darüber endet kein Weg`);
+  }
+  // Auf der Kachel eines festen Objekts steht sonst nichts.
+  for (const o of objects.filter((s) => SOLID_TYPES.includes(s.type))) {
+    const same = objects.filter((p) => at(p, tileX(o), tileY(o)));
+    if (same.length !== 1) problems.push(`${o.type} ${tileX(o)}/${tileY(o)} teilt seine Kachel mit ${same.filter((p) => p !== o).map((p) => p.type).join(', ')}`);
   }
   // Auf der Kachel des Lagerfeuers steht sonst nichts.
   const onFire = objects.filter((o) => at(o, BONFIRE.to[0], BONFIRE.to[1]));
@@ -318,8 +350,8 @@ export function restyleHub() {
   // Hof- und Steinboden zählen für die Wegränder wie Weg: wo der Weg auf einen Hof stößt, kein Grasrand.
   const edgeMask = mask.map((row, y) => row.map((p, x) => p || isOldWood(ground[y * map.width + x]) || ground[y * map.width + x] === OLD_STONE));
   const { base, detail } = buildGround(map, ground, mask, edgeMask, plots, tileIndex);
-  const collision = buildCollision(map, layerOf(map, 'collision').data);
   const { objects, nextId } = restyleObjects(map, objectsLayer, exits);
+  const collision = buildCollision(map, layerOf(map, 'collision').data, objects);
   checkConsistency(map, collision, objects, mask, edgeMask);
 
   const tileLayer = (id, name, data) => ({ id, name, type: 'tilelayer', width: map.width, height: map.height, x: 0, y: 0, opacity: 1, visible: true, data });

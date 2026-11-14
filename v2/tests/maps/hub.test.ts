@@ -8,7 +8,7 @@ import { PROP_DEFS, propKey } from '../../src/data/props';
 import type { TiledMap, TiledObject, TiledObjectLayer, TiledTileLayer } from '../../src/maps/tiled';
 import { validateMap } from '../../src/maps/validate';
 // @ts-expect-error -- Karten-Werkzeuge sind untypisiertes JavaScript (laufen nur in Node, nicht im Spiel)
-import { COLLISION_CHANGES, PATH_WIDEN } from '../../tools/maps/restyle-hub.mjs';
+import { COLLISION_CHANGES, GARDEN_GATE, PATH_WIDEN, SIGNPOST_MOVE, SOLID_TYPES } from '../../tools/maps/restyle-hub.mjs';
 import { loadGameMaps, loadLegacyMaps } from './loadMaps';
 
 const HUB_JSON = fileURLToPath(new URL('../../src/assets/maps/hub.json', import.meta.url));
@@ -30,6 +30,9 @@ interface Widen {
 }
 const changes = COLLISION_CHANGES as CollisionChange[];
 const widen = PATH_WIDEN as Widen[];
+const solidTypes = SOLID_TYPES as string[];
+const gardenGate = (GARDEN_GATE as [number, number][]).map(([x, y]) => `${x}/${y}`);
+const signpostMove = SIGNPOST_MOVE as { from: [number, number]; to: [number, number] };
 
 const template = loadLegacyMaps().hub;
 const maps = loadGameMaps();
@@ -72,8 +75,8 @@ describe('neu gestaltete Dorfkarte hub', () => {
     expect(objects(hub, 'npcs').map(pick).sort()).toEqual(objects(template, 'npcs').map(pick).sort());
   });
 
-  it('Stationen, Beete, Truhen, Regal, welke Pflanzen, Rohstoffe und Wegweiser liegen wie in der Vorlage', () => {
-    const fixed = ['station', 'garden_plot', 'chest', 'trophy_shelf', 'wilted_plant', 'resource', 'signpost'];
+  it('Stationen, Beete, Truhen, Regal, welke Pflanzen und Rohstoffe liegen wie in der Vorlage', () => {
+    const fixed = ['station', 'garden_plot', 'chest', 'trophy_shelf', 'wilted_plant', 'resource'];
     const key = (o: TiledObject) => {
       const id = o.type === 'chest' || o.type === 'resource' ? `#${String(prop(o, 'id'))}` : '';
       const station = o.type === 'station' ? `:${String(prop(o, 'station'))}` : '';
@@ -86,7 +89,9 @@ describe('neu gestaltete Dorfkarte hub', () => {
   it('Wegweiser tragen das Ziel statt eines Textes', () => {
     const exitTarget = new Map(objects(template, 'exits').map((e) => [e.name, prop(e, 'target')]));
     const signs = objects(hub, 'objects').filter((o) => o.type === 'signpost');
-    const old = new Map(objects(template, 'objects').filter((o) => o.type === 'signpost').map((o) => [tileOf(o), String(prop(o, 'dir'))]));
+    const moved = (pos: string) => (pos === signpostMove.from.join('/') ? signpostMove.to.join('/') : pos);
+    const old = new Map(objects(template, 'objects').filter((o) => o.type === 'signpost').map((o) => [moved(tileOf(o)), String(prop(o, 'dir'))]));
+    expect(signs.map(tileOf).sort()).toEqual([...old.keys()].sort());
     for (const s of signs) {
       expect(prop(s, 'target'), tileOf(s)).toBe(exitTarget.get(old.get(tileOf(s))!));
       expect(prop(s, 'label'), tileOf(s)).toBeUndefined();
@@ -127,17 +132,25 @@ describe('neu gestaltete Dorfkarte hub', () => {
       if (oldCol[i] !== 0) blockedInTemplate.push(pos);
       if (col[i] !== 0) blockedNow.push(pos);
     });
-    expect(blockedNow).toEqual([]);
+    // Einzige Ausnahme: die Truhe auf dem Vorplatz der Küche (fest seit der Stil-Prüfung); der Vorplatz ist 5×2 Kacheln groß.
+    expect(blockedNow).toEqual(['9/9']);
+    expect(objects(hub, 'objects').filter((o) => tileOf(o) === '9/9').map((o) => o.type)).toEqual(['chest']);
     // Die Vorlage sperrte genau eine Wegkachel: das Lagerfeuer auf dem Südweg (altes hub.js: collision[19][20] = 1).
     expect(blockedInTemplate).toEqual(['20/19']);
   });
 
-  it('jede Abweichung der Sperrflächen steht in COLLISION_CHANGES (höchstens 40 Einträge, je mit Begründung)', () => {
+  it('jede Abweichung der Sperrflächen steht in COLLISION_CHANGES (höchstens 40 Einträge, je mit Begründung) oder ist die Kachel eines festen Objekts', () => {
     const oldCol = tiles(template, 'collision');
     const col = tiles(hub, 'collision');
     const deviations = col.flatMap((v, i) => ((v !== 0) !== (oldCol[i] !== 0) ? [`${i % 40}/${Math.floor(i / 40)}:${v !== 0}`] : []));
     const listed = changes.map((c) => `${c.x}/${c.y}:${c.blocked}`);
-    expect(listed.sort()).toEqual(deviations.sort());
+    const solid = objects(hub, 'objects')
+      .filter((o) => solidTypes.includes(o.type))
+      .filter((o) => oldCol[Math.floor(o.y / 16) * 40 + Math.floor(o.x / 16)] === 0)
+      .map((o) => `${tileOf(o)}:true`);
+    // Als Menge: Der Busch 33/9 steht auf einer Kachel, die schon Dedas Haus sperrt.
+    expect([...new Set([...listed, ...solid])].sort()).toEqual(deviations.sort());
+    expect(listed.filter((l) => solid.includes(l))).toEqual(['33/9:true']);
     expect(changes.length).toBeLessThanOrEqual(40);
     for (const c of changes) expect(c.reason.length, `${c.x}/${c.y}`).toBeGreaterThan(10);
   });
@@ -226,6 +239,94 @@ describe('neu gestaltete Dorfkarte hub', () => {
         expect(weg.has(ground[y * 40 + x]!), `${x}/${y}`).toBe(true);
       }
       expect(treeRects.filter((t) => exitRects.some((e) => overlaps(t, e)))).toEqual([]);
+    });
+  });
+
+  describe('feste Gegenstände (Stil-Prüfung 2026-11-14: Zäune, Truhen, Wegweiser, Büsche)', () => {
+    const col = tiles(hub, 'collision');
+    const free = (x: number, y: number) => x >= 0 && y >= 0 && x < 40 && y < 32 && col[y * 40 + x] === 0;
+    const tx = (o: TiledObject) => Math.floor(o.x / 16);
+    const ty = (o: TiledObject) => Math.floor(o.y / 16);
+    const weg = new Set(Object.entries(JSON.parse(readFileSync(join(GFX, 'tiles/dorf.json'), 'utf8')) as Record<string, number>)
+      .filter(([k]) => k.startsWith('weg_')).map(([, v]) => v + 1));
+    const onPath = (x: number, y: number) => weg.has(tiles(hub, 'ground')[y * 40 + x]!);
+    /** Alle vom Startpunkt 19/14 aus über freie Kacheln (4er-Nachbarschaft) erreichbaren Kacheln. */
+    const reached = (() => {
+      const seen = new Set(['19/14']);
+      const queue: [number, number][] = [[19, 14]];
+      for (let i = 0; i < queue.length; i++) {
+        const [x, y] = queue[i]!;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          const key = `${x + dx}/${y + dy}`;
+          if (!seen.has(key) && free(x + dx, y + dy)) {
+            seen.add(key);
+            queue.push([x + dx, y + dy]);
+          }
+        }
+      }
+      return seen;
+    })();
+
+    it('genau diese vier Arten sind fest; Hühner, Blumen, Steine, Beete und Rohstoffe bleiben durchlaufbar', () => {
+      expect([...solidTypes].sort()).toEqual(['bush', 'chest', 'real_fence', 'signpost']);
+      const walkable = objects(hub, 'objects').filter((o) => ['chicken', 'flower', 'rock', 'resource', 'wilted_plant', 'garden_plot'].includes(o.type));
+      expect(walkable.length).toBeGreaterThan(40);
+      expect(walkable.filter((o) => !free(tx(o), ty(o))).map((o) => `${o.type}@${tileOf(o)}`)).toEqual([]);
+    });
+
+    it('jeder Zaun, jede Truhe, jeder Wegweiser und jeder Busch steht auf einer gesperrten Kachel, allein auf seiner Kachel', () => {
+      const solid = objects(hub, 'objects').filter((o) => solidTypes.includes(o.type));
+      const count = (type: string) => solid.filter((o) => o.type === type).length;
+      expect([count('bush'), count('chest'), count('real_fence'), count('signpost')]).toEqual([11, 2, 12, 5]);
+      expect(solid.filter((o) => free(tx(o), ty(o))).map((o) => `${o.type}@${tileOf(o)}`)).toEqual([]);
+      const others = [...objects(hub, 'objects'), ...objects(hub, 'npcs'), ...objects(hub, 'spawn')];
+      for (const s of solid) expect(others.filter((o) => tileOf(o) === tileOf(s)).length, `${s.type}@${tileOf(s)}`).toBe(1);
+    });
+
+    it('Gartentor: wo der Weg auf Omas Zaun trifft (10/21 und 11/21), steht kein Zaun mehr; sonst stehen alle Zäune der Vorlage', () => {
+      expect(gardenGate).toEqual(['10/21', '11/21']);
+      const fences = (m: TiledMap) => objects(m, 'objects').filter((o) => o.type === 'real_fence').map(tileOf).sort();
+      expect(fences(hub)).toEqual(fences(template).filter((pos) => !gardenGate.includes(pos)));
+      for (const [x, y] of [[10, 21], [11, 21]] as const) {
+        expect(free(x, y), `${x}/${y}`).toBe(true);
+        expect(objects(hub, 'objects').some((o) => tileOf(o) === `${x}/${y}`), `${x}/${y}`).toBe(false);
+        // Direkt über dem Tor endet der Weg zum Garten.
+        expect(onPath(x, y - 1), `${x}/${y}`).toBe(true);
+      }
+    });
+
+    it('der Wegweiser zur Höhle steht neben dem Ostweg auf 37/13, nicht mehr auf dem Weg 37/14', () => {
+      expect([signpostMove.from, signpostMove.to]).toEqual([[37, 14], [37, 13]]);
+      expect(objects(template, 'objects').filter((o) => o.type === 'signpost' && tileOf(o) === '37/14')).toHaveLength(1);
+      const sign = objects(hub, 'objects').filter((o) => tileOf(o) === '37/13');
+      expect(sign.map((o) => `${o.type}:${String(prop(o, 'target'))}`)).toEqual(['signpost:dungeon']);
+      expect(objects(hub, 'objects').some((o) => tileOf(o) === '37/14')).toBe(false);
+      expect(free(37, 14)).toBe(true);
+      expect(onPath(37, 13)).toBe(false);
+    });
+
+    it('kein Wegweiser und kein Busch steht auf einer Wegkachel', () => {
+      const wrong = objects(hub, 'objects').filter((o) => (o.type === 'signpost' || o.type === 'bush') && onPath(tx(o), ty(o)));
+      expect(wrong.map((o) => `${o.type}@${tileOf(o)}`)).toEqual([]);
+    });
+
+    it('die neuen Sperren schneiden nichts ab: jede freie Kachel ist vom Startpunkt aus erreichbar (außer der Nische hinter der Küchentruhe)', () => {
+      const cutOff: string[] = [];
+      for (let y = 0; y < 32; y++) for (let x = 0; x < 40; x++) if (free(x, y) && !reached.has(`${x}/${y}`)) cutOff.push(`${x}/${y}`);
+      // 9/8 liegt zwischen Kochstelle, Haus und Körben; ihr einziger Zugang war die Kachel der Truhe 9/9. Dort steht nichts.
+      expect(cutOff).toEqual(['9/8']);
+      expect([...objects(hub, 'objects'), ...objects(hub, 'npcs')].some((o) => tileOf(o) === '9/8')).toBe(false);
+    });
+
+    it('Truhen, Beete, Rohstoffe, Regal und Stationen sind begehbar oder haben eine erreichbare Kachel direkt daneben', () => {
+      const targets = objects(hub, 'objects').filter((o) => ['chest', 'garden_plot', 'resource', 'trophy_shelf', 'station'].includes(o.type));
+      expect(targets).toHaveLength(23);
+      const near = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+      const stuck = targets.filter((o) => {
+        const xs = Array.from({ length: Math.max(1, o.width / 16) }, (_, i) => tx(o) + i);
+        return !xs.some((x) => near.some(([dx, dy]) => reached.has(`${x + dx}/${ty(o) + dy}`)));
+      });
+      expect(stuck.map((o) => `${o.type}@${tileOf(o)}`)).toEqual([]);
     });
   });
 
