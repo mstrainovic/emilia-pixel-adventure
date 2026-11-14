@@ -4,6 +4,7 @@ import { WorldScene } from './scenes/WorldScene';
 import { PixelGrid } from './core/pixelGrid';
 import { EventBus, type GameEvents } from './core/events';
 import { SERVICES_KEY, startGame, type Services } from './core/services';
+import { GameSession } from './core/session';
 import { installTestHooks } from './core/testHooks';
 import { InputHub } from './input/hub';
 import { KeyboardSource } from './input/keyboard';
@@ -73,8 +74,10 @@ const services: Services = {
   pixelGrid, input, bus, state: start.state, save, store,
   persist: start.persist, startNotice: start.notice, legacyNewer: start.legacyNewer,
   startRepair: start.repair, importSave: start.importSave,
+  session: new GameSession(start.state, bus),
 };
 game.registry.set(SERVICES_KEY, services);
+services.session.start();
 pixelGrid.start();
 // alle 60 s, beim Verstecken und beim Verlassen der Seite (wie Etappe 0)
 if (start.persist) save.start(document, window);

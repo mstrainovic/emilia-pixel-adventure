@@ -8,6 +8,7 @@ import { BOSSES } from '../../src/data/bosses';
 import { FISH_TYPES } from '../../src/data/fish';
 import { SHELL_TYPES } from '../../src/data/shells';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES } from '../../src/data/achievements';
+import { wrapLines, DIALOG_LINE_CHARS, DIALOG_MAX_LINES } from '../../src/systems/dialogue';
 
 /** Ganze Wörter (klein geschrieben), die die Muster treffen dürfen, jeweils mit Begründung. */
 const EXCEPTIONS: Record<string, string> = {};
@@ -61,5 +62,13 @@ describe('Texte', () => {
   it('verwendet echte Umlaute', () => {
     const joined = texts.join('\n');
     for (const c of ['ä', 'ö', 'ü', 'ß']) expect(joined).toContain(c);
+  });
+  it('jeder Satz der Dorfbewohner passt in höchstens 2 Zeilen zu 36 Zeichen', () => {
+    const tooLong: string[] = [];
+    for (const n of NPCS) {
+      const all = [...n.dialogs, ...Object.values(n.friendshipDialogs).flat()];
+      for (const t of all) if (wrapLines(t, DIALOG_LINE_CHARS).length > DIALOG_MAX_LINES) tooLong.push(`${n.id}: ${t}`);
+    }
+    expect(tooLong).toEqual([]);
   });
 });

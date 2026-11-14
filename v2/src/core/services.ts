@@ -6,6 +6,7 @@ import type { RepairReport } from '../save/normalize';
 import { createNewGameState, type GameState } from './state';
 import type { EventBus, GameEvents } from './events';
 import type { PixelGrid } from './pixelGrid';
+import type { GameSession } from './session';
 
 /** Was beim Start zu erklären ist (die Anzeige dazu kommt in Plan 1b). */
 export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
@@ -82,6 +83,8 @@ export interface Services {
   startRepair: RepairReport | null;
   /** Ergebnis des Sofort-Speicherns nach einer Übernahme beim Start (siehe GameStart.importSave). */
   importSave: SaveResult | null;
+  /** Gespräche, Aufgaben, Rucksack: ruft die Logik auf und meldet Änderungen über `bus`. */
+  session: GameSession;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

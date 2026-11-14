@@ -1,8 +1,19 @@
 import type { SaveReason, SaveResult } from '../save/store';
+import type { QuestChange } from '../systems/quests';
+import type { FriendChange } from '../systems/friendship';
 
-/** Ereignisse des Spiels (Plan 1b ergänzt weitere). */
+/** Ereignisse des Spiels. */
 export interface GameEvents {
   'save:result': { reason: SaveReason; result: SaveResult };
+  'npc:talked': { npcId: string };
+  'quest:changed': QuestChange;
+  'friendship:changed': FriendChange;
+  'inventory:changed': Record<string, never>;
+  /** Herzen, Level, Erfahrung, Münzen. */
+  'stats:changed': Record<string, never>;
+  'ui:paused': { paused: boolean };
+  /** Der Ton selbst zieht in Etappe 7 um. */
+  'ui:sound': { name: 'open' | 'close' | 'click' | 'quest' };
 }
 
 type Handler<P> = (payload: P) => void;
