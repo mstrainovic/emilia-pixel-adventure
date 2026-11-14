@@ -7,6 +7,8 @@ import { createNewGameState, type GameState } from './state';
 import type { EventBus, GameEvents } from './events';
 import type { PixelGrid } from './pixelGrid';
 import type { GameSession } from './session';
+import type { UiRoot } from '../ui/root';
+import type { WindowManager } from '../ui/windows';
 
 /** Was beim Start zu erklären ist (die Anzeige dazu kommt in Plan 1b). */
 export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
@@ -85,6 +87,10 @@ export interface Services {
   importSave: SaveResult | null;
   /** Gespräche, Aufgaben, Rucksack: ruft die Logik auf und meldet Änderungen über `bus`. */
   session: GameSession;
+  /** Wurzel der HTML-Oberfläche über dem Spielbild (Maßstab als CSS-Variablen). */
+  uiRoot: UiRoot;
+  /** Fenster und Anhalten des Spiels; die Welt-Szene ruft je Bild `windows.handleInput`. */
+  windows: WindowManager;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

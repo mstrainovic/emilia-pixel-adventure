@@ -94,6 +94,20 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 | ferdinand | figuren/ferdinand.png | Actor/Character/Noble/SeparateAnim/Idle.png + Actor/Character/Noble/SeparateAnim/Walk.png | siehe Änderungen | recolor [{"#4e484a":"#548789","#3b3643":"#2d697b","#965340":"#816855"}]; anchorBottomCenter [16,16] | Händler Ferdinand: türkise Melone und türkiser Anzug, braune Hose | CC0 1.0 |
 | ferdinand | figuren/ferdinand-gesicht.png | Actor/Character/Noble/Faceset.png | siehe Änderungen | recolor [{"#4e484a":"#548789","#3b3643":"#2d697b","#965340":"#816855"}] | Händler Ferdinand: türkise Melone und türkiser Anzug, braune Hose | CC0 1.0 |
 | schatten | figuren/schatten.png | Actor/Character/Shadow.png | 0,0 12×7 | unverändert | Schatten unter jeder Figur | CC0 1.0 |
+| fenster | ui/fenster.png | Ui/Theme/Theme Wood/nine_path_panel.png | 0,0 16×16 | unverändert ausgeschnitten | Fensterrahmen (neunteilig, Rand 5 Bildpunkte); die Fläche darin ist --c-paper | CC0 1.0 |
+| knopf | ui/knopf.png | Ui/Theme/Theme Wood/button_normal.png | 0,0 16×8 | unverändert ausgeschnitten | Knopf (neunteilig, Rand 2 Bildpunkte) | CC0 1.0 |
+| knopf_gedrueckt | ui/knopf_gedrueckt.png | Ui/Theme/Theme Wood/button_pressed.png | 0,0 16×8 | unverändert ausgeschnitten | Knopf, gedrückt | CC0 1.0 |
+| platz | ui/platz.png | Ui/Theme/Theme Wood/inventory_cell.png | 0,0 16×16 | unverändert ausgeschnitten | Platz in Schnellleiste und Rucksack (neunteilig, Rand oben/links 3, unten/rechts 1) | CC0 1.0 |
+| zahlen | ui/zahlen.ttf | Ui/Font/NormalFont.ttf | siehe Änderungen | unverändert kopiert | Schrift EmiliaZahlen: nur Ziffern, „/" und „×" (unicode-range in src/ui/fonts.css) | CC0 1.0 |
+
+## Schriften
+
+Beide Schriften liefert das Spiel selbst aus (`src/ui/fonts.css`), nie von fremden Adressen.
+
+| Schrift | Herkunft | Dateien | Lizenz | Verwendung |
+| --- | --- | --- | --- | --- |
+| Nunito | npm-Paket @fontsource/nunito (Nunito Project Authors, https://github.com/googlefonts/nunito), Fassung 5.3.0 | latin und latin-ext, je 400 und 700 (woff2), von Vite aus node_modules gebündelt | SIL Open Font License 1.1 | Leseschrift der Oberfläche (--font-text) |
+| EmiliaZahlen | Ninja Adventure Asset Pack: Ui/Font/NormalFont.ttf | ui/zahlen.ttf | CC0 1.0, siehe LIZENZ-ninja-adventure.txt | Schrift EmiliaZahlen: nur Ziffern, „/" und „×" (unicode-range in src/ui/fonts.css) |
 
 ## Figuren
 

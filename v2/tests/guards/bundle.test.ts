@@ -7,7 +7,7 @@ import { CSP } from './csp';
 const DIST = fileURLToPath(new URL('../../../dist/v2', import.meta.url));
 const MAX_BYTES = 4 * 1024 * 1024;
 /** Test-Zugänge und Prüfhilfen, die im ausgelieferten Paket nichts verloren haben. */
-const FORBIDDEN = ['__emilia2', 'stilprobe', 'lastSaveResult', 'PixelProbe', 'probe=schach'];
+const FORBIDDEN = ['__emilia2', 'stilprobe', 'lastSaveResult', 'PixelProbe', 'probe=schach', 'openTestWindow', 'consumeInput', 'uiLog'];
 const NOT_BUILT = 'dist/v2 fehlt oder ist leer. Erst bauen: npm run build';
 
 function listFiles(dir: string): string[] {
@@ -50,6 +50,18 @@ describe('gebautes Paket dist/v2', () => {
       .filter((f) => rel(f).split('/').includes('legacy-maps') || readFileSync(f).includes('legacy-tiles'))
       .map(rel);
     expect(leaks).toEqual([]);
+  });
+
+  it('liefert die Schriften selbst mit (Nunito latin und latin-ext in 400 und 700, Ziffernschrift)', () => {
+    requireBuild();
+    const names = files.map(rel);
+    for (const subset of ['latin', 'latin-ext']) {
+      for (const weight of ['400', '700']) {
+        const re = new RegExp(`nunito-${subset}-${weight}-normal[^/]*\\.woff2$`);
+        expect(names.some((n) => re.test(n)), `${subset} ${weight}`).toBe(true);
+      }
+    }
+    expect(names.some((n) => /zahlen[^/]*\.ttf$/.test(n))).toBe(true);
   });
 
   it('bleibt unter 4 MB', () => {

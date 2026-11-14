@@ -38,7 +38,12 @@
     "props/dorf.json",
     "props/dorf.png",
     "tiles/dorf.json",
-    "tiles/dorf.png"
+    "tiles/dorf.png",
+    "ui/fenster.png",
+    "ui/knopf.png",
+    "ui/knopf_gedrueckt.png",
+    "ui/platz.png",
+    "ui/zahlen.ttf"
   ],
   "eintraege": [
     {
@@ -1094,6 +1099,71 @@
       },
       "aenderungen": "unverändert",
       "verwendung": "Schatten unter jeder Figur",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "fenster",
+      "ziel": "ui/fenster.png",
+      "quelle": "Ui/Theme/Theme Wood/nine_path_panel.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Fensterrahmen (neunteilig, Rand 5 Bildpunkte); die Fläche darin ist --c-paper",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "knopf",
+      "ziel": "ui/knopf.png",
+      "quelle": "Ui/Theme/Theme Wood/button_normal.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 8
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Knopf (neunteilig, Rand 2 Bildpunkte)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "knopf_gedrueckt",
+      "ziel": "ui/knopf_gedrueckt.png",
+      "quelle": "Ui/Theme/Theme Wood/button_pressed.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 8
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Knopf, gedrückt",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "platz",
+      "ziel": "ui/platz.png",
+      "quelle": "Ui/Theme/Theme Wood/inventory_cell.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Platz in Schnellleiste und Rucksack (neunteilig, Rand oben/links 3, unten/rechts 1)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "zahlen",
+      "ziel": "ui/zahlen.ttf",
+      "quelle": "Ui/Font/NormalFont.ttf",
+      "ausschnitt": null,
+      "aenderungen": "unverändert kopiert",
+      "verwendung": "Schrift EmiliaZahlen: nur Ziffern, „/\" und „×\" (unicode-range in src/ui/fonts.css)",
       "lizenz": "CC0 1.0"
     }
   ]

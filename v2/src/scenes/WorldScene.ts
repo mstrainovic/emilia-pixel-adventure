@@ -119,20 +119,27 @@ export class WorldScene extends Phaser.Scene {
   /**
    * Einzige Stelle mit der Reihenfolge je Bild:
    * 1. Eingabe sammeln (input.frame)
-   * 2. Abnehmer der Oberfläche (Plan 1b) nehmen ihre Drücke ab
-   * 3. Spielerin rechnen, ihren Ort und die gelaufene Strecke in den Spielstand schreiben
+   * 2. Abnehmer der Oberfläche nehmen ihre Drücke ab (windows.handleInput: Esc schließt ein offenes Fenster)
+   * 3. Nur wenn das Spiel nicht angehalten ist (Fenster, Gespräch, Dreh-Hinweis): Spielerin rechnen, ihren Ort und
+   *    die gelaufene Strecke in den Spielstand schreiben, die Uhr des Spieltags weiterstellen (session.tick)
    * 4. Kamera rechnen
    * 5. Tiefe und Zeichenposition setzen – erst hier wird gerundet (auf ganze Bildschirmpixel), Figur und Kamera
    *    aus denselben Gleitkommawerten dieses Bildes.
+   * Kamera und Zeichnen laufen auch angehalten weiter (eine neue Fenstergröße richtet das Bild sofort aus).
    */
   override update(_time: number, delta: number): void {
     const dt = delta / 1000;
-    this.services.input.frame(dt);
-    const before = this.player.state;
-    this.player.update(dt);
-    const after = this.player.state;
-    const walked = Math.hypot((after.x - before.x) / this.tileSize.width, (after.y - before.y) / this.tileSize.height);
-    this.services.state.progression.stats.distanceWalked += walked;
+    const { input, windows, session } = this.services;
+    input.frame(dt);
+    windows.handleInput(input);
+    if (!windows.paused) {
+      const before = this.player.state;
+      this.player.update(dt);
+      const after = this.player.state;
+      const walked = Math.hypot((after.x - before.x) / this.tileSize.width, (after.y - before.y) / this.tileSize.height);
+      this.services.state.progression.stats.distanceWalked += walked;
+      session.tick(dt);
+    }
     this.recordPlayer();
     this.moveCamera(dt);
     this.draw();

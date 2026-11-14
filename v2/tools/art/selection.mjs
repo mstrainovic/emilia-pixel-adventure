@@ -261,5 +261,29 @@ export const FIGURES = [
 /** Gemeinsamer Schatten unter allen Figuren. */
 export const FIGURE_SHADOW = { id: 'schatten', source: 'Actor/Character/Shadow.png', use: 'Schatten unter jeder Figur' };
 
-/** Oberfläche: { id, source, x, y, w, h, use } — ab Plan 1b. */
-export const UI = [];
+const WOOD = 'Ui/Theme/Theme Wood';
+
+/**
+ * Oberfläche: { id, source, x, y, w, h, use } wird als ui/<id>.png ausgeschnitten; { id, source, file, use } wird
+ * unverändert als ui/<file> kopiert (Schriften). Die Bilder dienen in kit.css als neunteilige Ränder.
+ */
+export const UI = [
+  { id: 'fenster', source: `${WOOD}/nine_path_panel.png`, x: 0, y: 0, w: 16, h: 16, use: 'Fensterrahmen (neunteilig, Rand 5 Bildpunkte); die Fläche darin ist --c-paper' },
+  { id: 'knopf', source: `${WOOD}/button_normal.png`, x: 0, y: 0, w: 16, h: 8, use: 'Knopf (neunteilig, Rand 2 Bildpunkte)' },
+  { id: 'knopf_gedrueckt', source: `${WOOD}/button_pressed.png`, x: 0, y: 0, w: 16, h: 8, use: 'Knopf, gedrückt' },
+  { id: 'platz', source: `${WOOD}/inventory_cell.png`, x: 0, y: 0, w: 16, h: 16, use: 'Platz in Schnellleiste und Rucksack (neunteilig, Rand oben/links 3, unten/rechts 1)' },
+  { id: 'zahlen', source: 'Ui/Font/NormalFont.ttf', file: 'zahlen.ttf', use: 'Schrift EmiliaZahlen: nur Ziffern, „/" und „×" (unicode-range in src/ui/fonts.css)' },
+];
+
+/** Schriften, die nicht aus dem Pack kommen (für QUELLEN.md); die Lizenzdatei wird beim Bauen geprüft. */
+export const FONTS = [
+  {
+    name: 'Nunito',
+    paket: '@fontsource/nunito',
+    herkunft: 'npm-Paket @fontsource/nunito (Nunito Project Authors, https://github.com/googlefonts/nunito)',
+    dateien: 'latin und latin-ext, je 400 und 700 (woff2), von Vite aus node_modules gebündelt',
+    lizenz: 'SIL Open Font License 1.1',
+    lizenzBeginn: 'This Font Software is licensed under the SIL Open Font License, Version 1.1.',
+    use: 'Leseschrift der Oberfläche (--font-text)',
+  },
+];

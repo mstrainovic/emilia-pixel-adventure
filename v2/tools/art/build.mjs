@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as png from './png.mjs';
-import { FIGURE_SHADOW, FIGURES, PROPS, TILES, UI } from './selection.mjs';
+import { FIGURE_SHADOW, FIGURES, FONTS, PROPS, TILES, UI } from './selection.mjs';
 
 const PACK = {
   name: 'Ninja Adventure Asset Pack',
@@ -296,10 +296,41 @@ function buildFigures() {
 
 function buildUi() {
   for (const u of UI) {
+    if (u.file) {
+      // Schrift: Datei unverändert kopieren
+      const ziel = `ui/${u.file}`;
+      mkdirSync(join(outDir, 'ui'), { recursive: true });
+      writeFileSync(join(outDir, ziel), readFileSync(packPath(u.source)));
+      files.push(ziel);
+      record(u, ziel, null, 'unverändert kopiert');
+      continue;
+    }
     const ziel = `ui/${u.id}.png`;
     writeImage(ziel, png.crop(source(u.source), u.x, u.y, u.w, u.h));
     record(u, ziel, { x: u.x, y: u.y, w: u.w, h: u.h }, 'unverändert ausgeschnitten');
   }
+}
+
+/** Schriften außerhalb des Packs: Lizenz im installierten Paket prüfen, Fassung für QUELLEN.md lesen. */
+function checkFonts() {
+  return FONTS.map((f) => {
+    const dir = fileURLToPath(new URL(`../../node_modules/${f.paket}/`, import.meta.url));
+    const license = readFileSync(join(dir, 'LICENSE'), 'utf8');
+    if (!license.includes(f.lizenzBeginn)) {
+      throw new Error(`Lizenz von ${f.paket} ist nicht mehr wie erwartet (${f.lizenz}) – bitte prüfen, nichts erzeugt`);
+    }
+    const { version } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    return { ...f, fassung: version };
+  });
+}
+
+/** Tabelle der Schriften: die aus npm-Paketen und die aus dem Pack kopierten. */
+function fontRows(fonts, cell) {
+  const row = (values) => `| ${values.map(cell).join(' | ')} |`;
+  return [
+    ...fonts.map((f) => row([f.name, `${f.herkunft}, Fassung ${f.fassung}`, f.dateien, f.lizenz, f.use])),
+    ...UI.filter((u) => u.file).map((u) => row(['EmiliaZahlen', `${PACK.name}: ${u.source}`, `ui/${u.file}`, `${PACK.lizenz}, siehe ${LICENSE_FILE}`, u.use])),
+  ];
 }
 
 function sourcesMarkdown() {
@@ -319,6 +350,14 @@ function sourcesMarkdown() {
     '| --- | --- | --- | --- | --- | --- | --- |',
     ...entries.map((e) => `| ${[e.kennung, e.ziel, e.quelle, cut(e.ausschnitt), e.aenderungen, e.verwendung, e.lizenz].map(cell).join(' | ')} |`),
     '',
+    '## Schriften',
+    '',
+    'Beide Schriften liefert das Spiel selbst aus (`src/ui/fonts.css`), nie von fremden Adressen.',
+    '',
+    '| Schrift | Herkunft | Dateien | Lizenz | Verwendung |',
+    '| --- | --- | --- | --- | --- |',
+    ...fontRows(fonts, cell),
+    '',
     ...(figureTable.length === 0 ? [] : [
       '## Figuren',
       '',
@@ -334,6 +373,7 @@ function sourcesMarkdown() {
 }
 
 const license = checkLicense();
+const fonts = checkFonts();
 [TILES, PROPS, FIGURES, UI].forEach(checkIds);
 for (const name of MANAGED) rmSync(join(outDir, name), { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });

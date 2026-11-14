@@ -11,9 +11,16 @@ import { KeyboardSource } from './input/keyboard';
 import { openBrowserStorage } from './save/browser';
 import { SaveService } from './save/service';
 import { SaveStore } from './save/store';
+import { UiRoot } from './ui/root';
+import { WindowManager } from './ui/windows';
+import { el } from './ui/el';
+import { TEXTS } from './data/texts';
+import type { Action } from './input/actions';
 
 const host = document.getElementById('game');
 if (!host) throw new Error('Spielbereich #game fehlt.');
+const uiHost = document.getElementById('ui');
+if (!uiHost) throw new Error('Oberfläche #ui fehlt.');
 
 // Test-Zugang wie in testHooks.ts. Die Bedingung steht bewusst hier statt als importierte Konstante:
 // nur so entfernt der Build die Test-Zweige samt Probe-Szene vollständig.
@@ -70,11 +77,14 @@ input.add(keyboard);
 const save = new SaveService(store, () => services.state, () => Date.now(), (reason, result) => {
   bus.emit('save:result', { reason, result });
 });
+const uiRoot = new UiRoot(uiHost, pixelGrid);
+const windows = new WindowManager(uiRoot.element, bus);
 const services: Services = {
   pixelGrid, input, bus, state: start.state, save, store,
   persist: start.persist, startNotice: start.notice, legacyNewer: start.legacyNewer,
   startRepair: start.repair, importSave: start.importSave,
   session: new GameSession(start.state, bus),
+  uiRoot, windows,
 };
 game.registry.set(SERVICES_KEY, services);
 services.session.start();
@@ -99,5 +109,15 @@ if (testHooksEnabled) {
     saveNow: () => save.saveNow('timer'),
     state: () => structuredClone(services.state),
     lastSaveResult: () => lastSaveResult,
+  });
+  // Oberfläche: Probefenster, Anhalten, gemeldete Ereignisse, Blick in den Eingabe-Puffer
+  const uiLog: string[] = [];
+  bus.on('ui:paused', ({ paused }) => { uiLog.push(`paused:${paused}`); });
+  bus.on('ui:sound', ({ name }) => { uiLog.push(`sound:${name}`); });
+  installTestHooks({
+    openTestWindow: () => windows.open({ id: 'test', title: TEXTS['test.title'], body: el('p', '', TEXTS['test.body']) }),
+    paused: () => windows.paused,
+    uiLog: () => [...uiLog],
+    consumeInput: (action: Action) => input.consume(action),
   });
 }

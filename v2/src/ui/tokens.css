@@ -1,0 +1,41 @@
+/*
+ * Baukasten der Oberfläche (Spec 10, Plan 1b Task 5): die einzigen Farbwerte der Oberfläche stehen hier.
+ * Alle acht Farben stammen aus Palette.png des Packs „Ninja Adventure".
+ *
+ * Kontrast (WCAG 2.1, relative Leuchtdichte, mit einem Node-Skript gerechnet):
+ *   --c-ink    #141b1b auf --c-paper #fce2ca: 14,03 : 1  (verlangt mindestens 7 : 1)
+ *   --c-accent #2d697b auf --c-paper #fce2ca:  4,94 : 1  (verlangt mindestens 3 : 1)
+ *   zum Vergleich: --c-wood #965340 auf --c-paper 4,68 : 1; --c-coin #f1c471 auf --c-ink 10,71 : 1
+ * Der Akzent ist blaugrün, damit die Auswahl sich vom Holz (Rahmen) und vom Rot der Herzen abhebt.
+ * Die Abdunklung hinter Fenstern ist die Tinte zu 55 % deckend (Empfehlung: 40–60 %).
+ */
+:root {
+  --c-ink: #141b1b;
+  --c-paper: #fce2ca;
+  --c-wood: #965340;
+  --c-accent: #2d697b;
+  --c-heart: #e0394c;
+  --c-coin: #f1c471;
+  --c-ok: #56864c;
+  --c-shade: rgb(20 27 27 / 0.55);
+
+  --fs-1: 16px;
+  --fs-2: 20px;
+  --fs-3: 24px;
+  --fs-4: 32px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 16px;
+  --sp-4: 24px;
+
+  /* kleinste Tippfläche in CSS-Pixeln */
+  --tap: 48px;
+
+  --font-text: 'Nunito';
+  /* Ziffern aus der Pixelschrift des Packs; alles andere (unicode-range) fällt auf Nunito zurück */
+  --font-num: 'EmiliaZahlen', 'Nunito';
+
+  /* Blende der Fenster */
+  --fade: 120ms;
+}

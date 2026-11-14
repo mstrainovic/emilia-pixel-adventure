@@ -1,0 +1,180 @@
+/*
+ * Bausteine der Oberfläche (Spec 10): ein Fenster-, ein Knopf-, ein Platz-Stil. Farben, Schriftgrößen und Abstände
+ * nur über die Variablen aus tokens.css. Maßstab (von UiRoot auf #ui gesetzt):
+ *   --px      ein Gerätepixel als CSS-Länge (1/dpr px)
+ *   --hud-px  ein Bildpunkt der Oberflächen-Grafik: ceil(Zoom / 2) Gerätepixel
+ *   --view-x, --view-y, --view-w, --view-h  sichtbares Spielfeld in CSS-Pixeln
+ * Pixelbilder werden nur als Ränder (border-image) in ganzen Vielfachen von --hud-px gezeigt; gestreckt wird nur,
+ * was in Streckrichtung einfarbig ist (Kanten und Mitte der Bilder).
+ */
+
+#ui {
+  position: fixed;
+  inset: 0;
+  /* die Fläche selbst fängt keine Zeiger ab; nur Bausteine, die es brauchen */
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ui-root {
+  position: absolute;
+  inset: 0;
+  font-family: var(--font-text);
+  font-size: var(--fs-1);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--c-ink);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ---------- Fenster ---------- */
+
+/* Abdunklung über dem ganzen Bild; Tippen darauf schließt das Fenster. Innenabstand hält die Aussparungen frei. */
+.ui-shade {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(var(--sp-3), env(safe-area-inset-top))
+    max(var(--sp-3), env(safe-area-inset-right))
+    max(var(--sp-3), env(safe-area-inset-bottom))
+    max(var(--sp-3), env(safe-area-inset-left));
+  background: var(--c-shade);
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity var(--fade) ease-out;
+}
+
+.ui-shade.is-open {
+  opacity: 1;
+}
+
+.ui-shade.is-closing {
+  pointer-events: none;
+  transition-timing-function: ease-in;
+}
+
+.ui-window {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: min(100%, 320px);
+  background: var(--c-paper);
+  background-clip: padding-box;
+  border-style: solid;
+  border-width: calc(5 * var(--hud-px));
+  /* nine_path_panel.png (16×16): Rahmen 5 Bildpunkte je Seite, die Fläche darin ist Papier */
+  border-image: url('../assets/gfx/ui/fenster.png') 5 / calc(5 * var(--hud-px)) stretch;
+  image-rendering: pixelated;
+}
+
+/* Kopf: Titel links oben, Schließen-Knopf immer rechts oben */
+.ui-window__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-2) 0 var(--sp-3);
+}
+
+.ui-window__title {
+  flex: 1 1 auto;
+  margin: 0;
+  padding-top: var(--sp-2);
+  font-size: var(--fs-3);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ui-window__body {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+}
+
+/* ---------- Knopf ---------- */
+
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  font-family: var(--font-text);
+  font-size: var(--fs-2);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--c-ink);
+  background: none;
+  border-style: solid;
+  border-width: calc(2 * var(--hud-px));
+  /* button_normal.png (16×8): Rand 2 Bildpunkte, die Mitte ist die Knopffläche */
+  border-image: url('../assets/gfx/ui/knopf.png') 2 fill / calc(2 * var(--hud-px)) stretch;
+  image-rendering: pixelated;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-button:active,
+.ui-button.is-pressed {
+  border-image-source: url('../assets/gfx/ui/knopf_gedrueckt.png');
+}
+
+.ui-button:focus {
+  outline: none;
+}
+
+.ui-button:focus-visible {
+  outline: calc(2 * var(--hud-px)) solid var(--c-accent);
+  outline-offset: var(--hud-px);
+}
+
+/* Schließen-Knopf: „×" in Nunito fett, quadratisch, mindestens eine Tippfläche */
+.ui-close {
+  flex: 0 0 auto;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  font-size: var(--fs-4);
+}
+
+/* ---------- Platz (Schnellleiste, Rucksack) ---------- */
+
+.ui-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  font-family: var(--font-num);
+  font-size: var(--fs-1);
+  color: var(--c-ink);
+  background: none;
+  border-style: solid;
+  border-width: calc(3 * var(--hud-px)) var(--hud-px) var(--hud-px) calc(3 * var(--hud-px));
+  /* inventory_cell.png (16×16): Schattenkante oben und links 3, unten und rechts 1 Bildpunkt */
+  border-image: url('../assets/gfx/ui/platz.png') 3 1 1 3 fill / calc(3 * var(--hud-px)) var(--hud-px) var(--hud-px) calc(3 * var(--hud-px)) stretch;
+  image-rendering: pixelated;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* gewählter Platz: Rahmen in der Akzentfarbe, zwei Bildpunkte breit, außen um den Platz */
+.ui-slot.is-selected {
+  box-shadow: 0 0 0 calc(2 * var(--hud-px)) var(--c-accent);
+}
+
+/* Ohne Bewegung: keine Blende */
+@media (prefers-reduced-motion: reduce) {
+  .ui-shade {
+    transition: none;
+  }
+}

@@ -35,10 +35,10 @@ function listFiles(dir: string): string[] {
   return walk(dir).map((p) => relative(dir, p).split(sep).join('/')).sort();
 }
 
-/** Text mit einheitlichen Zeilenenden (Git darf beim Auschecken CRLF setzen), PNG bytegenau. */
+/** Text mit einheitlichen Zeilenenden (Git darf beim Auschecken CRLF setzen), Bilder und Schriften bytegenau. */
 function content(path: string): Buffer {
   const bytes = readFileSync(path);
-  return path.endsWith('.png') ? bytes : Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'));
+  return /\.(png|ttf)$/.test(path) ? bytes : Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'));
 }
 
 const sources = JSON.parse(readFileSync(join(GFX, 'quellen.json'), 'utf8')) as Sources;
@@ -79,6 +79,41 @@ describe('Quellenverzeichnis src/assets/gfx', () => {
     const png = PNG.sync.read(readFileSync(join(GFX, 'tiles/dorf.png')));
     expect(png.width % 16).toBe(0);
     expect(png.height % 16).toBe(0);
+  });
+
+  it('Oberfläche: Fensterrahmen, Knopf, gedrückter Knopf, Platz und Ziffernschrift aus dem Pack', () => {
+    const expected: Record<string, string> = {
+      'ui/fenster.png': 'Ui/Theme/Theme Wood/nine_path_panel.png',
+      'ui/knopf.png': 'Ui/Theme/Theme Wood/button_normal.png',
+      'ui/knopf_gedrueckt.png': 'Ui/Theme/Theme Wood/button_pressed.png',
+      'ui/platz.png': 'Ui/Theme/Theme Wood/inventory_cell.png',
+      'ui/zahlen.ttf': 'Ui/Font/NormalFont.ttf',
+    };
+    for (const [ziel, quelle] of Object.entries(expected)) {
+      const entry = sources.eintraege.find((e) => e.ziel === ziel);
+      expect(entry?.quelle, ziel).toBe(quelle);
+      expect(existsSync(join(GFX, ziel)), ziel).toBe(true);
+    }
+  });
+
+  it('Fensterrahmen ist 16×16, Knöpfe 16×8 (Ränder in ganzen Bildpunkten zerlegbar)', () => {
+    const size = (f: string): [number, number] => {
+      const png = PNG.sync.read(readFileSync(join(GFX, f)));
+      return [png.width, png.height];
+    };
+    expect(size('ui/fenster.png')).toEqual([16, 16]);
+    expect(size('ui/platz.png')).toEqual([16, 16]);
+    expect(size('ui/knopf.png')).toEqual([16, 8]);
+    expect(size('ui/knopf_gedrueckt.png')).toEqual([16, 8]);
+  });
+
+  it('QUELLEN.md nennt beide Schriften mit Herkunft und Lizenz', () => {
+    const md = readFileSync(join(GFX, 'QUELLEN.md'), 'utf8');
+    expect(md).toContain('Nunito');
+    expect(md).toContain('@fontsource/nunito');
+    expect(md).toContain('SIL Open Font License 1.1');
+    expect(md).toContain('EmiliaZahlen');
+    expect(md).toContain('Ui/Font/NormalFont.ttf');
   });
 
   it('src/assets/gfx ist zusammen kleiner als 400 kB', () => {

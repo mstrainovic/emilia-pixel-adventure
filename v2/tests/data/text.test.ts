@@ -9,6 +9,16 @@ import { FISH_TYPES } from '../../src/data/fish';
 import { SHELL_TYPES } from '../../src/data/shells';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES } from '../../src/data/achievements';
 import { wrapLines, DIALOG_LINE_CHARS, DIALOG_MAX_LINES } from '../../src/systems/dialogue';
+import { TEXTS, hint } from '../../src/data/texts';
+
+/** Begriffe, die im Bild anders heißen (Aufgabe, Gegenstand, Rucksack, Herstellen, Erfolge). */
+const FORBIDDEN_TERMS = ['Quest', 'Item', 'Inventar', 'Crafting', 'Achievement'];
+
+/** Alle Texte der Oberfläche: TEXTS und jeder Hinweis je Handlung und Gerät. */
+function uiTexts(): string[] {
+  const hints = (['interact', 'close', 'move'] as const).flatMap((a) => (['keys', 'touch'] as const).map((d) => hint(a, d)));
+  return [...Object.values(TEXTS), ...hints];
+}
 
 /** Ganze Wörter (klein geschrieben), die die Muster treffen dürfen, jeweils mit Begründung. */
 const EXCEPTIONS: Record<string, string> = {};
@@ -32,6 +42,7 @@ function collectTexts(): string[] {
   for (const s of Object.values(SHELL_TYPES)) out.push(s.name);
   for (const a of Object.values(ACHIEVEMENTS)) out.push(a.name, a.description);
   for (const c of Object.values(ACHIEVEMENT_CATEGORIES)) out.push(c.name);
+  out.push(...uiTexts());
   return out;
 }
 
@@ -70,5 +81,28 @@ describe('Texte', () => {
       for (const t of all) if (wrapLines(t, DIALOG_LINE_CHARS).length > DIALOG_MAX_LINES) tooLong.push(`${n.id}: ${t}`);
     }
     expect(tooLong).toEqual([]);
+  });
+});
+
+describe('Texte der Oberfläche (TEXTS)', () => {
+  const texts = uiTexts();
+  it('werden mitgesammelt', () => {
+    expect(Object.keys(TEXTS).length).toBeGreaterThan(0);
+    for (const t of texts) expect(collectTexts()).toContain(t);
+  });
+  it('sind nicht leer', () => {
+    expect(texts.filter((t) => t.trim() === '')).toEqual([]);
+  });
+  it.each(FORBIDDEN_TERMS)('enthalten das Wort „%s" nicht', (term) => {
+    const word = new RegExp(`(?<![\\p{L}])${term}(?![\\p{L}])`, 'iu');
+    expect(texts.filter((t) => word.test(t))).toEqual([]);
+  });
+  it('die Prüfung trifft nur ganze Wörter', () => {
+    const word = /(?<![\p{L}])Item(?![\p{L}])/iu;
+    expect(word.test('ein Item')).toBe(true);
+    expect(word.test('Items')).toBe(false);
+  });
+  it('Hinweise nennen je Gerät Taste oder Knopf', () => {
+    for (const a of ['interact', 'close', 'move'] as const) expect(hint(a, 'keys')).not.toBe(hint(a, 'touch'));
   });
 });
