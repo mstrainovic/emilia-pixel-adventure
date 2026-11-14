@@ -74,12 +74,14 @@ function stepAxis(grid: SolidGrid, b: Box, axis: Axis, step: number): { value: n
 /**
  * Quer zur Bewegung: um wie viel (höchstens |step|, also im Tempo der Figur) lässt sich die Figur zur Seite
  * schieben, damit sie an der Ecke vorbeikommt? Gesucht wird die Seite mit dem kleinsten
- * Überstand bis `CORNER_NUDGE`. 0 heißt: kein Rutschen möglich.
+ * Überstand bis `CORNER_NUDGE`, aber nie entgegen `crossStep`. 0 heißt: kein Rutschen möglich.
  */
-function cornerNudge(grid: SolidGrid, b: Box, axis: Axis, step: number): number {
+function cornerNudge(grid: SolidGrid, b: Box, axis: Axis, step: number, crossStep: number): number {
   const cross: Axis = axis === 'x' ? 'y' : 'x';
   for (let s = 1; s <= CORNER_NUDGE; s++) {
     for (const dir of [-1, 1]) {
+      // Nie gegen die Querabsicht schieben: sonst hebt sich Rutschen und Weitergehen auf.
+      if (crossStep !== 0 && Math.sign(crossStep) !== dir) continue;
       const [cx, cy] = along(cross, dir * s);
       const [ax, ay] = along(axis, step);
       if (hitsAt(grid, b, cx + ax, cy + ay)) continue;
@@ -120,7 +122,7 @@ export function moveAndSlide(box: Box, dx: number, dy: number, grid: SolidGrid):
         continue;
       }
       const cross: Axis = axis === 'x' ? 'y' : 'x';
-      const nudge = cornerNudge(grid, b, axis, step);
+      const nudge = cornerNudge(grid, b, axis, step, steps[cross]);
       if (nudge === 0) {
         // Wirklich blockiert; nur ein Rutschen um die Ecke zählt nicht als Stehenbleiben,
         // sonst fiele das Tempo bei jeder Ecke auf 0.
