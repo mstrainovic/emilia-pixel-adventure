@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
-import { blockProblems, readPng, type GridSnapshot, type PngImage } from './helpers/png';
+import { HIDE_UI, blockProblems, readPng, type GridSnapshot, type PngImage } from './helpers/png';
 
 type Snapshot = GridSnapshot;
 
@@ -42,7 +42,7 @@ async function checkWorld(page: Page, name: string): Promise<void> {
   const snapshot = await waitForWorld(page);
   expect(await page.evaluate(() => (window as any).__emilia2.world)).toEqual({ map: 'hub', objects: HUB_OBJECTS, npcs: 9 });
 
-  const shot = await page.screenshot({ scale: 'device' });
+  const shot = await page.screenshot({ scale: 'device', style: HIDE_UI });
   mkdirSync(ARTIFACTS, { recursive: true });
   writeFileSync(`${ARTIFACTS}${name}.png`, shot);
   const png = readPng(shot);

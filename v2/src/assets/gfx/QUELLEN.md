@@ -99,6 +99,15 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 | knopf_gedrueckt | ui/knopf_gedrueckt.png | Ui/Theme/Theme Wood/button_pressed.png | 0,0 16×8 | unverändert ausgeschnitten | Knopf, gedrückt | CC0 1.0 |
 | platz | ui/platz.png | Ui/Theme/Theme Wood/inventory_cell.png | 0,0 16×16 | unverändert ausgeschnitten | Platz in Schnellleiste und Rucksack (neunteilig, Rand oben/links 3, unten/rechts 1) | CC0 1.0 |
 | zahlen | ui/zahlen.ttf | Ui/Font/NormalFont.ttf | siehe Änderungen | unverändert kopiert | Schrift EmiliaZahlen: nur Ziffern, „/" und „×" (unicode-range in src/ui/fonts.css) | CC0 1.0 |
+| herz | ui/herz.png | Ui/Receptacle/Heart.png | 0,0 80×16 | unverändert ausgeschnitten | Herzen der Anzeige: Zustand n (0 = leer … 4 = voll) bei x = 16 × n | CC0 1.0 |
+| muenze | ui/muenze.png | Items/Treasure/Coin2.png | 0,0 10×10 | unverändert ausgeschnitten | Münzen in der Anzeige (erstes Bild der drehenden Münze) | CC0 1.0 |
+| schwert | ui/schwert.png | Items/Weapons/Sword2/Sprite.png | 0,0 6×15 | mittig in 16×16 gesetzt | Symbol Holzschwert (das Pack hat kein Holzschwert; schlichtes kurzes Schwert) | CC0 1.0 |
+| beere | ui/beere.png | Items/Food/Seed3.png | 0,0 8×8 | mittig in 16×16 gesetzt | Symbol Beere (rote runde Frucht) | CC0 1.0 |
+| holz | ui/holz.png | Items/Resource/Branch.png | 0,0 16×16 | unverändert ausgeschnitten | Symbol Holz (Ast) | CC0 1.0 |
+| kraut | ui/kraut.png | Items/Resource/Grass.png | 0,0 16×16 | unverändert ausgeschnitten | Symbol Magisches Kraut (grünes Kraut) | CC0 1.0 |
+| samen_karotte | ui/samen_karotte.png | Items/Food/SeedBig1.png | 0,0 10×13 | mittig in 16×16 gesetzt | Symbol Karottensamen (orange Knolle mit Keim) | CC0 1.0 |
+| samen_tomate | ui/samen_tomate.png | Items/Food/SeedBig3.png | 0,0 10×13 | mittig in 16×16 gesetzt | Symbol Tomatensamen (rote Knolle mit Keim) | CC0 1.0 |
+| beutel | ui/beutel.png | Items/Object/Bag.png | 0,0 16×16 | unverändert ausgeschnitten | Neutrales Symbol für Gegenstände ohne eigenes Bild | CC0 1.0 |
 
 ## Schriften
 

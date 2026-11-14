@@ -306,7 +306,15 @@ function buildUi() {
       continue;
     }
     const ziel = `ui/${u.id}.png`;
-    writeImage(ziel, png.crop(source(u.source), u.x, u.y, u.w, u.h));
+    const cut = png.crop(source(u.source), u.x, u.y, u.w, u.h);
+    if (u.box) {
+      // Symbol: mittig in ein leeres box×box-Feld (bei ungerader Differenz ein Pixel mehr rechts bzw. unten)
+      if (u.w > u.box || u.h > u.box) throw new Error(`${u.id}: ${u.w}×${u.h} passt nicht in ${u.box}×${u.box}`);
+      writeImage(ziel, png.blit(png.emptyImage(u.box, u.box), cut, Math.floor((u.box - u.w) / 2), Math.floor((u.box - u.h) / 2)));
+      record(u, ziel, { x: u.x, y: u.y, w: u.w, h: u.h }, u.w === u.box && u.h === u.box ? 'unverändert ausgeschnitten' : `mittig in ${u.box}×${u.box} gesetzt`);
+      continue;
+    }
+    writeImage(ziel, cut);
     record(u, ziel, { x: u.x, y: u.y, w: u.w, h: u.h }, 'unverändert ausgeschnitten');
   }
 }

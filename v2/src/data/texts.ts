@@ -14,12 +14,26 @@ export const TEXTS = {
   'hint.close.touch': 'Tippe auf das Kreuz',
   'hint.move.keys': 'Laufen mit W A S D oder den Pfeilen',
   'hint.move.touch': 'Laufen mit dem Daumen unten links',
+  // Anzeige und Schnellleiste (Task 6). {…} füllt fillText. Vorgelesen, nicht geschrieben, außer Menü.
+  'hud.hearts': '{n} von {max} Herzen',
+  'hud.level': 'Level {n}',
+  'hud.coins': '{n} Münzen',
+  'hud.quest': 'Aufgabe',
+  'hud.menu': 'Menü',
+  'hud.hotbar': 'Schnellleiste',
+  'hud.slot.empty': 'Leerer Platz',
+  'hud.slot.count': '{name}, {n} Stück',
   /** Probefenster der Browser-Tests (nur über den Test-Zugang erreichbar). */
   'test.title': 'Probefenster',
   'test.body': 'Hier steht später etwas Schönes.',
 } as const satisfies { readonly [key: string]: string };
 
 export type TextKey = keyof typeof TEXTS;
+
+/** Text mit Platzhaltern: `{name}` wird durch `values.name` ersetzt (fehlende Werte bleiben stehen). */
+export function fillText(key: TextKey, values: Readonly<Record<string, string | number>>): string {
+  return TEXTS[key].replace(/\{(\w+)\}/g, (all, name: string) => (Object.hasOwn(values, name) ? String(values[name]) : all));
+}
 
 /** Hinweis für eine Handlung, passend zum zuletzt benutzten Gerät: Taste am PC, Knopf mit Touch. */
 export function hint(action: 'interact' | 'close' | 'move', device: InputDevice): string {

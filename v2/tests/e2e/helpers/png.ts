@@ -1,5 +1,11 @@
 import { PNG } from 'pngjs';
 
+/**
+ * Für Bildschirmfotos, die das Spielbild selbst prüfen: blendet die HTML-Oberfläche (Anzeige, Schnellleiste) aus,
+ * damit nur die Zeichenfläche geprüft wird (page.screenshot({ style: HIDE_UI })).
+ */
+export const HIDE_UI = '#ui { visibility: hidden !important; }';
+
 export interface PngImage {
   width: number;
   height: number;

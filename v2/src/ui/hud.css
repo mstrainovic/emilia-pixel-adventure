@@ -1,0 +1,241 @@
+/*
+ * Anzeige und Schnellleiste (Spec 10, Plan 1b Task 6). Zonen: oben links Herzen, darunter Level und Münzen; oben
+ * rechts Aufgabe und Menü-Knopf; unten Mitte die Schnellleiste. Ränder halten die Aussparungen frei.
+ *
+ * Ganze Gerätepixel: Pixelbilder haben Maße in Vielfachen von --hud-px, und ihre Lage ergibt sich nur aus Längen,
+ * die auf ganzen Gerätepixeln liegen (--sp-*, --tap und --hud-px bei Dichte 1, 1,25 und 1,5; feste Breiten statt
+ * Textbreiten vor einem Bild). Was mittig liegen muss, wird mit round(…, var(--px)) auf Gerätepixel gerundet.
+ * Chromium rechnet das Layout in 1/64 CSS-Pixel: 1,6 px (ein --hud-px bei Dichte 1,25) ist darin nicht genau
+ * darstellbar, und in einer Reihe summiert sich der Fehler. Darum werden Bilder nicht aneinandergereiht, sondern
+ * jedes einzeln gesetzt (Herzen per transform, das rechnet ohne Raster; Symbole absolut im Platz).
+ */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---------- oben links: Herzen, darunter Level und Münzen ---------- */
+
+.hud-stats {
+  position: absolute;
+  top: max(var(--sp-3), env(safe-area-inset-top));
+  left: max(var(--sp-3), env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+/* --count (Zahl der Herzen) und je Herz --i setzt hud.ts */
+.hud-hearts {
+  position: relative;
+  width: calc(var(--count) * 16 * var(--hud-px));
+  height: calc(16 * var(--hud-px));
+}
+
+/* Heart.png: fünf Zustände zu 16×16 nebeneinander (0 leer … 4 voll) */
+.hud-heart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateX(calc(var(--i) * 16 * var(--hud-px)));
+  width: calc(16 * var(--hud-px));
+  height: calc(16 * var(--hud-px));
+  background-image: url('../assets/gfx/ui/herz.png');
+  background-repeat: no-repeat;
+  background-size: calc(80 * var(--hud-px)) calc(16 * var(--hud-px));
+  background-position: calc(-64 * var(--hud-px)) 0;
+  image-rendering: pixelated;
+}
+
+.hud-heart[data-quarters='0'] { background-position: 0 0; }
+.hud-heart[data-quarters='1'] { background-position: calc(-16 * var(--hud-px)) 0; }
+.hud-heart[data-quarters='2'] { background-position: calc(-32 * var(--hud-px)) 0; }
+.hud-heart[data-quarters='3'] { background-position: calc(-48 * var(--hud-px)) 0; }
+
+.hud-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
+}
+
+/* feste Breite: die Münze daneben liegt so nicht hinter einer Textbreite */
+.hud-level {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  width: max(var(--tap), calc(24 * var(--hud-px)));
+}
+
+/*
+ * Ziffernschrift: ein Schriftpixel ist 1/9 em (zahlen.ttf: unitsPerEm 2048, Raster 227,6). Scharf ist sie nur, wenn
+ * die Größe in Gerätepixeln ein Vielfaches von 9 ist; darum wird die Stufe auf 9 Gerätepixel gerundet
+ * (--fs-3 → 27 px bei Dichte 1, --fs-2 → 18 px).
+ */
+.hud-level__num,
+.hud-coins__num {
+  font-family: var(--font-num);
+  font-size: round(nearest, var(--fs-3), calc(9 * var(--px)));
+  line-height: 1;
+}
+
+/* schmaler Fortschrittsbalken bis zum nächsten Level */
+.hud-level__bar {
+  height: calc(2 * var(--hud-px));
+  background: var(--c-wood);
+}
+
+.hud-level__fill {
+  height: 100%;
+  background: var(--c-ok);
+}
+
+/* Bild oben bündig (ganze Pixel), nur die Zahl wird mittig dazu gesetzt */
+.hud-coins {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+}
+
+.hud-coins__num {
+  align-self: center;
+}
+
+.hud-coins__img {
+  width: calc(10 * var(--hud-px));
+  height: calc(10 * var(--hud-px));
+  image-rendering: pixelated;
+}
+
+/* ---------- oben rechts: Aufgabe und Menü-Knopf ---------- */
+
+.hud-corner {
+  position: absolute;
+  top: max(var(--sp-3), env(safe-area-inset-top));
+  right: max(var(--sp-3), env(safe-area-inset-right));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.hud-quest {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  /* feste, auf Gerätepixel gerundete Breite: so liegt das Gesicht links auf ganzen Pixeln */
+  width: round(down, min(360px, 42vw), var(--px));
+  padding: var(--sp-1) var(--sp-2);
+}
+
+.hud-quest[hidden] {
+  display: none;
+}
+
+.hud-quest__face {
+  flex: 0 0 auto;
+  width: calc(38 * var(--hud-px));
+  height: calc(38 * var(--hud-px));
+  image-rendering: pixelated;
+}
+
+.hud-quest__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hud-quest__name {
+  margin: 0;
+  font-size: var(--fs-2);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* höchstens zwei Zeilen */
+.hud-quest__desc {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.hud-quest__count {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: round(nearest, var(--fs-2), calc(9 * var(--px)));
+  line-height: 1.2;
+}
+
+/* immer sichtbar (PC und Touch), feste Breite aus ganzen Gerätepixeln */
+.hud-menu {
+  width: calc(2 * var(--tap));
+  pointer-events: auto;
+}
+
+/* ---------- unten Mitte: Schnellleiste ---------- */
+
+.hotbar {
+  /*
+   * Platz: mindestens eine Tippfläche, sonst 20 Bildpunkte (Rand 3 + 1, Symbol 16). Der Rest neben dem Symbol ist
+   * entweder 0 oder --tap − 20 × --hud-px; die Hälfte davon liegt auf ganzen Gerätepixeln (24 px × Dichte ist bei
+   * 1, 1,25, 1,5 und 2 ganz). Kein round(): 48 / 3,2 ist in Gleitkomma nicht genau 15.
+   */
+  --slot: max(var(--tap), calc(20 * var(--hud-px)));
+  /* Abstand: Platz für den Ring des gewählten Platzes (3 × --hud-px) und einen Bildpunkt Luft */
+  --gap: max(var(--sp-2), calc(4 * var(--hud-px)));
+  position: absolute;
+  bottom: max(var(--sp-3), env(safe-area-inset-bottom));
+  left: round(nearest, calc(50% - (8 * var(--slot) + 7 * var(--gap)) / 2), var(--px));
+  display: flex;
+  gap: var(--gap);
+}
+
+.hotbar .ui-slot {
+  width: var(--slot);
+  height: var(--slot);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/*
+ * Gewählter Platz: auf dem grünen Platz-Bild hebt sich der Akzent nur durch den Farbton ab (Helligkeit etwa 2:1).
+ * Darum ein heller Strich in Papierfarbe direkt am Platz und darum ein breiter Ring in der Akzentfarbe.
+ */
+.hotbar .ui-slot.is-selected {
+  box-shadow:
+    0 0 0 var(--hud-px) var(--c-paper),
+    0 0 0 calc(3 * var(--hud-px)) var(--c-accent);
+}
+
+.hotbar .ui-slot:focus {
+  outline: none;
+}
+
+.hotbar .ui-slot:focus-visible {
+  outline: calc(2 * var(--hud-px)) dashed var(--c-ink);
+  outline-offset: calc(4 * var(--hud-px));
+}
+
+/* absolut, mittig im Platz: gemessen ab der Innenkante (Rand links und oben 3 Bildpunkte), Inhalt Platz − 4, Symbol 16 */
+.hotbar__icon {
+  position: absolute;
+  top: calc((var(--slot) - 20 * var(--hud-px)) / 2);
+  left: calc((var(--slot) - 20 * var(--hud-px)) / 2);
+  width: calc(16 * var(--hud-px));
+  height: calc(16 * var(--hud-px));
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.hotbar__count {
+  position: absolute;
+  right: var(--hud-px);
+  bottom: 0;
+  font-size: round(nearest, var(--fs-2), calc(9 * var(--px)));
+  line-height: 1;
+  pointer-events: none;
+}

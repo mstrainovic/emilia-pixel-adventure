@@ -13,6 +13,8 @@ import { SaveService } from './save/service';
 import { SaveStore } from './save/store';
 import { UiRoot } from './ui/root';
 import { WindowManager } from './ui/windows';
+import { Hud } from './ui/hud';
+import { Hotbar } from './ui/hotbar';
 import { el } from './ui/el';
 import { TEXTS } from './data/texts';
 import type { Action } from './input/actions';
@@ -79,15 +81,19 @@ const save = new SaveService(store, () => services.state, () => Date.now(), (rea
 });
 const uiRoot = new UiRoot(uiHost, pixelGrid);
 const windows = new WindowManager(uiRoot.element, bus, input);
-const services: Services = {
+// Anzeige und Schnellleiste bekommen die Dienste selbst und werden darum gleich danach eingetragen. Erst nach
+// session.start: das Anlegen der ersten Aufgabe meldet kein Ereignis, die beiden lesen den Stand beim Anlegen.
+const services = {
   pixelGrid, input, bus, state: start.state, save, store,
   persist: start.persist, startNotice: start.notice, legacyNewer: start.legacyNewer,
   startRepair: start.repair, importSave: start.importSave,
   session: new GameSession(start.state, bus),
   uiRoot, windows,
-};
-game.registry.set(SERVICES_KEY, services);
+} as Services;
 services.session.start();
+services.hud = new Hud(uiRoot.element, services);
+services.hotbar = new Hotbar(uiRoot.element, services);
+game.registry.set(SERVICES_KEY, services);
 pixelGrid.start();
 // alle 60 s, beim Verstecken und beim Verlassen der Seite (wie Etappe 0)
 if (start.persist) save.start(document, window);
@@ -119,5 +125,12 @@ if (testHooksEnabled) {
     paused: () => windows.paused,
     uiLog: () => [...uiLog],
     consumeInput: (action: Action) => input.consume(action),
+  });
+  // Anzeige: Lebenspunkte setzen und melden (wie später ein Treffer)
+  installTestHooks({
+    setHp: (hp: number) => {
+      services.state.player.hp = hp;
+      bus.emit('stats:changed', {});
+    },
   });
 }

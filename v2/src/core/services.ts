@@ -9,6 +9,8 @@ import type { PixelGrid } from './pixelGrid';
 import type { GameSession } from './session';
 import type { UiRoot } from '../ui/root';
 import type { WindowManager } from '../ui/windows';
+import type { Hud } from '../ui/hud';
+import type { Hotbar } from '../ui/hotbar';
 
 /** Was beim Start zu erklären ist (die Anzeige dazu kommt in Plan 1b). */
 export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
@@ -91,6 +93,10 @@ export interface Services {
   uiRoot: UiRoot;
   /** Fenster und Anhalten des Spiels; die Welt-Szene ruft je Bild `windows.handleInput`. */
   windows: WindowManager;
+  /** Grundanzeige: Herzen, Level, Münzen, Aufgabe, Menü-Knopf (`hud.onMenu`). */
+  hud: Hud;
+  /** Schnellleiste; die Welt-Szene ruft je Bild `hotbar.handleInput` (Tasten 1–8), wenn das Spiel läuft. */
+  hotbar: Hotbar;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

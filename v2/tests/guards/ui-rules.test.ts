@@ -116,8 +116,10 @@ describe('Regeln des Oberflächen-Baukastens (src/ui)', () => {
     expect([...defined].sort()).toEqual(COLOR_TOKENS);
   });
 
-  it('font-size nur als var(--fs-1) bis var(--fs-4)', () => {
-    const bad = css.flatMap((f) => values(f.text, 'font-size').filter((v) => !/^var\(--fs-[1-4]\)$/.test(v)).map((v) => `${f.rel}: ${v}`));
+  // Ausnahme für die Ziffernschrift (Task 6): die Stufe auf 9 Gerätepixel gerundet, nur so ist sie scharf (1 Schriftpixel = 1/9 em)
+  it('font-size nur als var(--fs-1) bis var(--fs-4), für Ziffern auf 9 Gerätepixel gerundet', () => {
+    const allowed = /^(var\(--fs-[1-4]\)|round\(nearest, var\(--fs-[1-4]\), calc\(9 \* var\(--px\)\)\))$/;
+    const bad = css.flatMap((f) => values(f.text, 'font-size').filter((v) => !allowed.test(v)).map((v) => `${f.rel}: ${v}`));
     expect(bad).toEqual([]);
     // auch nicht über den Umweg im Code
     expect(files.filter((f) => f.rel.endsWith('.ts') && /fontSize|font-size/.test(f.text)).map((f) => f.rel)).toEqual([]);

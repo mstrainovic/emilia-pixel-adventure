@@ -120,7 +120,8 @@ export class WorldScene extends Phaser.Scene {
    * Einzige Stelle mit der Reihenfolge je Bild:
    * 1. Eingabe sammeln (input.frame)
    * 2. Abnehmer der Oberfläche nehmen ihre Drücke ab (windows.handleInput: Esc schließt ein offenes Fenster)
-   * 3. Nur wenn das Spiel nicht angehalten ist (Fenster, Gespräch, Dreh-Hinweis): Spielerin rechnen, ihren Ort und
+   * 3. Nur wenn das Spiel nicht angehalten ist (Fenster, Gespräch, Dreh-Hinweis): Tasten 1–8 der Schnellleiste
+   *    (hotbar.handleInput), Spielerin rechnen, ihren Ort und
    *    die gelaufene Strecke in den Spielstand schreiben, die Uhr des Spieltags weiterstellen (session.tick)
    * 4. Kamera rechnen
    * 5. Tiefe und Zeichenposition setzen – erst hier wird gerundet (auf ganze Bildschirmpixel), Figur und Kamera
@@ -129,10 +130,11 @@ export class WorldScene extends Phaser.Scene {
    */
   override update(_time: number, delta: number): void {
     const dt = delta / 1000;
-    const { input, windows, session } = this.services;
+    const { input, windows, session, hotbar } = this.services;
     input.frame(dt);
     windows.handleInput(input);
     if (!windows.paused) {
+      hotbar.handleInput(input);
       const before = this.player.state;
       this.player.update(dt);
       const after = this.player.state;

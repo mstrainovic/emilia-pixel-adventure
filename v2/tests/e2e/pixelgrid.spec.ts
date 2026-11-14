@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
-import { readPng, type PngImage } from './helpers/png';
+import { HIDE_UI, readPng, type PngImage } from './helpers/png';
 
 type Layout = { zoom: number; viewWidth: number; viewHeight: number; offsetX: number; offsetY: number };
 type Snapshot = { deviceWidth: number; deviceHeight: number; dpr: number; layout: Layout };
@@ -35,7 +35,7 @@ async function waitForProbe(page: Page, previous?: Snapshot): Promise<Snapshot> 
 
 /** Prüft den Screenshot Pixel für Pixel; liefert die ersten Abweichungen. */
 async function checkBoard(page: Page, snapshot: Snapshot, name: string): Promise<string[]> {
-  const shot = await page.screenshot({ scale: 'device' });
+  const shot = await page.screenshot({ scale: 'device', style: HIDE_UI });
   const png = readPng(shot);
   const problems: string[] = [];
   try {

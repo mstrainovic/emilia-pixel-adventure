@@ -9,7 +9,7 @@ import { FISH_TYPES } from '../../src/data/fish';
 import { SHELL_TYPES } from '../../src/data/shells';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES } from '../../src/data/achievements';
 import { wrapLines, DIALOG_LINE_CHARS, DIALOG_MAX_LINES } from '../../src/systems/dialogue';
-import { TEXTS, hint } from '../../src/data/texts';
+import { TEXTS, fillText, hint } from '../../src/data/texts';
 
 /** Begriffe, die im Bild anders heißen (Aufgabe, Gegenstand, Rucksack, Herstellen, Erfolge). */
 const FORBIDDEN_TERMS = ['Quest', 'Item', 'Inventar', 'Crafting', 'Achievement'];
@@ -104,5 +104,13 @@ describe('Texte der Oberfläche (TEXTS)', () => {
   });
   it('Hinweise nennen je Gerät Taste oder Knopf', () => {
     for (const a of ['interact', 'close', 'move'] as const) expect(hint(a, 'keys')).not.toBe(hint(a, 'touch'));
+  });
+});
+
+describe('fillText', () => {
+  it('setzt Werte für die Platzhalter ein, fehlende bleiben stehen', () => {
+    expect(fillText('hud.hearts', { n: '2,25', max: 5 })).toBe('2,25 von 5 Herzen');
+    expect(fillText('hud.slot.count', { name: 'Beere', n: 5 })).toBe('Beere, 5 Stück');
+    expect(fillText('hud.level', {})).toBe('Level {n}');
   });
 });

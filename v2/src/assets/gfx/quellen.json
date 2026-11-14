@@ -39,10 +39,19 @@
     "props/dorf.png",
     "tiles/dorf.json",
     "tiles/dorf.png",
+    "ui/beere.png",
+    "ui/beutel.png",
     "ui/fenster.png",
+    "ui/herz.png",
+    "ui/holz.png",
     "ui/knopf.png",
     "ui/knopf_gedrueckt.png",
+    "ui/kraut.png",
+    "ui/muenze.png",
     "ui/platz.png",
+    "ui/samen_karotte.png",
+    "ui/samen_tomate.png",
+    "ui/schwert.png",
     "ui/zahlen.ttf"
   ],
   "eintraege": [
@@ -1164,6 +1173,132 @@
       "ausschnitt": null,
       "aenderungen": "unverändert kopiert",
       "verwendung": "Schrift EmiliaZahlen: nur Ziffern, „/\" und „×\" (unicode-range in src/ui/fonts.css)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "herz",
+      "ziel": "ui/herz.png",
+      "quelle": "Ui/Receptacle/Heart.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Herzen der Anzeige: Zustand n (0 = leer … 4 = voll) bei x = 16 × n",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "muenze",
+      "ziel": "ui/muenze.png",
+      "quelle": "Items/Treasure/Coin2.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 10
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Münzen in der Anzeige (erstes Bild der drehenden Münze)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "schwert",
+      "ziel": "ui/schwert.png",
+      "quelle": "Items/Weapons/Sword2/Sprite.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 15
+      },
+      "aenderungen": "mittig in 16×16 gesetzt",
+      "verwendung": "Symbol Holzschwert (das Pack hat kein Holzschwert; schlichtes kurzes Schwert)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "beere",
+      "ziel": "ui/beere.png",
+      "quelle": "Items/Food/Seed3.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "aenderungen": "mittig in 16×16 gesetzt",
+      "verwendung": "Symbol Beere (rote runde Frucht)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "holz",
+      "ziel": "ui/holz.png",
+      "quelle": "Items/Resource/Branch.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Symbol Holz (Ast)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "kraut",
+      "ziel": "ui/kraut.png",
+      "quelle": "Items/Resource/Grass.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Symbol Magisches Kraut (grünes Kraut)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "samen_karotte",
+      "ziel": "ui/samen_karotte.png",
+      "quelle": "Items/Food/SeedBig1.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "aenderungen": "mittig in 16×16 gesetzt",
+      "verwendung": "Symbol Karottensamen (orange Knolle mit Keim)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "samen_tomate",
+      "ziel": "ui/samen_tomate.png",
+      "quelle": "Items/Food/SeedBig3.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "aenderungen": "mittig in 16×16 gesetzt",
+      "verwendung": "Symbol Tomatensamen (rote Knolle mit Keim)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "beutel",
+      "ziel": "ui/beutel.png",
+      "quelle": "Items/Object/Bag.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Neutrales Symbol für Gegenstände ohne eigenes Bild",
       "lizenz": "CC0 1.0"
     }
   ]

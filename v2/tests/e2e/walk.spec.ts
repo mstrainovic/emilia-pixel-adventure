@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
-import { blockProblems, figureRect, readPng, type GridSnapshot } from './helpers/png';
+import { HIDE_UI, blockProblems, figureRect, readPng, type GridSnapshot } from './helpers/png';
 import { LOOKAHEAD } from '../../src/systems/camera';
 
 type PlayerInfo = { x: number; y: number; facing: string; moving: boolean };
@@ -233,7 +233,7 @@ test('beim Laufen steht die Kamera auf ganzen Bildschirmpixeln, das Bild bleibt 
     cams.push(await camera(page));
     await page.waitForTimeout(40);
   }
-  const shot = await page.screenshot({ scale: 'device' });
+  const shot = await page.screenshot({ scale: 'device', style: HIDE_UI });
   const snapshot = await grid(page);
   const at = await page.evaluate(() => ({ p: (window as any).__emilia2.player() as PlayerInfo, c: (window as any).__emilia2.camera() as CameraInfo }));
   await page.keyboard.up('KeyD');
@@ -319,7 +319,7 @@ test('Fenstergröße ändern, während D gehalten wird: kein Fehler, Bild bleibt
   });
   await nextFrames(page);
   await page.waitForTimeout(300);
-  const shot = await page.screenshot({ scale: 'device' });
+  const shot = await page.screenshot({ scale: 'device', style: HIDE_UI });
   const snapshot = await grid(page);
   const { p, c } = await page.evaluate(() => ({ p: (window as any).__emilia2.player(), c: (window as any).__emilia2.camera() }));
   await page.keyboard.up('KeyD');
