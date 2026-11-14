@@ -655,7 +655,7 @@
 
 Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1a-welt` (abgezweigt von `plan/etappe-1`), alle 13 Tasks mit eigener Prüfung, danach Schlussprüfung des ganzen Branchs und eine Fix-Welle. Nichts ist gemergt oder gepusht.
 
-**Prüfstand am Ende:** `v2/`: Typprüfung ohne Fehler, Vitest 613 bestanden (nach dem Versetzen des Lagerfeuers; 3 übersprungen: Tests, die das Pack oder Emilias echte Datei brauchen), Playwright 100 bestanden / 19 übersprungen (Chromium, WebKit, gebautes Paket), Paket-Schutztests 9 von 9, Grafik- und Kartentests mit Pack grün. Stamm: `npm test` und `npm run build` in Ordnung; am alten Spiel ist nichts geändert. Hinweis zur Reihenfolge: Der Stamm-Build leert `dist/`; erst danach `cd v2 && npm run build`, dann liegen `dist/index.html` und `dist/v2/index.html` beide vor (die Auslieferung baut ohnehin getrennt).
+**Prüfstand am Ende:** `v2/`: Typprüfung ohne Fehler, Vitest 614 bestanden (nach dem Versetzen des Lagerfeuers und dem Verkleinern von Marie und Liam; mit Pack 616; 3 übersprungen: Tests, die das Pack oder Emilias echte Datei brauchen), Playwright 100 bestanden / 19 übersprungen (Chromium, WebKit, gebautes Paket), Paket-Schutztests 9 von 9, Grafik- und Kartentests mit Pack grün. Stamm: `npm test` und `npm run build` in Ordnung; am alten Spiel ist nichts geändert. Hinweis zur Reihenfolge: Der Stamm-Build leert `dist/`; erst danach `cd v2 && npm run build`, dann liegen `dist/index.html` und `dist/v2/index.html` beide vor (die Auslieferung baut ohnehin getrennt).
 
 ### Was gegenüber dem Plan geändert wurde (Entscheidungen während der Umsetzung)
 
@@ -674,10 +674,11 @@ Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1a-welt` (ab
 13. **Probe-Szene** wird weiter in `main.ts` gewählt (hält sie aus dem Produktions-Paket); `fps.smoothStep` ist aus (sonst Zeitlupe unter 60 Bildern je Sekunde); die Kamera zielt mit `centerOn` (Phaser kappt Kachel-Ebenen nach `worldView`, das den Ursprung ignoriert).
 14. **Fix-Welle nach der Schlussprüfung:** keine klebende Taste bei Zusatztasten, Rechtsklick-Menü und verborgener Seite; Fuß auf der unteren Kartenkante bleibt beim Neuladen stehen; Paket-Schutztest sucht weitere Test-Zugänge und prüft den ganzen CSP-Wortlaut.
 15. **Lagerfeuer versetzt (Stil-Prüfung, Wunsch des Auftraggebers am 2026-11-14):** Im alten Spiel stand es mitten auf dem Südweg (20/19). Es steht jetzt auf der Wiese östlich neben dem Weg auf 22/20, in Babas Blickrichtung; der Südweg ist durchgehend frei. Das weicht bewusst von Task 9 ab („Ort des Lagerfeuers unverändert"). Baba bleibt auf 18/20.
+16. **Marie und Liam sind Kinder (Stil-Prüfung, Antwort des Auftraggebers am 2026-11-14):** Beide Blätter verlieren je Zelle eine Zeile (Marie aus der Mütze, Liam aus den Haaren; Zeilen je Richtung und Haltung so gewählt, dass der Umriss geschlossen bleibt). Höchste Pose jetzt 15 statt 16 wie bei Emilia und Lena; im Stehen ist Marie 15 hoch wie Emilia, Liam 14 wie Lena. Gemessen im Stehen: Papa, Opa, Baba 16; Mama, Deda, Ferdinand 15 (16 erreichen sie erst im Schritt nach oben); Oma immer 15. Marie reicht mit der Zipfelmütze also im Stehen so hoch wie Mama. Die Gesichter (Porträts) sind unverändert.
 
 **Fehler im Plantext, die bei der Umsetzung auffielen:** `starsky` führt acht `npc`-Objekte *mit* Dorfbewohner-Kennungen (nicht ohne). `resetQuests` im alten Spiel ruft ein nicht vorhandenes `_assignNextQuest()`; ein echter New-Game-Plus-Stand sieht deshalb anders aus als die Vorlage `LEGACY_NGPLUS` (v2 verarbeitet die echte Form richtig; eine Vorlage in echter Form fehlt noch in der Verstümmelungs-Schleife). Mein Testraster fürs Eckenrutschen war zweimal falsch gestellt (0,5-s-Grenze; 5 Bildpunkte Überstand mit Querabsicht).
 
-### Figuren-Zuordnung (Vorschlag, wird in der Stil-Prüfung entschieden)
+### Figuren-Zuordnung (in der Stil-Prüfung am 2026-11-14 bestätigt)
 
 | Figur | Vorlage im Pack | Höhe | Aussehen und Abweichung |
 |---|---|---|---|
@@ -686,8 +687,8 @@ Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1a-welt` (ab
 | julian | `Villager4` | 13 (14 breit) | blond, rotes Hemd |
 | mama_tanja | `Villager3` | 16 | brauner Bob, rosa Oberteil |
 | papa_milos | `Villager2` | 16 | schwarze Locken, blaue Hose; kein blaues Hemd |
-| marie | `ManGreen` | 16 | blond unter grüner Zipfelmütze; grün statt gelb |
-| liam | `Boy` | 16 | dunkelbraune Strubbelhaare, grünes Hemd |
+| marie | `ManGreen` | 15 (Kind) | blond unter grüner Zipfelmütze; grün statt gelb |
+| liam | `Boy` | 15 (Kind) | dunkelbraune Strubbelhaare, grünes Hemd |
 | oma | `OldWoman` | 15 | graue lange Haare, malvenfarbenes Kleid |
 | opa | `OldMan3` | 16 | Strohhut, weißer Bart, olivgrünes Gewand |
 | baba | `Cavegirl2` | 16 | rotbraune Haare, rotes Kleid; wirkt jung |
@@ -713,7 +714,7 @@ Stichwortliste im Kopfkommentar von `v2/src/scenes/world/buildLayers.ts` (Tilema
 
 - Gefällt das Dorf (Erdweg statt Sandweg; Tannen wirken wie Büsche; Gartenecke mit Blumen unter den Zäunen unruhig)? **Antwort 2026-11-14 (anhand von Bildern, unterwegs): „ja, gefällt mir", mit einer Änderung: Das Lagerfeuer stand auf dem Weg und ist versetzt (siehe Punkt 15 oben).**
 - Größen: Kinder sind meist nur einen Bildpunkt kleiner als Erwachsene; Oma ist so hoch wie Emilia. **Antwort 2026-11-14: „passt" – die Größen bleiben, wie sie sind.**
-- Zuordnung der Figuren (Tabelle oben): Papa ohne Hemd in Blau, Marie in Grün, Baba wirkt jung; Emilia und Mama ähneln sich am meisten. **Antwort 2026-11-14 (anhand des Figurenbilds, die vier Punkte waren genannt): „ja" – alle zwölf Zuordnungen bleiben.** Sind Marie und Liam Kinder oder Erwachsene? (Noch offen; beide sind derzeit 16 Bildpunkte hoch wie die Erwachsenen.)
+- Zuordnung der Figuren (Tabelle oben): Papa ohne Hemd in Blau, Marie in Grün, Baba wirkt jung; Emilia und Mama ähneln sich am meisten. **Antwort 2026-11-14 (anhand des Figurenbilds, die vier Punkte waren genannt): „ja" – alle zwölf Zuordnungen bleiben.** Sind Marie und Liam Kinder oder Erwachsene? **Antwort 2026-11-14: „Kinder" – beide sind jetzt so groß wie Emilia und Lena (siehe Punkt 16 oben).**
 - Schatten der Figuren ist kaum zu sehen (liegt fast ganz unter der Figur).
 - Zäune, Truhen, Wegweiser, Büsche und Hühner sind wie im alten Spiel durchlaufbar; mit der neuen Tiefensortierung wirkt das wie ein Fehler. Sperren?
 - Lena (Stilprobe) und Deda stehen dicht unter Brunnen und Kessel.

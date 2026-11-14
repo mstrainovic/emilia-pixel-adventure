@@ -189,18 +189,26 @@ export const FIGURES = [
     face: 'Faceset1.png',
     ops: [
       ['recolor', { '#ef914f': SKIN, '#d14b34': SKIN_SHADE }],
+      // Kind (Antwort des Auftraggebers, Stil-Prüfung 2026-11-14): eine Zeile aus der Mütze, je Richtung die,
+      // bei der der Umriss geschlossen bleibt. Die Mütze wippt nicht, darum gilt die Zeile fast überall für alle Haltungen.
+      { where: { facing: ['down', 'up'] }, step: ['dropRows', [5]] },
+      { where: { facing: ['left'] }, step: ['dropRows', [4]] },
+      { where: { facing: ['right'], rows: REST }, step: ['dropRows', [4]] },
+      { where: { facing: ['right'], rows: STEP }, step: ['dropRows', [5]] },
       ['anchorBottomCenter', 16, 16],
     ],
-    use: 'Marie: blonde Haare unter grüner Zipfelmütze, grüne Kleidung (Mütze und Kleidung teilen die Farben; gelb würde mit den Haaren verschwimmen)',
+    use: 'Marie (Kind): blonde Haare unter grüner Zipfelmütze, grüne Kleidung (Mütze und Kleidung teilen die Farben; gelb würde mit den Haaren verschwimmen)',
   },
   {
     id: 'liam',
     source: 'Actor/Character/Boy',
     ops: [
       ['recolor', { '#d14b34': '#695953', '#965340': '#4e484a', '#ef914f': SKIN, '#e3f1f5': '#56864c', '#548789': '#816855' }],
+      // Kind (Antwort des Auftraggebers, Stil-Prüfung 2026-11-14): eine Haarzeile weniger.
+      ...dropPerPose({ rest: [6], stepDown: [7], stepUp: [5] }),
       ['anchorBottomCenter', 16, 16],
     ],
-    use: 'Angler Liam: dunkelbraune Strubbelhaare, grünes Hemd, braune Hose',
+    use: 'Angler Liam (Kind): dunkelbraune Strubbelhaare, grünes Hemd, braune Hose',
   },
   {
     id: 'oma',

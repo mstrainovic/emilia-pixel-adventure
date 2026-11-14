@@ -23,15 +23,16 @@ function figure(id: string, height: FigureDef['height']): FigureDef {
   return { sheet: `figuren/${id}.png`, face: `figuren/${id}-gesicht.png`, height };
 }
 
-/** Kinder sind kleiner als Erwachsene: Julian < Emilia = Lena < Dorfbewohner (Spec 8.2). */
+/** Kinder sind kleiner als Erwachsene: Julian < Emilia = Lena = Marie = Liam < erwachsene Dorfbewohner (Spec 8.2). */
 export const FIGURES: Record<string, FigureDef> = {
   emilia: figure('emilia', 15),
   lena: figure('lena', 15),
   julian: figure('julian', 13),
   mama_tanja: figure('mama_tanja', 16),
   papa_milos: figure('papa_milos', 16),
-  marie: figure('marie', 16),
-  liam: figure('liam', 16),
+  // Marie und Liam sind Kinder (Antwort des Auftraggebers, Stil-Prüfung 2026-11-14): so groß wie Emilia und Lena.
+  marie: figure('marie', 15),
+  liam: figure('liam', 15),
   // OldWoman ist im Pack in keinem Bild höher als 15 und hat nur zwei Laufbilder (offener Punkt, siehe Bericht Task 8).
   oma: figure('oma', 15),
   opa: figure('opa', 16),

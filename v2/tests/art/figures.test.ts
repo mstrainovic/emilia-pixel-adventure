@@ -13,7 +13,9 @@ const CELL = 16;
 const COLS = 4;
 const ROWS = 5;
 const CHILDREN = ['emilia', 'lena', 'julian'];
-const ADULTS = NPCS.map((n) => n.id);
+/** Dorfbewohner, die Kinder sind (Antwort des Auftraggebers in der Stil-Prüfung, 2026-11-14): so groß wie Emilia. */
+const CHILD_NPCS = ['marie', 'liam'];
+const ADULTS = NPCS.map((n) => n.id).filter((id) => !CHILD_NPCS.includes(id));
 /** Erwachsene, deren Pflicht-Vorlage nicht 16 hoch ist (offener Punkt für den Auftraggeber). */
 const TOO_SHORT_TEMPLATE = ['oma'];
 
@@ -67,7 +69,8 @@ describe('sprites.ts', () => {
   });
 
   it('FIGURES hat genau Emilia, Lena, Julian und alle Dorfbewohner', () => {
-    expect(Object.keys(FIGURES).sort()).toEqual([...CHILDREN, ...ADULTS].sort());
+    expect(CHILD_NPCS.filter((id) => !NPCS.some((n) => n.id === id))).toEqual([]);
+    expect(Object.keys(FIGURES).sort()).toEqual([...CHILDREN, ...CHILD_NPCS, ...ADULTS].sort());
   });
 
   it('jede Blatt- und Gesichtsdatei existiert, dazu der Schatten', () => {
@@ -119,11 +122,18 @@ describe('Figurenblätter', () => {
     expect(Math.max(...boxes.map((b) => b!.right))).toBe(CELL - 2);
   });
 
-  it('Größen: Julian < Emilia = Lena < Erwachsene (Spec 8.2)', () => {
+  it('Größen: Julian < Emilia = Lena = Marie = Liam < Erwachsene (Spec 8.2)', () => {
     expect(FIGURES.julian!.height).toBe(13);
     expect(FIGURES.emilia!.height).toBe(15);
     expect(FIGURES.lena!.height).toBe(15);
+    for (const id of CHILD_NPCS) expect(FIGURES[id]!.height, id).toBe(15);
     for (const id of ADULTS.filter((a) => !TOO_SHORT_TEMPLATE.includes(a))) expect(FIGURES[id]!.height, id).toBe(16);
+  });
+
+  it('im Stehen ist Marie so hoch wie Emilia und Liam so hoch wie Lena', () => {
+    const idleTop = (id: string) => Math.min(...cellBoxes(readSheet(FIGURES[id]!.sheet)).slice(0, COLS).map((b) => b!.top));
+    expect(CELL - idleTop('marie')).toBe(CELL - idleTop('emilia'));
+    expect(CELL - idleTop('liam')).toBe(CELL - idleTop('lena'));
   });
 
   it('Ausnahme: Oma (Vorlage OldWoman) ist nur so groß wie Emilia, nicht kleiner', () => {
