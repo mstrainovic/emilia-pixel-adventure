@@ -121,9 +121,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+ * button_pressed.png (16×8) liegt einen Bildpunkt tiefer: oben 3 (leere Zeile, Umriss, helle Kante), sonst 2.
+ * Darum das ganze border-image mit eigenen Schnitten, nie nur das Bild tauschen. border-width bleibt, das Layout
+ * springt beim Drücken nicht.
+ */
 .ui-button:active,
 .ui-button.is-pressed {
-  border-image-source: url('../assets/gfx/ui/knopf_gedrueckt.png');
+  border-image: url('../assets/gfx/ui/knopf_gedrueckt.png') 3 2 2 2 fill / calc(3 * var(--hud-px)) calc(2 * var(--hud-px)) calc(2 * var(--hud-px)) calc(2 * var(--hud-px)) stretch;
 }
 
 .ui-button:focus {

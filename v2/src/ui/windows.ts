@@ -32,16 +32,21 @@ function reducedMotion(): boolean {
  * Fenster-Verwalter (Spec 10): ein Fenster zur Zeit, ein zweites ersetzt das erste. Ein Fenster schließt mit ×, Esc
  * (Handlung `cancel`) und Tippen daneben, hält das Spiel an (`ui:paused`), blendet 120 ms ein und aus (ohne Blende
  * bei `prefers-reduced-motion`), meldet `ui:sound`. Der Fokus liegt beim Öffnen auf × und kehrt danach zurück.
+ * Solange ein Fenster offen ist, sind die übrigen Kinder von `root` `inert` (weder Tab noch Zeiger).
  * Auch Gespräch und Dreh-Hinweis halten das Spiel über `setPaused` an; angehalten ist es, solange ein Grund besteht.
  */
 export class WindowManager {
   private current: OpenWindow | null = null;
   private readonly closing = new Set<HTMLElement>();
   private readonly reasons = new Set<string>();
-  /** Beim Öffnen gesetzt: der nächste `handleInput` lässt alle Tasten los, damit keine klebt. */
-  private resetInput = false;
+  /** Was der Verwalter für die Dauer eines Fensters unerreichbar gemacht hat (`inert`), um es danach freizugeben. */
+  private readonly madeInert = new Set<HTMLElement>();
 
-  constructor(private readonly root: HTMLElement, private readonly bus: EventBus<GameEvents>) {}
+  /**
+   * `input` wird beim Öffnen sofort losgelassen (`reset`), damit keine Taste klebt. Sofort, nicht erst im nächsten
+   * `handleInput`: sonst ginge ein Druck verloren, der zwischen Öffnen und nächstem Bild kommt (etwa Esc).
+   */
+  constructor(private readonly root: HTMLElement, private readonly bus: EventBus<GameEvents>, private readonly input: InputHub) {}
 
   open(spec: WindowSpec): void {
     const replaced = this.current;
@@ -74,13 +79,14 @@ export class WindowManager {
     // Tippen daneben: nur ein Klick genau auf die Abdunklung, nicht ins Fenster
     shade.addEventListener('click', (e) => { if (e.target === shade) this.closeIf(shade); });
     this.root.appendChild(shade);
+    this.makeOthersInert(shade);
 
     this.current = { spec, shade, previousFocus };
     // Blende: erst nach dem ersten Layout sichtbar schalten, sonst springt der Übergang
     void shade.offsetWidth;
     shade.classList.add('is-open');
     close.focus({ preventScroll: true });
-    this.resetInput = true;
+    this.input.reset();
     if (replaced) replaced.spec.onClose?.();
     this.setPaused(WINDOW_REASON, true);
     this.bus.emit('ui:sound', { name: 'open' });
@@ -102,6 +108,9 @@ export class WindowManager {
         shade.remove();
       }, FADE_MS);
     }
+    // erst freigeben, dann den Fokus zurückgeben: ein Element mit inert nimmt keinen Fokus an
+    for (const node of this.madeInert) node.inert = false;
+    this.madeInert.clear();
     restoreFocus(open.previousFocus, shade);
     this.setPaused(WINDOW_REASON, false);
     this.bus.emit('ui:sound', { name: 'close' });
@@ -124,19 +133,27 @@ export class WindowManager {
   }
 
   /**
-   * Schritt 2 der Reihenfolge je Bild (WorldScene.update): lässt nach dem Öffnen alle Tasten los und nimmt `cancel`
-   * ab, wenn ein Fenster offen ist (schließt es). Liefert `true`, wenn ein Druck abgenommen wurde.
+   * Schritt 2 der Reihenfolge je Bild (WorldScene.update): nimmt `cancel` ab, wenn ein Fenster offen ist (schließt
+   * es). Liefert `true`, wenn ein Druck abgenommen wurde.
    */
   handleInput(input: InputHub): boolean {
-    if (this.resetInput) {
-      this.resetInput = false;
-      input.reset();
-    }
     if (this.current && input.consume('cancel')) {
       this.close();
       return true;
     }
     return false;
+  }
+
+  /**
+   * Alles andere in der Oberfläche (Anzeige, Schnellleiste, Touch-Knöpfe) ist bei offenem Fenster weder per Tab noch
+   * per Zeiger erreichbar. Was schon vorher `inert` war, bleibt unberührt und wird später nicht freigegeben.
+   */
+  private makeOthersInert(shade: HTMLElement): void {
+    for (const child of Array.from(this.root.children)) {
+      if (child === shade || !(child instanceof HTMLElement) || child.inert) continue;
+      child.inert = true;
+      this.madeInert.add(child);
+    }
   }
 
   /** Schließt nur, wenn `shade` noch das offene Fenster ist (ein später Klick auf ein ersetztes bleibt ohne Folgen). */

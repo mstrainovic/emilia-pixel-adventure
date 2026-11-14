@@ -160,6 +160,33 @@ test('Tastatur: × hat den Fokus, Enter schließt, kein confirm bleibt liegen, d
   expect(errors).toEqual([]);
 });
 
+test('bei offenem Fenster ist der Rest der Oberfläche unerreichbar (inert), danach wieder frei', async ({ page }) => {
+  const errors: string[] = [];
+  await openWorld(page, errors);
+  await page.evaluate(() => {
+    const b = document.createElement('button');
+    b.id = 'nachbar';
+    b.textContent = 'Nachbar';
+    document.querySelector('.ui-root')!.appendChild(b);
+  });
+  const inert = (): Promise<boolean> => page.evaluate(() => (document.getElementById('nachbar') as HTMLElement).inert);
+  expect(await inert()).toBe(false);
+  await openTestWindow(page);
+  expect(await inert()).toBe(true);
+  // Tab bleibt aus dem Nachbarn heraus
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.id)).not.toBe('nachbar');
+  }
+  // ein zweites Fenster ersetzt das erste: der Nachbar bleibt unerreichbar
+  await openTestWindow(page);
+  expect(await inert()).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(testWindow(page)).toHaveCount(0);
+  expect(await inert()).toBe(false);
+  expect(errors).toEqual([]);
+});
+
 test.describe('Maßstab der Oberfläche', () => {
   for (const dpr of [1, 1.25, 1.5]) {
     test(`--hud-px × Pixeldichte ist bei Dichte ${dpr} eine ganze Zahl`, async ({ browser, baseURL, browserName }) => {
@@ -215,4 +242,18 @@ test('Bilder des offenen Testfensters für die Durchsicht', async ({ browser, ba
     writeFileSync(`${ARTIFACTS}task-5-fenster-${shot.width}x${shot.height}@${shot.dpr}x.png`, await page.screenshot({ scale: 'device' }));
     await context.close();
   }
+  // gedrückter Knopf: × bei 1280×720 gedrückt halten, Ausschnitt um das Fenster
+  const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  await openWorld(page, []);
+  await openTestWindow(page);
+  await expect(page.locator('.ui-shade')).toHaveCSS('opacity', '1');
+  const box = (await closeButton(page).boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect(closeButton(page)).toHaveCSS('border-image-source', /knopf_gedrueckt/);
+  const win = (await testWindow(page).boundingBox())!;
+  writeFileSync(`${ARTIFACTS}task-5-knopf-gedrueckt.png`, await page.screenshot({ clip: { x: win.x + win.width - 90, y: win.y, width: 90, height: 80 } }));
+  await page.mouse.up();
+  await context.close();
 });

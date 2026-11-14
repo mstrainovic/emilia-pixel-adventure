@@ -1,9 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
 
 const UI = fileURLToPath(new URL('../../src/ui', import.meta.url));
+const GFX = fileURLToPath(new URL('../../src/assets/gfx', import.meta.url));
 const TEXTS_FILE = fileURLToPath(new URL('../../src/data/texts.ts', import.meta.url));
 
 /** Die acht Farb-Variablen des Baukastens (Plan 1b, Task 5). */
@@ -31,6 +33,63 @@ function rules(text: string): string {
 function values(text: string, property: string): string[] {
   const re = new RegExp(`(?<![-\\w])${property}\\s*:\\s*([^;}]+)`, 'g');
   return [...rules(text).matchAll(re)].map((m) => (m[1] ?? '').trim());
+}
+
+/** Ein neunteiliger Rand aus kit.css: Bild, Schnitte (oben, rechts, unten, links, Quellpixel), Breiten in --hud-px. */
+interface NineSlice { image: string; slice: number[]; fill: boolean; widths: (number | null)[]; source: string }
+
+/** Wie CSS: ein bis vier Werte auf oben, rechts, unten, links verteilen. */
+function sides<T>(v: T[]): T[] {
+  const [a, b = a, c = a, d = b] = v as [T, T?, T?, T?];
+  return [a, b as T, c as T, d as T];
+}
+
+/** Breite als Vielfaches von --hud-px: `var(--hud-px)` → 1, `calc(N * var(--hud-px))` → N, sonst null. */
+function hudMultiple(token: string): number | null {
+  if (token === 'var(--hud-px)') return 1;
+  const m = /^calc\((\d+) \* var\(--hud-px\)\)$/.exec(token);
+  return m ? Number(m[1]) : null;
+}
+
+/** Alle `border-image`-Kurzschreibungen mit einem Bild aus gfx/ui. */
+function nineSlices(text: string): NineSlice[] {
+  return values(text, 'border-image').map((value) => {
+    const m = /^url\('\.\.\/assets\/gfx\/ui\/(\w+)\.png'\)\s+([\d\s]+?)\s*(fill)?\s*\/\s*(.+?)\s+stretch$/.exec(value);
+    if (!m) throw new Error(`border-image nicht lesbar: ${value}`);
+    const widths = (m[4] ?? '').match(/calc\([^)]*\)\)|var\([^)]*\)|\S+/g) ?? [];
+    return {
+      image: m[1] ?? '',
+      slice: sides((m[2] ?? '').trim().split(/\s+/).map(Number)),
+      fill: m[3] === 'fill',
+      widths: sides(widths.map(hudMultiple)),
+      source: value,
+    };
+  });
+}
+
+function checkWidths(s: NineSlice): string[] {
+  return s.widths.some((w, i) => w !== s.slice[i]) ? [`${s.image}: Breiten ${s.widths} passen nicht zu den Schnitten ${s.slice}`] : [];
+}
+
+/** Gestreckte Bänder eines Bildes: Kanten (quer zur Streckrichtung einfarbig) und, mit `fill`, die Mitte. */
+function stripeProblems(s: NineSlice): string[] {
+  const png = PNG.sync.read(readFileSync(join(GFX, 'ui', `${s.image}.png`)));
+  const at = (x: number, y: number): string => png.data.subarray((y * png.width + x) * 4, (y * png.width + x) * 4 + 4).join(',');
+  const [top, right, bottom, left] = s.slice as [number, number, number, number];
+  const x0 = left, x1 = png.width - right, y0 = top, y1 = png.height - bottom;
+  const problems: string[] = [];
+  if (x0 >= x1 || y0 >= y1) return [`${s.image}: Schnitte ${s.slice} lassen keine Mitte`];
+  const uniform = (what: string, points: [number, number][]): void => {
+    const colors = new Set(points.map(([x, y]) => at(x, y)));
+    if (colors.size > 1) problems.push(`${s.image}: ${what} nicht einfarbig`);
+  };
+  const range = (a: number, b: number): number[] => Array.from({ length: b - a }, (_, i) => a + i);
+  // obere und untere Kante werden waagrecht gestreckt: jede Zeile einfarbig
+  for (const y of [...range(0, y0), ...range(y1, png.height)]) uniform(`Zeile ${y}`, range(x0, x1).map((x) => [x, y]));
+  // linke und rechte Kante werden senkrecht gestreckt: jede Spalte einfarbig
+  for (const x of [...range(0, x0), ...range(x1, png.width)]) uniform(`Spalte ${x}`, range(y0, y1).map((y) => [x, y]));
+  if (s.fill) uniform('Mitte', range(x0, x1).flatMap((x) => range(y0, y1).map((y): [number, number] => [x, y])));
+  return problems;
 }
 
 // Bildzeichen: Emoji, Piktogramme, Dingbats (auch ✕ U+2715) und die Emoji-Darstellungsauswahl
@@ -79,6 +138,23 @@ describe('Regeln des Oberflächen-Baukastens (src/ui)', () => {
   it('die Prüfung erkennt Emoji und Dingbats, das Malzeichen × ist erlaubt', () => {
     for (const c of ['\u{1F600}', '✕', '✖', '❤', '⭐', '\u{1F5D9}']) expect(PICTOGRAPH.test(c), c).toBe(true);
     expect(PICTOGRAPH.test('×')).toBe(false);
+  });
+
+  it('neunteilige Ränder: jedes gestreckte Band ist einfarbig, die Randbreite ist genau Schnitt × --hud-px', () => {
+    const slices = nineSlices(byName('kit.css'));
+    // Fenster, Knopf, gedrückter Knopf, Platz
+    expect(slices.map((s) => s.image).sort()).toEqual(['fenster', 'knopf', 'knopf_gedrueckt', 'platz']);
+    const problems = slices.flatMap((s) => [...checkWidths(s), ...stripeProblems(s)]);
+    expect(problems).toEqual([]);
+  });
+
+  it('die Prüfung erkennt falsche Schnitte (gedrückter Knopf mit den Schnitten des normalen)', () => {
+    const wrong: NineSlice = { image: 'knopf_gedrueckt', slice: [2, 2, 2, 2], fill: true, widths: [2, 2, 2, 2], source: 'Probe' };
+    expect(stripeProblems(wrong).length).toBeGreaterThan(0);
+  });
+
+  it('ein Randbild wird nie allein über border-image-source getauscht (die Schnitte gehören zum Bild)', () => {
+    expect(values(byName('kit.css'), 'border-image-source')).toEqual([]);
   });
 
   it('kit.css beachtet die Aussparungen an allen vier Rändern', () => {

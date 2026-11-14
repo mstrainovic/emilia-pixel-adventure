@@ -78,7 +78,7 @@ const save = new SaveService(store, () => services.state, () => Date.now(), (rea
   bus.emit('save:result', { reason, result });
 });
 const uiRoot = new UiRoot(uiHost, pixelGrid);
-const windows = new WindowManager(uiRoot.element, bus);
+const windows = new WindowManager(uiRoot.element, bus, input);
 const services: Services = {
   pixelGrid, input, bus, state: start.state, save, store,
   persist: start.persist, startNotice: start.notice, legacyNewer: start.legacyNewer,
