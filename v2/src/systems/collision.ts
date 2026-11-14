@@ -26,11 +26,6 @@ export const CORNER_NUDGE = 5;
  * entlang der Wand (mehr als die Hälfte), wird nicht gerutscht, und die Figur gleitet mit ihrer Querbewegung an der Wand entlang.
  */
 export const NUDGE_MAX_CROSS_RATIO = 0.5;
-/**
- * Gesucht wird in ganzen Bildpunkten bis `CORNER_NUDGE`, zuletzt noch mit knapp einem Bildpunkt Spielraum (6 bleiben hängen):
- * Läuft die Figur schräg auf die Ecke zu, wächst der Überstand auf dem Weg bis zur Wand um Bruchteile.
- */
-const NUDGE_REACH = [1, 2, 3, 4, CORNER_NUDGE, CORNER_NUDGE + 0.9];
 
 export interface SlideResult {
   x: number;
@@ -89,7 +84,7 @@ function stepAxis(grid: SolidGrid, b: Box, axis: Axis, step: number): { value: n
  */
 function cornerNudge(grid: SolidGrid, b: Box, axis: Axis, step: number, crossStep: number): number {
   const cross: Axis = axis === 'x' ? 'y' : 'x';
-  for (const s of NUDGE_REACH) {
+  for (let s = 1; s <= CORNER_NUDGE; s++) {
     for (const dir of [-1, 1]) {
       // Nicht deutlich gegen die Querabsicht schieben: sonst hebt sich Rutschen und Weitergehen auf.
       if (Math.sign(crossStep) === -dir && Math.abs(crossStep) > NUDGE_MAX_CROSS_RATIO * Math.abs(step)) continue;

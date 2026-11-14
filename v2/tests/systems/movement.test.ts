@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SolidGrid } from '../../src/systems/collision';
+import { moveAndSlide, type SolidGrid } from '../../src/systems/collision';
 import {
   ACCEL_TIME,
   MAX_DT,
@@ -350,17 +350,26 @@ describe('Eckenzone: kein Kriechen, auch bei fast gerader Eingabe', () => {
   const overlaps = [1, 3, 5];
 
   /** Aufstellung je Überlappung k; Absicht aus dem Quer-Anteil c. */
-  const setups: Array<{ name: string; start: (k: number) => Partial<Mover>; intent: (c: number) => MoveIntent }> = [
-    { name: 'rechts, frei oben', start: (k) => ({ x: 122, y: 80 + k }), intent: (c) => norm(1, c) },
-    { name: 'rechts, frei unten', start: (k) => ({ x: 122, y: 102 - k }), intent: (c) => norm(1, c) },
-    { name: 'links, frei oben', start: (k) => ({ x: 150, y: 80 + k }), intent: (c) => norm(-1, c) },
-    { name: 'unten, frei links', start: (k) => ({ x: 123 + k, y: 77 }), intent: (c) => norm(c, 1) },
-    { name: 'unten, frei rechts', start: (k) => ({ x: 149 - k, y: 77 }), intent: (c) => norm(c, 1) },
+  const setups: Array<{
+    name: string;
+    start: (k: number) => Partial<Mover>;
+    intent: (c: number) => MoveIntent;
+    /** Zeigt der Quer-Anteil c von der freien Seite weg? */
+    away: (c: number) => boolean;
+  }> = [
+    { name: 'rechts, frei oben', start: (k) => ({ x: 122, y: 80 + k }), intent: (c) => norm(1, c), away: (c) => c > 0 },
+    { name: 'rechts, frei unten', start: (k) => ({ x: 122, y: 102 - k }), intent: (c) => norm(1, c), away: (c) => c < 0 },
+    { name: 'links, frei oben', start: (k) => ({ x: 150, y: 80 + k }), intent: (c) => norm(-1, c), away: (c) => c > 0 },
+    { name: 'unten, frei links', start: (k) => ({ x: 123 + k, y: 77 }), intent: (c) => norm(c, 1), away: (c) => c > 0 },
+    { name: 'unten, frei rechts', start: (k) => ({ x: 149 - k, y: 77 }), intent: (c) => norm(c, 1), away: (c) => c < 0 },
   ];
 
   for (const s of setups) {
     for (const k of overlaps) {
       for (const c of crosses) {
+        // Zeigt die Querabsicht von der freien Seite weg, wächst der Überstand bis zur Wand; 5 px Start lägen
+        // am Wandkontakt außerhalb der Rutschzone (siehe Grenztest unten). Dort gelten nur 1 und 3 px.
+        if (s.away(c) && k > 3) continue;
         it(`${s.name}, Überlappung ${k}, quer ${c}`, () => {
           const start = still(s.start(k));
           const intent = s.intent(c);
@@ -393,4 +402,31 @@ describe('Eckenzone: kein Kriechen, auch bei fast gerader Eingabe', () => {
       expect(past).toBe(true);
     });
   }
+});
+
+describe('Grenze der Rutschzone', () => {
+  it('Überstand über CORNER_NUDGE bei Wandkontakt: kein Rutschen, blockedX (gewollte Grenze der Rutschzone)', () => {
+    const tile = gridOf((x, y) => x === 8 && y === 5); // 128..144 × 80..96
+    // Start mit 5 px Überstand (Kastenunterkante 85), Absicht (1, +0.05): weg von der freien Seite (oben).
+    let m = still({ x: 118, y: 85, facing: 'right' });
+    const n = Math.hypot(1, 0.05);
+    const intent: MoveIntent = { x: 1 / n, y: 0.05 / n, run: false };
+    let contactOverlap = 0;
+    for (let i = 0; i < 40; i++) {
+      m = stepMover(m, intent, 1 / 60, tile);
+      if (m.x + PLAYER_BODY.halfW >= 128 - 1e-9) {
+        contactOverlap = m.y - 80; // Kastenunterkante = Fußpunkt y
+        break;
+      }
+    }
+    expect(contactOverlap).toBeGreaterThan(5);
+    const hit = moveAndSlide(
+      { x: m.x, y: m.y - PLAYER_BODY.footOffset, halfW: PLAYER_BODY.halfW, halfH: PLAYER_BODY.halfH },
+      2,
+      0.1,
+      tile,
+    );
+    expect(hit.blockedX).toBe(true);
+    expect(hit.y + PLAYER_BODY.footOffset).toBeGreaterThan(85); // nicht nach oben gerutscht
+  });
 });
