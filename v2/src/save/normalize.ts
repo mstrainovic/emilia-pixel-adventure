@@ -1,7 +1,8 @@
 // Prüft und repariert einen gespeicherten Stand der Version 1: hartes Minimum, sonst Feld für Feld reparieren.
 // Reine Funktion, wirft nie. Auf einem gültigen Stand ist sie die Identität; unbekannte Zusatzfelder bleiben.
-import { createNewGameState, INVENTORY_SLOTS, GAME_STATE_VERSION, type GameState } from '../core/state';
+import { createEmptyGameState, INVENTORY_SLOTS, GAME_STATE_VERSION, type GameState } from '../core/state';
 import { MAX_LEVEL, HP_PER_HEART, heartsForLevel, xpToNext } from '../core/levels';
+import { getItem } from '../data/items';
 import { QUESTS } from '../data/quests';
 import { isMapId, HUB_START } from '../data/maps';
 import {
@@ -91,7 +92,7 @@ function repairInventory(rawSlots: unknown, target: GameState): Pick<RepairRepor
   const entries = Array.isArray(rawSlots) ? (rawSlots as unknown[]) : [];
   const droppedItems = readSlots(entries.slice(0, INVENTORY_SLOTS), target);
   for (let from = INVENTORY_SLOTS; from < entries.length; from += INVENTORY_SLOTS) {
-    const scratch = createNewGameState(0);
+    const scratch = createEmptyGameState(0);
     droppedItems.push(...readSlots(entries.slice(from, from + INVENTORY_SLOTS), scratch));
     for (const slot of scratch.inventory.slots) {
       if (slot.itemId === null) continue;
@@ -101,6 +102,19 @@ function repairInventory(rawSlots: unknown, target: GameState): Pick<RepairRepor
     }
   }
   return { droppedItems, resizedInventory: entries.length !== INVENTORY_SLOTS };
+}
+
+/** Wartende Belohnungen: unbekannte Kennungen und ungültige Stückzahlen fallen heraus und werden gemeldet. */
+function repairPending(raw: unknown): { items: GameState['pendingItems']; dropped: RepairReport['droppedItems'] } {
+  const items: GameState['pendingItems'] = []; const dropped: RepairReport['droppedItems'] = [];
+  for (const entry of Array.isArray(raw) ? (raw as unknown[]) : []) {
+    const itemId = field(entry, 'itemId'); const count = finite(field(entry, 'count'));
+    if (typeof itemId !== 'string') continue;
+    if (getItem(itemId) === null) { dropped.push({ itemId, count: count !== undefined && count > 0 ? Math.max(1, Math.floor(count)) : 0 }); continue; }
+    if (count === undefined || count < 1) { dropped.push({ itemId, count: 0 }); continue; }
+    items.push({ itemId, count: Math.floor(count) });
+  }
+  return { items, dropped };
 }
 
 function repairStats(raw: unknown): GameState['progression']['stats'] {
@@ -134,7 +148,7 @@ export function normalizeState(raw: unknown): { state: GameState; report: Repair
   const rawLevel = finite(field(prog, 'level'));
   if (!isObj(prog) || rawLevel === undefined) return null;
 
-  const defaults = createNewGameState(0);   // dient auch als Ablage für die wiederverwendeten Lesehelfer
+  const defaults = createEmptyGameState(0);   // leer (kein Startschwert!); dient auch als Ablage für die Lesehelfer
   const level = clamp(Math.floor(rawLevel), 1, MAX_LEVEL);
   const xp = finite(field(prog, 'xp'));
   const xpMax = level >= MAX_LEVEL ? 0 : xpToNext(level) - 1;
@@ -145,6 +159,8 @@ export function normalizeState(raw: unknown): { state: GameState; report: Repair
   readWorld(raw, defaults);
   const { player: repairedPlayer, relocated } = repairPlayer(player, level);
   const { quests, dropped: droppedQuests, reset: resetQuests } = repairQuests(prog);
+  const pending = repairPending(raw['pendingItems']);
+  const droppedItems = [...inv.droppedItems, ...pending.dropped];
   const hotbar = finite(field(inventory, 'selectedHotbar'));
   const difficulty = field(raw['settings'], 'difficulty');
 
@@ -159,6 +175,7 @@ export function normalizeState(raw: unknown): { state: GameState; report: Repair
       selectedHotbar: hotbar !== undefined && Number.isInteger(hotbar) && hotbar >= 0 && hotbar <= HOTBAR_MAX ? hotbar : 0,
       coins: counter(field(inventory, 'coins')),
     },
+    pendingItems: pending.items,
     progression: {
       level, xp: xp === undefined ? 0 : clamp(Math.floor(xp), 0, xpMax),
       ...quests, stats: repairStats(field(prog, 'stats')),
@@ -181,8 +198,8 @@ export function normalizeState(raw: unknown): { state: GameState; report: Repair
     },
   };
   const report: RepairReport = {
-    droppedItems: inv.droppedItems, droppedQuests, resetQuests, relocated, resizedInventory: inv.resizedInventory,
-    lossy: inv.droppedItems.length > 0 || droppedQuests.length > 0,
+    droppedItems, droppedQuests, resetQuests, relocated, resizedInventory: inv.resizedInventory,
+    lossy: droppedItems.length > 0 || droppedQuests.length > 0,
   };
   return { state: { ...(raw as Obj), ...repaired } as GameState, report };
 }

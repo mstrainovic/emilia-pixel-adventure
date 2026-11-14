@@ -1,7 +1,7 @@
 // Übernahme des alten Spielstands (Spiel 1.x) in den neuen Zustand.
 // Reine Funktion: kein localStorage, keine Seiteneffekte, wirft nie, verändert die Eingabe nicht.
 // Gearbeitet wird nach vorhandenen Feldern, nie nach `version` (die wurde im alten Spiel nicht gepflegt).
-import { createNewGameState, INVENTORY_SLOTS, type GameState } from '../core/state';
+import { createEmptyGameState, INVENTORY_SLOTS, type GameState } from '../core/state';
 import { MAX_LEVEL, HP_PER_HEART, heartsForLevel, convertLegacyXp } from '../core/levels';
 import { ITEM_SUCCESSORS, getItem } from '../data/items';
 import { BOSSES } from '../data/bosses';
@@ -200,7 +200,7 @@ export function readWorld(save: Obj, state: GameState): void {
 }
 
 function build(save: Obj, mutedRaw: string | null, now: number): { state: GameState; report: MigrationReport } {
-  const state = createNewGameState(now);
+  const state = createEmptyGameState(now);
   const report: MigrationReport = {
     droppedItems: [], replacedItems: {}, reconstructedQuests: [], warnings: [], cutItems: [],
   };

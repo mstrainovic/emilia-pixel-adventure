@@ -4,6 +4,8 @@ import { createNewGameState, type GameState } from '../../src/core/state';
 import { HUB_START } from '../../src/data/maps';
 import { heartsForLevel, HP_PER_HEART, xpToNext } from '../../src/core/levels';
 import { getItem } from '../../src/data/items';
+import { migrateLegacySave } from '../../src/save/legacy';
+import { LEGACY_FIRST_COMMIT } from './legacySaves';
 
 type Loose = Record<string, any>;
 
@@ -222,5 +224,81 @@ describe('normalizeState: legacyDeclinedAt', () => {
     expect(run(raw).state.legacyDeclinedAt).toBe(200);
     raw.legacyDeclinedAt = 'x';
     expect(run(raw).state.legacyDeclinedAt).toBeNull();
+  });
+});
+
+describe('normalizeState: pendingItems', () => {
+  it('ergänzt ein fehlendes Feld zu [] ohne Verlust', () => {
+    const raw = base(); delete raw.pendingItems;
+    const { state, report } = run(raw);
+    expect(state.pendingItems).toEqual([]);
+    expect(report).toEqual(CLEAN);
+  });
+
+  it('gültige Einträge bleiben unverändert', () => {
+    const raw = base(); raw.pendingItems = [{ itemId: 'berry', count: 5 }, { itemId: 'wood', count: 120 }];
+    const { state, report } = run(raw);
+    expect(state.pendingItems).toEqual([{ itemId: 'berry', count: 5 }, { itemId: 'wood', count: 120 }]);
+    expect(report).toEqual(CLEAN);
+  });
+
+  it('unbekannte Kennung: entfernt und als droppedItems gemeldet', () => {
+    const raw = base(); raw.pendingItems = [{ itemId: 'gibt_es_nicht', count: 2 }, { itemId: 'berry', count: 1 }];
+    const { state, report } = run(raw);
+    expect(state.pendingItems).toEqual([{ itemId: 'berry', count: 1 }]);
+    expect(report.droppedItems).toEqual([{ itemId: 'gibt_es_nicht', count: 2 }]);
+    expect(report.lossy).toBe(true);
+  });
+
+  it.each([[0], [-2], ['viel'], [1.5]])('ungültige Stückzahl %s: entfernt und gemeldet', (count) => {
+    const raw = base(); raw.pendingItems = [{ itemId: 'berry', count }];
+    const { state, report } = run(raw);
+    expect(state.pendingItems).toEqual(count === 1.5 ? [{ itemId: 'berry', count: 1 }] : []);
+    expect(report.lossy).toBe(count !== 1.5);
+  });
+
+  it('kein Feld-Array: wird zu []', () => {
+    const raw = base(); raw.pendingItems = 'Unsinn';
+    expect(run(raw).state.pendingItems).toEqual([]);
+  });
+});
+
+describe('normalizeState: kein geschenktes Schwert', () => {
+  it('leerer Platz 0 bleibt leer', () => {
+    const raw = base(); raw.inventory.slots[0] = { itemId: null, count: 0 };
+    const { state, report } = run(raw);
+    expect(state.inventory.slots[0]).toEqual({ itemId: null, count: 0 });
+    expect(state.inventory.slots.some((s) => s.itemId === 'sword_wood')).toBe(false);
+    expect(report).toEqual(CLEAN);
+  });
+
+  it('60 Plätze, Platz 0 leer, zwölf überzählige mit Beeren: kein Schwert, Beeren landen in freien Plätzen', () => {
+    const raw = base();
+    raw.inventory.slots[0] = { itemId: null, count: 0 };
+    raw.inventory.slots = [...raw.inventory.slots, ...Array.from({ length: 12 }, () => ({ itemId: 'berry', count: 2 }))];
+    const { state } = run(raw);
+    expect(state.inventory.slots.some((s) => s.itemId === 'sword_wood')).toBe(false);
+    expect(state.inventory.slots.filter((s) => s.itemId === 'berry')).toHaveLength(12);
+  });
+
+  it('gültiger Stand mit Schwert auf Platz 0 bleibt unverändert (Identität)', () => {
+    const raw = base();
+    expect(run(raw).state).toEqual(raw);
+  });
+
+  it('alter Stand ohne Schwert: nach der Übernahme keins', () => {
+    const noSword = { ...LEGACY_FIRST_COMMIT, inventory: Array.from({ length: 48 }, () => ({ itemId: null, count: 0 })) };
+    const result = migrateLegacySave(JSON.stringify(noSword), null, 1);
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') return;
+    expect(result.state.inventory.slots.some((s) => s.itemId === 'sword_wood')).toBe(false);
+    expect(result.state.inventory.slots.every((s) => s.itemId === null && s.count === 0)).toBe(true);
+    expect(result.state.pendingItems).toEqual([]);
+  });
+
+  it('alter Stand mit Schwert auf Platz 0: genau ein Schwert', () => {
+    const result = migrateLegacySave(JSON.stringify(LEGACY_FIRST_COMMIT), null, 1);
+    if (result.kind !== 'ok') throw new Error('Übernahme fehlgeschlagen');
+    expect(result.state.inventory.slots.filter((s) => s.itemId === 'sword_wood')).toHaveLength(1);
   });
 });

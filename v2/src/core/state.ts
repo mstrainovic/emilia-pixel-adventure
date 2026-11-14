@@ -20,6 +20,7 @@ export interface GameState {
   legacyDeclinedAt: number | null;      // Zeitstempel des alten Stands, dessen Übernahme abgelehnt wurde
   player: { map: MapId; x: number; y: number; hp: number };   // x/y: Fußpunkt in Kacheln (Gleitkomma); hp in Lebenspunkten, 4 je Herz
   inventory: { slots: Array<{ itemId: string | null; count: number }>; selectedHotbar: number; coins: number };
+  pendingItems: Array<{ itemId: string; count: number }>;   // Belohnungen, die noch keinen Platz hatten
   progression: {
     level: number; xp: number;
     activeQuests: Record<string, { progress: number }>;
@@ -41,8 +42,11 @@ export interface GameState {
   settings: { muted: boolean; difficulty: 'sanft' | 'normal' };
 }
 
-/** Frischer Spielstand; nur einfache JSON-Daten, keine geteilten Objekte. */
-export function createNewGameState(now: number): GameState {
+/**
+ * Stand mit lauter leeren Plätzen: Ablage beim Laden und Übernehmen, damit dort kein Startgegenstand erscheint.
+ * Ein leerer Platz ist immer genau `{ itemId: null, count: 0 }`.
+ */
+export function createEmptyGameState(now: number): GameState {
   return {
     formatVersion: 1,
     savedAt: now,
@@ -54,6 +58,7 @@ export function createNewGameState(now: number): GameState {
       selectedHotbar: 0,
       coins: 0,
     },
+    pendingItems: [],
     progression: {
       level: 1, xp: 0, activeQuests: {}, completedQuests: [],
       stats: {
@@ -77,4 +82,11 @@ export function createNewGameState(now: number): GameState {
     seenHints: [],
     settings: { muted: false, difficulty: 'sanft' },
   };
+}
+
+/** Frischer Spielstand: wie der leere, dazu das Holzschwert auf Platz 0 (Alt: src/core/Game.js, Zeile 368). */
+export function createNewGameState(now: number): GameState {
+  const state = createEmptyGameState(now);
+  state.inventory.slots[0] = { itemId: 'sword_wood', count: 1 };
+  return state;
 }
