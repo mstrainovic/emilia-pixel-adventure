@@ -10,6 +10,31 @@
     "lizenzdatei": "LIZENZ-ninja-adventure.txt"
   },
   "dateien": [
+    "figuren/baba-gesicht.png",
+    "figuren/baba.png",
+    "figuren/deda-gesicht.png",
+    "figuren/deda.png",
+    "figuren/emilia-gesicht.png",
+    "figuren/emilia.png",
+    "figuren/ferdinand-gesicht.png",
+    "figuren/ferdinand.png",
+    "figuren/julian-gesicht.png",
+    "figuren/julian.png",
+    "figuren/lena-gesicht.png",
+    "figuren/lena.png",
+    "figuren/liam-gesicht.png",
+    "figuren/liam.png",
+    "figuren/mama_tanja-gesicht.png",
+    "figuren/mama_tanja.png",
+    "figuren/marie-gesicht.png",
+    "figuren/marie.png",
+    "figuren/oma-gesicht.png",
+    "figuren/oma.png",
+    "figuren/opa-gesicht.png",
+    "figuren/opa.png",
+    "figuren/papa_milos-gesicht.png",
+    "figuren/papa_milos.png",
+    "figuren/schatten.png",
     "tiles/dorf.json",
     "tiles/dorf.png"
   ],
@@ -54,6 +79,236 @@
       },
       "aenderungen": "unverändert ausgeschnitten",
       "verwendung": "Boden im Dorf: Sandweg",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "emilia",
+      "ziel": "figuren/emilia.png",
+      "quelle": "Actor/Character/Princess/SeparateAnim/Idle.png + Actor/Character/Princess/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#4e484a\":\"#695953\",\"#3b3643\":\"#4e484a\",\"#f1c471\":\"#ef9597\",\"#d78b4a\":\"#cf736d\",\"#e0394c\":\"#ef9597\",\"#a3754e\":\"#f2ad7d\",\"#965340\":\"#d3865f\"}]; dropRows [[4]] nur Blattzeile 0/1/3; dropRows [[5]] nur Richtung unten/links/rechts, Blattzeile 2/4; dropRows [[3]] nur Richtung oben, Blattzeile 2/4; anchorBottomCenter [16,16]",
+      "verwendung": "Spielfigur Emilia: dunkelbraune Haare, rosa Kleid und rosa Schleife",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "emilia",
+      "ziel": "figuren/emilia-gesicht.png",
+      "quelle": "Actor/Character/Princess/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#4e484a\":\"#695953\",\"#3b3643\":\"#4e484a\",\"#f1c471\":\"#ef9597\",\"#d78b4a\":\"#cf736d\",\"#e0394c\":\"#ef9597\",\"#a3754e\":\"#f2ad7d\",\"#965340\":\"#d3865f\"}]",
+      "verwendung": "Spielfigur Emilia: dunkelbraune Haare, rosa Kleid und rosa Schleife",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "lena",
+      "ziel": "figuren/lena.png",
+      "quelle": "Actor/Character/Woman/SeparateAnim/Idle.png + Actor/Character/Woman/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#ef914f\":\"#f2ad7d\",\"#cf736d\":\"#d3865f\"}]; dropRows [[5]] nur Blattzeile 0/1/3; dropRows [[6]] nur Richtung unten/links/rechts, Blattzeile 2/4; dropRows [[5]] nur Richtung oben, Blattzeile 2/4; anchorBottomCenter [16,16]",
+      "verwendung": "Cousine Lena: blonde Haare mit Haarband, blaues Kleid",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "lena",
+      "ziel": "figuren/lena-gesicht.png",
+      "quelle": "Actor/Character/Woman/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#ef914f\":\"#f2ad7d\",\"#cf736d\":\"#d3865f\"}]",
+      "verwendung": "Cousine Lena: blonde Haare mit Haarband, blaues Kleid",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "julian",
+      "ziel": "figuren/julian.png",
+      "quelle": "Actor/Character/Villager4/SeparateAnim/Idle.png + Actor/Character/Villager4/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]; dropRows [[4,9,13]] nur Blattzeile 0/1/3; dropRows [[5,10,13]] nur Richtung unten/links/rechts, Blattzeile 2/4; dropRows [[3,8,13]] nur Richtung oben, Blattzeile 2/4; dropCols [[6,9]]; anchorBottomCenter [16,16]",
+      "verwendung": "Cousin Julian: blonde Haare, rotes Hemd (Hemdfarbe = Wangen im Gesicht), kleiner als alle",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "julian",
+      "ziel": "figuren/julian-gesicht.png",
+      "quelle": "Actor/Character/Villager4/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]",
+      "verwendung": "Cousin Julian: blonde Haare, rotes Hemd (Hemdfarbe = Wangen im Gesicht), kleiner als alle",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "mama_tanja",
+      "ziel": "figuren/mama_tanja.png",
+      "quelle": "Actor/Character/Villager3/SeparateAnim/Idle.png + Actor/Character/Villager3/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#4e484a\":\"#965340\",\"#3b3643\":\"#695953\",\"#a3754e\":\"#f2ad7d\",\"#965340\":\"#d3865f\",\"#56864c\":\"#cf736d\",\"#a8a129\":\"#ef9597\",\"#8d977f\":\"#543c52\",\"#abc2bc\":\"#8f3e56\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Mama Tanja: braune Haare als Bob, rosa Oberteil, pflaumenfarbener Rock",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "mama_tanja",
+      "ziel": "figuren/mama_tanja-gesicht.png",
+      "quelle": "Actor/Character/Villager3/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#4e484a\":\"#965340\",\"#3b3643\":\"#695953\",\"#a3754e\":\"#f2ad7d\",\"#965340\":\"#d3865f\",\"#56864c\":\"#cf736d\",\"#a8a129\":\"#ef9597\",\"#8d977f\":\"#543c52\",\"#abc2bc\":\"#8f3e56\"}]",
+      "verwendung": "Mama Tanja: braune Haare als Bob, rosa Oberteil, pflaumenfarbener Rock",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "papa_milos",
+      "ziel": "figuren/papa_milos.png",
+      "quelle": "Actor/Character/Villager2/SeparateAnim/Idle.png + Actor/Character/Villager2/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#d14b34\":\"#f2ad7d\",\"#8f3e56\":\"#d3865f\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Papa Milos: schwarze, wilde Locken, blaue Hose (Vorlage hat kein eigenes Hemd: Hemd- und Hautschatten sind eine Farbe)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "papa_milos",
+      "ziel": "figuren/papa_milos-gesicht.png",
+      "quelle": "Actor/Character/Villager2/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#d14b34\":\"#f2ad7d\",\"#8f3e56\":\"#d3865f\"}]",
+      "verwendung": "Papa Milos: schwarze, wilde Locken, blaue Hose (Vorlage hat kein eigenes Hemd: Hemd- und Hautschatten sind eine Farbe)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "marie",
+      "ziel": "figuren/marie.png",
+      "quelle": "Actor/Character/ManGreen/SeparateAnim/Idle.png + Actor/Character/ManGreen/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Marie: blonde Haare unter grüner Zipfelmütze, grüne Kleidung (Mütze und Kleidung teilen die Farben; gelb würde mit den Haaren verschwimmen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "marie",
+      "ziel": "figuren/marie-gesicht.png",
+      "quelle": "Actor/Character/ManGreen/Faceset1.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]",
+      "verwendung": "Marie: blonde Haare unter grüner Zipfelmütze, grüne Kleidung (Mütze und Kleidung teilen die Farben; gelb würde mit den Haaren verschwimmen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "liam",
+      "ziel": "figuren/liam.png",
+      "quelle": "Actor/Character/Boy/SeparateAnim/Idle.png + Actor/Character/Boy/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#d14b34\":\"#695953\",\"#965340\":\"#4e484a\",\"#ef914f\":\"#f2ad7d\",\"#e3f1f5\":\"#56864c\",\"#548789\":\"#816855\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Angler Liam: dunkelbraune Strubbelhaare, grünes Hemd, braune Hose",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "liam",
+      "ziel": "figuren/liam-gesicht.png",
+      "quelle": "Actor/Character/Boy/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#d14b34\":\"#695953\",\"#965340\":\"#4e484a\",\"#ef914f\":\"#f2ad7d\",\"#e3f1f5\":\"#56864c\",\"#548789\":\"#816855\"}]",
+      "verwendung": "Angler Liam: dunkelbraune Strubbelhaare, grünes Hemd, braune Hose",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "oma",
+      "ziel": "figuren/oma.png",
+      "quelle": "Actor/Character/OldWoman/SpriteSheet.png (Zeilen 0, 0, 1, 0, 1)",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#d3a2c0\":\"#8e7c73\",\"#f2eaf1\":\"#b3957f\",\"#a5608b\":\"#4e484a\",\"#548789\":\"#a5608b\",\"#2d697b\":\"#8f3e56\",\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Oma: graue lange Haare, malvenfarbenes Kleid",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "oma",
+      "ziel": "figuren/oma-gesicht.png",
+      "quelle": "Actor/Character/OldWoman/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#d3a2c0\":\"#8e7c73\",\"#f2eaf1\":\"#b3957f\",\"#a5608b\":\"#4e484a\",\"#548789\":\"#a5608b\",\"#2d697b\":\"#8f3e56\",\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]",
+      "verwendung": "Oma: graue lange Haare, malvenfarbenes Kleid",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "opa",
+      "ziel": "figuren/opa.png",
+      "quelle": "Actor/Character/OldMan3/SeparateAnim/Idle.png + Actor/Character/OldMan3/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#3b3643\":\"#5f7160\",\"#4e484a\":\"#8d977f\",\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Opa: Strohhut, weißer Bart, olivgrünes Gewand (Glatze unter dem Hut)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "opa",
+      "ziel": "figuren/opa-gesicht.png",
+      "quelle": "Actor/Character/OldMan3/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#3b3643\":\"#5f7160\",\"#4e484a\":\"#8d977f\",\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]",
+      "verwendung": "Opa: Strohhut, weißer Bart, olivgrünes Gewand (Glatze unter dem Hut)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "baba",
+      "ziel": "figuren/baba.png",
+      "quelle": "Actor/Character/Cavegirl2/SeparateAnim/Idle.png + Actor/Character/Cavegirl2/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#8f3e56\":\"#965340\",\"#543c52\":\"#695953\",\"#fce2ca\":\"#965340\",\"#f1c471\":\"#9c6546\",\"#965340\":\"#d14b34\",\"#a3754e\":\"#8f3e56\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Baba: rotbraune, wilde Haare mit Zöpfen, rotes Kleid",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "baba",
+      "ziel": "figuren/baba-gesicht.png",
+      "quelle": "Actor/Character/Cavegirl2/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#8f3e56\":\"#965340\",\"#543c52\":\"#695953\",\"#fce2ca\":\"#965340\",\"#f1c471\":\"#9c6546\",\"#965340\":\"#d14b34\",\"#a3754e\":\"#8f3e56\"}]; anchorBottomCenter [38,38] (Quelle 37×38)",
+      "verwendung": "Baba: rotbraune, wilde Haare mit Zöpfen, rotes Kleid",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "deda",
+      "ziel": "figuren/deda.png",
+      "quelle": "Actor/Character/OldMan2/SeparateAnim/Idle.png + Actor/Character/OldMan2/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#e0394c\":\"#4a5270\",\"#8f3e56\":\"#3b3643\",\"#674352\":\"#8e7c73\",\"#d3a2c0\":\"#b3957f\",\"#a5608b\":\"#8e7c73\",\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Deda: dunkelblaue Mütze, graue Haare, weißer Schnurrbart, gestreiftes Hemd",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "deda",
+      "ziel": "figuren/deda-gesicht.png",
+      "quelle": "Actor/Character/OldMan2/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#e0394c\":\"#4a5270\",\"#8f3e56\":\"#3b3643\",\"#674352\":\"#8e7c73\",\"#d3a2c0\":\"#b3957f\",\"#a5608b\":\"#8e7c73\",\"#ef914f\":\"#f2ad7d\",\"#d14b34\":\"#d3865f\"}]",
+      "verwendung": "Deda: dunkelblaue Mütze, graue Haare, weißer Schnurrbart, gestreiftes Hemd",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "ferdinand",
+      "ziel": "figuren/ferdinand.png",
+      "quelle": "Actor/Character/Noble/SeparateAnim/Idle.png + Actor/Character/Noble/SeparateAnim/Walk.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#4e484a\":\"#548789\",\"#3b3643\":\"#2d697b\",\"#965340\":\"#816855\"}]; anchorBottomCenter [16,16]",
+      "verwendung": "Händler Ferdinand: türkise Melone und türkiser Anzug, braune Hose",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "ferdinand",
+      "ziel": "figuren/ferdinand-gesicht.png",
+      "quelle": "Actor/Character/Noble/Faceset.png",
+      "ausschnitt": null,
+      "aenderungen": "recolor [{\"#4e484a\":\"#548789\",\"#3b3643\":\"#2d697b\",\"#965340\":\"#816855\"}]",
+      "verwendung": "Händler Ferdinand: türkise Melone und türkiser Anzug, braune Hose",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "schatten",
+      "ziel": "figuren/schatten.png",
+      "quelle": "Actor/Character/Shadow.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 7
+      },
+      "aenderungen": "unverändert",
+      "verwendung": "Schatten unter jeder Figur",
       "lizenz": "CC0 1.0"
     }
   ]

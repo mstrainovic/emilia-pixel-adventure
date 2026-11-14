@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as png from './png.mjs';
-import { FIGURES, PROPS, TILES, UI } from './selection.mjs';
+import { FIGURE_SHADOW, FIGURES, PROPS, TILES, UI } from './selection.mjs';
 
 const PACK = {
   name: 'Ninja Adventure Asset Pack',
@@ -107,19 +107,130 @@ function buildProps() {
   writeJson('props/dorf.json', frames);
 }
 
-/** Figuren: ops ist eine Liste [Funktionsname, ...Argumente] aus png.mjs, angewandt auf das ganze Quellbild. */
+/*
+ * Figuren: Blatt 64×80 aus 16×16-Zellen. Spalte = Richtung (unten, oben, links, rechts), Zeile 0 = stehen,
+ * Zeilen 1–4 = gehen. ops ist eine Liste von Schritten [Funktionsname aus png.mjs, ...Argumente], angewandt
+ * auf jede Zelle einzeln; ein Schritt der Form { where: { facing?: [...], rows?: [...] }, step: [...] } gilt
+ * nur für die genannten Richtungen und Blattzeilen. Jede Zelle muss am Ende wieder 16×16 sein
+ * (also mit anchorBottomCenter 16, 16 enden, wenn Zeilen oder Spalten entfernt wurden).
+ * Das Gesicht (Faceset, 38×38) bekommt nur die recolor-Schritte ohne where.
+ */
 const FIGURE_OPS = ['crop', 'recolor', 'dropRows', 'dropCols', 'anchorBottomCenter'];
-function buildFigures() {
-  for (const f of FIGURES) {
-    let img = source(f.source);
-    for (const [op, ...args] of f.ops) {
-      if (!FIGURE_OPS.includes(op)) throw new Error(`Unbekannter Schritt „${op}" bei Figur ${f.id}`);
-      img = png[op](img, ...args);
-    }
-    const ziel = `figuren/${f.id}.png`;
-    writeImage(ziel, img);
-    record(f, ziel, null, f.ops.map(([op, ...args]) => `${op} ${JSON.stringify(args)}`).join('; '));
+const FACINGS = ['down', 'up', 'left', 'right'];
+const SHEET_ROWS = 5;
+const FACE = 38;
+
+/** Die fünf 64×16-Streifen (stehen, gehen 1–4) einer Vorlage, dazu die Quellangabe. */
+function figureStrips(f) {
+  if (f.sheetRows) {
+    // Vorlagen ohne SeparateAnim (z. B. OldWoman): Zeilen aus SpriteSheet.png.
+    if (f.sheetRows.length !== SHEET_ROWS) throw new Error(`sheetRows bei Figur ${f.id} braucht ${SHEET_ROWS} Einträge`);
+    const rel = `${f.source}/SpriteSheet.png`;
+    const sheet = source(rel);
+    return { strips: f.sheetRows.map((r) => png.crop(sheet, 0, r * TILE, 4 * TILE, TILE)), quelle: `${rel} (Zeilen ${f.sheetRows.join(', ')})` };
   }
+  const idleRel = `${f.source}/SeparateAnim/Idle.png`;
+  const walkRel = `${f.source}/SeparateAnim/Walk.png`;
+  const idle = png.crop(source(idleRel), 0, 0, 4 * TILE, TILE);
+  const walk = source(walkRel);
+  return {
+    strips: [idle, ...[0, 1, 2, 3].map((r) => png.crop(walk, 0, r * TILE, 4 * TILE, TILE))],
+    quelle: `${idleRel} + ${walkRel}`,
+  };
+}
+
+function normalizeStep(f, s) {
+  const step = Array.isArray(s) ? s : s.step;
+  const where = Array.isArray(s) ? null : s.where;
+  if (!Array.isArray(step) || !FIGURE_OPS.includes(step[0])) throw new Error(`Unbekannter Schritt „${step?.[0]}" bei Figur ${f.id}`);
+  if (where && (where.facing ?? []).some((d) => !FACINGS.includes(d))) throw new Error(`Unbekannte Richtung bei Figur ${f.id}`);
+  return { op: step[0], args: step.slice(1), where };
+}
+
+function applies(where, facing, row) {
+  return !where || ((!where.facing || where.facing.includes(facing)) && (!where.rows || where.rows.includes(row)));
+}
+
+/** Höhe (höchste belegte Zeile über alle Zellen) und Breite (alle Zellen übereinander) des fertigen Blatts. */
+function measure(sheet) {
+  let top = TILE, left = TILE, right = -1;
+  for (let y = 0; y < sheet.height; y++) {
+    for (let x = 0; x < sheet.width; x++) {
+      if (sheet.data[(y * sheet.width + x) * 4 + 3] === 0) continue;
+      top = Math.min(top, y % TILE);
+      left = Math.min(left, x % TILE);
+      right = Math.max(right, x % TILE);
+    }
+  }
+  return { hoehe: TILE - top, breite: right - left + 1 };
+}
+
+const FACING_DE = { down: 'unten', up: 'oben', left: 'links', right: 'rechts' };
+function describeWhere(where) {
+  return [
+    where.facing && `Richtung ${where.facing.map((d) => FACING_DE[d]).join('/')}`,
+    where.rows && `Blattzeile ${where.rows.join('/')}`,
+  ].filter(Boolean).join(', ');
+}
+
+function describeSteps(steps) {
+  return steps.map(({ op, args, where }) => `${op} ${JSON.stringify(args)}${where ? ` nur ${describeWhere(where)}` : ''}`).join('; ');
+}
+
+function summarizeSteps(steps) {
+  const parts = [];
+  const colors = steps.filter((s) => s.op === 'recolor').reduce((n, s) => n + Object.keys(s.args[0]).length, 0);
+  if (colors > 0) parts.push(`${colors} Farben umgefärbt`);
+  for (const { op, args, where } of steps) {
+    if (op !== 'dropRows' && op !== 'dropCols') continue;
+    const what = op === 'dropRows' ? 'Zeile' : 'Spalte';
+    parts.push(`${what} ${args[0].join(', ')} entfernt${where ? ` (${describeWhere(where)})` : ''}`);
+  }
+  return parts.length > 0 ? parts.join('; ') : 'unverändert';
+}
+
+const figureTable = [];
+function buildFigures() {
+  if (FIGURES.length === 0) return;
+  for (const f of FIGURES) {
+    const steps = f.ops.map((s) => normalizeStep(f, s));
+    const { strips, quelle } = figureStrips(f);
+    const sheet = png.emptyImage(4 * TILE, SHEET_ROWS * TILE);
+    strips.forEach((strip, row) => {
+      FACINGS.forEach((facing, col) => {
+        let cell = png.crop(strip, col * TILE, 0, TILE, TILE);
+        for (const { op, args, where } of steps) {
+          if (applies(where, facing, row)) cell = png[op](cell, ...args);
+        }
+        if (cell.width !== TILE || cell.height !== TILE) {
+          throw new Error(`Figur ${f.id}, ${facing}/${row}: Zelle ist ${cell.width}×${cell.height} statt 16×16 (anchorBottomCenter fehlt?)`);
+        }
+        png.blit(sheet, cell, col * TILE, row * TILE);
+      });
+    });
+    const ziel = `figuren/${f.id}.png`;
+    writeImage(ziel, sheet);
+    record({ ...f, source: quelle }, ziel, null, describeSteps(steps));
+
+    const faceRel = `${f.source}/${f.face ?? 'Faceset.png'}`;
+    let face = source(faceRel);
+    const faceSteps = steps.filter((s) => s.op === 'recolor' && !s.where);
+    for (const { op, args } of faceSteps) face = png[op](face, ...args);
+    const faceNotes = faceSteps.length > 0 ? [describeSteps(faceSteps)] : [];
+    if (face.width !== FACE || face.height !== FACE) {
+      // Einzelne Facesets im Pack sind schmaler (Cavegirl2: 37×38); durchsichtig auf 38×38 ergänzt.
+      faceNotes.push(`anchorBottomCenter [${FACE},${FACE}] (Quelle ${face.width}×${face.height})`);
+      face = png.anchorBottomCenter(face, FACE, FACE);
+    }
+    const faceZiel = `figuren/${f.id}-gesicht.png`;
+    writeImage(faceZiel, face);
+    record({ ...f, source: faceRel }, faceZiel, null, faceNotes.length > 0 ? faceNotes.join('; ') : 'unverändert');
+
+    figureTable.push({ kennung: f.id, vorlage: f.source.split('/').pop(), aenderungen: summarizeSteps(steps), ...measure(sheet), verwendung: f.use });
+  }
+  const shadow = source(FIGURE_SHADOW.source);
+  writeImage('figuren/schatten.png', shadow);
+  record(FIGURE_SHADOW, 'figuren/schatten.png', { x: 0, y: 0, w: shadow.width, h: shadow.height }, 'unverändert');
 }
 
 function buildUi() {
@@ -147,6 +258,17 @@ function sourcesMarkdown() {
     '| --- | --- | --- | --- | --- | --- | --- |',
     ...entries.map((e) => `| ${[e.kennung, e.ziel, e.quelle, cut(e.ausschnitt), e.aenderungen, e.verwendung, e.lizenz].map(cell).join(' | ')} |`),
     '',
+    ...(figureTable.length === 0 ? [] : [
+      '## Figuren',
+      '',
+      'Vorlagen aus `Actor/Character/` im Pack; Höhe und Breite in Bildpunkten, gemessen am fertigen Blatt',
+      '(höchste und äußerste belegte Stelle über alle Zellen).',
+      '',
+      '| Figur | Vorlage | Änderungen | Höhe | Breite | Aussehen |',
+      '| --- | --- | --- | --- | --- | --- |',
+      ...figureTable.map((t) => `| ${[t.kennung, t.vorlage, t.aenderungen, t.hoehe, t.breite, t.verwendung].map(cell).join(' | ')} |`),
+      '',
+    ]),
   ].join('\n');
 }
 
