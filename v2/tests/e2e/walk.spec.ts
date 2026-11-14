@@ -174,7 +174,9 @@ test('beim Rennen gleitet das Bild in Bildschirmpixeln, nicht in Sprüngen ganze
   // auf ganze Bildpunkte (bei Zoom 6 Sprünge von 6 und 12 Bildschirmpixeln); die Rechnung prüft camera.test.ts.
   const errors: string[] = [];
   await openWorld(page, errors);
-  await teleport(page, 8, 15);
+  // Mitte der Karte auf dem Ost-West-Weg: Hier hängt die Kamera bei keiner Fenstergröße am Kartenrand
+  // (von Kachel 8 aus stand sie bei 426 Bildpunkten Sichtbreite zunächst still; auf GitHub scheiterte der Test daran einmal).
+  await teleport(page, 14, 14);
   await page.keyboard.down('ShiftLeft');
   await page.keyboard.down('KeyD');
   await page.waitForTimeout(400);
