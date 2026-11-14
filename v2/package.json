@@ -11,7 +11,9 @@
     "test:bundle": "vitest run --config vitest.bundle.config.ts",
     "test:e2e": "npm run build && playwright test",
     "maps:export": "node tools/export-legacy-maps.mjs",
-    "save:fingerprint": "node tools/save-fingerprint.mjs"
+    "save:fingerprint": "node tools/save-fingerprint.mjs",
+    "art:build": "node tools/art/build.mjs",
+    "art:sheet": "node tools/art/contact-sheet.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1"
