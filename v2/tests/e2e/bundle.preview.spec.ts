@@ -12,13 +12,20 @@ test('gebautes Paket startet ohne Fehler, ohne fremde Anfragen und ohne Test-Zug
   await expect(page.locator('canvas')).toBeVisible();
   expect(await page.evaluate(() => (window as any).__emilia2)).toBeUndefined();
 
-  // Ohne Test-Zugang gibt es kein ready-Signal: warten, bis in der Mitte wirklich gezeichnet ist.
+  // Ohne Test-Zugang gibt es kein ready-Signal: warten, bis das Dorf wirklich gezeichnet ist.
   await expect
     .poll(async () => {
       const png = readPng(await page.screenshot({ scale: 'device' }));
-      return png.at(Math.floor(png.width / 2), Math.floor(png.height / 2));
+      const colors = new Set<number>();
+      for (let y = 0; y < png.height; y++) {
+        for (let x = 0; x < png.width; x++) {
+          const [r, g, b] = png.at(x, y);
+          colors.add((r << 16) | (g << 8) | b);
+        }
+      }
+      return colors.size;
     })
-    .toEqual([45, 90, 39]);
+    .toBeGreaterThanOrEqual(16);
 
   expect(errors).toEqual([]);
   expect(foreign).toEqual([]);

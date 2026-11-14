@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
+import { WorldScene } from './scenes/WorldScene';
 import { PixelGrid } from './core/pixelGrid';
 import { SERVICES_KEY, type Services } from './core/services';
 import { installTestHooks } from './core/testHooks';
@@ -11,11 +12,12 @@ if (!host) throw new Error('Spielbereich #game fehlt.');
 // nur so entfernt der Build die Test-Zweige samt Probe-Szene vollständig.
 const testHooksEnabled = import.meta.env.DEV || import.meta.env.VITE_TEST_HOOKS === '1';
 
-// Schachbrett-Probe für die Pixeltests: nur mit Test-Zugang und ?probe=schach
+// Schachbrett-Probe für die Pixeltests: nur mit Test-Zugang und ?probe=schach. Sie läuft allein, ohne
+// Laden und Welt, damit das Prüfbild genau wie vorher entsteht. Sonst lädt BootScene und startet die Welt.
 const probe = testHooksEnabled && new URLSearchParams(window.location.search).get('probe') === 'schach';
 const scenes: Phaser.Types.Scenes.SceneType[] = probe
   ? [(await import('./scenes/PixelProbeScene')).PixelProbeScene]
-  : [BootScene];
+  : [BootScene, WorldScene];
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
