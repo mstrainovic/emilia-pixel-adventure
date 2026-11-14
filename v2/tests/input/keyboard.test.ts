@@ -19,7 +19,7 @@ class FakeTarget {
   /** Verteilt ein Ereignis; liefert, ob `preventDefault()` aufgerufen wurde. */
   fire(
     type: string,
-    init: { code?: string; repeat?: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean } = {},
+    init: { code?: string; repeat?: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean; target?: unknown } = {},
   ): boolean {
     let prevented = false;
     const event = {
@@ -29,6 +29,7 @@ class FakeTarget {
       ctrlKey: init.ctrlKey ?? false,
       metaKey: init.metaKey ?? false,
       altKey: init.altKey ?? false,
+      target: init.target,
       preventDefault: () => {
         prevented = true;
       },
@@ -36,12 +37,18 @@ class FakeTarget {
     for (const fn of this.listeners.get(type) ?? []) (fn as (e: unknown) => void)(event);
     return prevented;
   }
-  down(code: string, repeat = false): boolean {
-    return this.fire('keydown', { code, repeat });
+  down(code: string, repeat = false, target?: unknown): boolean {
+    return this.fire('keydown', { code, repeat, target });
   }
-  up(code: string): boolean {
-    return this.fire('keyup', { code });
+  up(code: string, target?: unknown): boolean {
+    return this.fire('keyup', { code, target });
   }
+}
+
+/** Ereignisziel wie ein Element: `closest` trifft, wenn der Wähler das Tag nennt (`button`, `input` …). */
+function element(tag: string): { closest: (selector: string) => unknown } {
+  const self = { closest: (selector: string) => (selector.split(',').map((t) => t.trim()).includes(tag) ? self : null) };
+  return self;
 }
 
 function setup(): { target: FakeTarget; keys: KeyboardSource } {
@@ -188,6 +195,65 @@ describe('KeyboardSource', () => {
     keys.reset();
     expect(keys.move).toEqual({ x: 0, y: 0 });
     expect(keys.drainPressed()).toEqual([]);
+  });
+
+  describe('Tastatur neben HTML-Knöpfen und Eingabefeldern', () => {
+    it.each(['Enter', 'Space'])('%s auf einem Knopf bleibt dem Browser: kein preventDefault, keine Handlung', (code) => {
+      const { target, keys } = setup();
+      const button = element('button');
+      expect(target.down(code, false, button)).toBe(false);
+      expect(target.up(code, button)).toBe(false);
+      expect(keys.drainPressed()).toEqual([]);
+    });
+
+    it.each(['Enter', 'Space'])('%s auf dem Seitenrumpf oder ohne closest wirkt als confirm', (code) => {
+      const { target, keys } = setup();
+      expect(target.down(code, false, element('body'))).toBe(true);
+      expect(keys.drainPressed()).toEqual(['confirm']);
+      expect(target.down(code, false, {})).toBe(true);
+      expect(keys.drainPressed()).toEqual(['confirm']);
+      expect(target.down(code, false, { closest: undefined })).toBe(true);
+      expect(keys.drainPressed()).toEqual(['confirm']);
+      expect(target.down(code)).toBe(true);
+      expect(keys.drainPressed()).toEqual(['confirm']);
+    });
+
+    it('Laufen und alle übrigen Tasten wirken auch bei Fokus auf einem Knopf', () => {
+      const { target, keys } = setup();
+      const button = element('button');
+      expect(target.down('KeyD', false, button)).toBe(true);
+      expect(keys.move.x).toBe(1);
+      target.up('KeyD', button);
+      for (const [code, action] of [['KeyE', 'interact'], ['Escape', 'cancel'], ['KeyM', 'menu'], ['KeyH', 'help'], ['Digit3', 'hotbar3']]) {
+        expect(target.down(code!, false, button)).toBe(true);
+        expect(keys.drainPressed()).toEqual([action]);
+      }
+    });
+
+    it('keyup von D im Eingabefeld lässt die zuvor gehaltene Taste los', () => {
+      const { target, keys } = setup();
+      target.down('KeyD');
+      target.up('KeyD', element('input'));
+      expect(keys.move.x).toBe(0);
+    });
+
+    it.each(['input', 'textarea', 'select', '[contenteditable="true"]'])('in %s gehört jede Taste außer Escape dem Feld', (tag) => {
+      const { target, keys } = setup();
+      const field = element(tag);
+      for (const code of ['KeyD', 'KeyE', 'Enter', 'Space', 'ShiftLeft', 'Digit1']) {
+        expect(target.down(code, false, field)).toBe(false);
+        expect(target.up(code, field)).toBe(false);
+      }
+      expect(keys.move).toEqual({ x: 0, y: 0 });
+      expect(keys.run).toBe(false);
+      expect(keys.drainPressed()).toEqual([]);
+    });
+
+    it('Escape im Eingabefeld wirkt als cancel', () => {
+      const { target, keys } = setup();
+      expect(target.down('Escape', false, element('input'))).toBe(true);
+      expect(keys.drainPressed()).toEqual(['cancel']);
+    });
   });
 
   describe('klebende Tasten', () => {

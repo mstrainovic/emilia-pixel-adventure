@@ -65,3 +65,16 @@ export function computeLayout(deviceWidth: number, deviceHeight: number, dpr = 1
     offsetY: Math.max(0, Math.floor((height - viewHeight * zoom) / 2)),
   };
 }
+
+/**
+ * Vertrag der Zeiger-Abbildung: Ort im sichtbaren Feld für einen Ort auf der Zeichenfläche (Gerätepixel).
+ * `x = (canvasX − offsetX) / zoom`, `y` ebenso; in Bildpunkten, ungerundet. `inside` ist wahr genau für
+ * `0 ≤ x < viewWidth` und `0 ≤ y < viewHeight`. Werte außerhalb werden nicht gekappt: der schwarze Rand liefert
+ * negative Werte oder Werte ab der Feldbreite bzw. -höhe. Nicht endliche Eingaben ergeben `{ x: NaN, y: NaN, inside: false }`.
+ */
+export function canvasToView(layout: PixelLayout, canvasX: number, canvasY: number): { x: number; y: number; inside: boolean } {
+  if (!Number.isFinite(canvasX) || !Number.isFinite(canvasY)) return { x: Number.NaN, y: Number.NaN, inside: false };
+  const x = (canvasX - layout.offsetX) / layout.zoom;
+  const y = (canvasY - layout.offsetY) / layout.zoom;
+  return { x, y, inside: x >= 0 && x < layout.viewWidth && y >= 0 && y < layout.viewHeight };
+}

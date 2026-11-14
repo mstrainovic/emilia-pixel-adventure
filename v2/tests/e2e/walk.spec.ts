@@ -147,6 +147,22 @@ test('D gedrückt: Emilia läuft nach rechts und bleibt nach dem Loslassen stehe
   expect(errors).toEqual([]);
 });
 
+test('die gelaufene Strecke (distanceWalked, in Kacheln) passt zu den gelaufenen Bildpunkten', async ({ page }) => {
+  const errors: string[] = [];
+  await openWorld(page, errors);
+  const distance = (): Promise<number> => page.evaluate(() => (window as any).__emilia2.state().progression.stats.distanceWalked as number);
+  const startDistance = await distance();
+  const before = await player(page);
+  await measureWalk(page, 600);
+  const after = await player(page);
+  const walked = after.x - before.x;
+  const gained = (await distance()) - startDistance;
+  expect(walked).toBeGreaterThan(10);
+  expect(gained).toBeGreaterThanOrEqual((walked / 16) * 0.9);
+  expect(gained).toBeLessThanOrEqual((walked / 16) * 1.1);
+  expect(errors).toEqual([]);
+});
+
 test('stockt das Bild mitten im Laufen fast eine Sekunde, springt Emilia nicht und läuft danach normal weiter', async ({ page }) => {
   const errors: string[] = [];
   await openWorld(page, errors);

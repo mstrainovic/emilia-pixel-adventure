@@ -39,6 +39,19 @@ const saveNow = (page: Page): Promise<{ kind: string }> => page.evaluate(() => (
 const readKey = (page: Page, key: string): Promise<string | null> => page.evaluate((k) => localStorage.getItem(k), key);
 
 /**
+ * Hält eine Taste, bis Emilia sich von `from` weg bewegt hat (Bedingung abwarten statt festes Wanduhr-Fenster: Auf dem
+ * Rechner der Auslieferung stockt das Bild etwa 1 s nach jedem Seitenstart). Danach loslassen.
+ */
+async function holdUntilMoved(page: Page, key: string, from: PlayerInfo): Promise<void> {
+  await page.keyboard.down(key);
+  try {
+    await expect.poll(async () => (await player(page)).x, { timeout: 5000, message: 'Emilia bewegt sich nicht' }).toBeGreaterThan(from.x + 5);
+  } finally {
+    await page.keyboard.up(key);
+  }
+}
+
+/**
  * Hält Tasten und wartet dann, bis Emilia steht. Das Warten ist hier keine Zeitmessung (die steht in walk.spec.ts):
  * Auf dem Rechner der Auslieferung (Linux, Software-Grafik, zwei Worker) stockt das Bild kurz nach dem Seitenstart
  * bis zu etwa 1 s (gemessen 1007 ms ohne ein einziges Bild; Tasten kamen an, Emilia stand 110 ms nach dem nächsten
@@ -117,8 +130,7 @@ test('Speicher, der beim Schreiben wirft: Spiel startet, Laufen geht, kein Konso
   await page.goto('./');
   await waitForWorld(page);
   const start = await player(page);
-  await hold(page, ['KeyD'], 400);
-  expect((await player(page)).x).toBeGreaterThan(start.x + 5);
+  await holdUntilMoved(page, 'KeyD', start);
   const result = await saveNow(page);
   const reported = await page.evaluate(() => {
     const h = (window as any).__emilia2;
@@ -141,8 +153,7 @@ test('Speicher, dessen Lesen wirft: Spiel startet mit storage-unavailable, Laufe
   await waitForWorld(page);
   expect(await page.evaluate(() => (window as any).__emilia2.startNotice)).toBe('storage-unavailable');
   const start = await player(page);
-  await hold(page, ['KeyD'], 400);
-  expect((await player(page)).x).toBeGreaterThan(start.x + 5);
+  await holdUntilMoved(page, 'KeyD', start);
   expect((await saveNow(page)).kind).not.toBe('saved');
   expect(errors).toEqual([]);
 });
@@ -165,9 +176,13 @@ test('zwei Tabs: der zuerst geladene überschreibt den Stand des anderen nicht',
   const one = await context.newPage(); const errorsOne = watchErrors(one);
   await one.goto('./');
   await waitForWorld(one);
+  const entryAfterOne = await readKey(one, SAVE_KEY);
   const two = await context.newPage(); const errorsTwo = watchErrors(two);
   await two.goto('./');
   await waitForWorld(two);
+  // Der Test setzt voraus, dass zwischen beiden Ladevorgängen niemand geschrieben hat (sonst wäre der Stand von Seite 1
+  // schon überholt und die Meldung unten kein Befund über das Speichern, sondern über diese Annahme).
+  expect(await readKey(two, SAVE_KEY), 'zwischen dem Laden von Seite 1 und Seite 2 hat eine Seite den Eintrag verändert (z. B. Speichern beim Verbergen)').toBe(entryAfterOne);
   await two.evaluate(() => (window as any).__emilia2.teleport(25, 14));
   expect((await saveNow(two)).kind).toBe('saved');
   const fromTwo = await readKey(two, SAVE_KEY);

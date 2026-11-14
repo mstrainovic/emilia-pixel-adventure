@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeZoom, computeLayout, snapToScreen } from '../../src/core/pixel';
+import { computeZoom, computeLayout, snapToScreen, canvasToView } from '../../src/core/pixel';
 
 describe('snapToScreen', () => {
   it('rundet auf ganze Bildschirmpixel: Vielfache von 1/Zoom Bildpunkt', () => {
@@ -83,6 +83,48 @@ describe('computeLayout', () => {
   it('liefert bei unbrauchbaren Größen ein Feld aus einem Bildpunkt', () => {
     for (const [w, h] of [[0, 0], [-5, 100], [Number.NaN, 100], [100, Number.POSITIVE_INFINITY]]) {
       expect(computeLayout(w as number, h as number)).toEqual({ zoom: 1, viewWidth: 1, viewHeight: 1, offsetX: 0, offsetY: 0 });
+    }
+  });
+});
+
+describe('canvasToView', () => {
+  const plain = computeLayout(1920, 1080, 1); // Zoom 5, Rand 0/0, Feld 384×216
+  const framed = { zoom: 5, viewWidth: 384, viewHeight: 216, offsetX: 3, offsetY: 7 };
+
+  it('ohne Rand: Ecke, letzter Gerätepixel und erster Pixel dahinter', () => {
+    expect(canvasToView(plain, 0, 0)).toEqual({ x: 0, y: 0, inside: true });
+    const last = canvasToView(plain, 1919, 1079);
+    expect(last.x).toBeCloseTo(383.8, 9);
+    expect(last.y).toBeCloseTo(215.8, 9);
+    expect(last.inside).toBe(true);
+    const past = canvasToView(plain, 1920, 500);
+    expect(past.x).toBe(384);
+    expect(past.inside).toBe(false);
+  });
+
+  it('mit Rand 3/7: der Rand liefert negative Werte und liegt außerhalb, der Feldanfang ist 0/0', () => {
+    const edge = canvasToView(framed, 2, 7);
+    expect(edge.x).toBeLessThan(0);
+    expect(edge.inside).toBe(false);
+    expect(canvasToView(framed, 3, 7)).toEqual({ x: 0, y: 0, inside: true });
+    const above = canvasToView(framed, 3, 6);
+    expect(above.y).toBeLessThan(0);
+    expect(above.inside).toBe(false);
+  });
+
+  it('Werte außerhalb werden nicht gekappt, ungerundet', () => {
+    const r = canvasToView(framed, 3 + 5 * 400 + 2, 7 - 10);
+    expect(r.x).toBeCloseTo(400.4, 9);
+    expect(r.y).toBe(-2);
+    expect(r.inside).toBe(false);
+  });
+
+  it('nicht endliche Eingaben → NaN und außerhalb', () => {
+    for (const [x, y] of [[Number.NaN, 5], [5, Number.NaN], [Number.POSITIVE_INFINITY, 5], [5, Number.NEGATIVE_INFINITY]]) {
+      const r = canvasToView(plain, x as number, y as number);
+      expect(r.x).toBeNaN();
+      expect(r.y).toBeNaN();
+      expect(r.inside).toBe(false);
     }
   });
 });

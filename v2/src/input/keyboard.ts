@@ -33,6 +33,29 @@ type PageTarget = Pick<Document, 'addEventListener' | 'removeEventListener' | 'h
 
 const hasModifier = (e: KeyboardEvent): boolean => e.ctrlKey || e.metaKey || e.altKey;
 
+/** Eingabefelder: Hier gehört jede Taste außer Escape dem Feld (Tippen, Pfeiltasten, Leertaste …). */
+const FIELD_SELECTOR = 'input, select, textarea, [contenteditable="true"]';
+/** Bedienelemente: Enter und Leertaste lösen sie aus, das gehört dem Browser. */
+const CONTROL_SELECTOR = `button, a[href], ${FIELD_SELECTOR}`;
+
+/** Liegt das Ziel des Ereignisses in einem Element dieser Art? Ziele ohne `closest` (Fenster, Dokument) zählen als Seitenrumpf. */
+function targetIn(e: KeyboardEvent, selector: string): boolean {
+  const target = e.target as { closest?: unknown } | null | undefined;
+  if (!target || typeof target.closest !== 'function') return false;
+  return (target.closest as (s: string) => unknown).call(target, selector) != null;
+}
+
+/**
+ * Welche Tasten das Spiel dem Browser überlässt (kein `preventDefault`, keine Handlung, nicht gehalten):
+ * - Ziel in einem Eingabefeld (`input`, `select`, `textarea`, `contenteditable`): jede Taste außer `Escape`;
+ * - Ziel in einem Bedienelement (`button`, `a[href]` oder Eingabefeld): `Enter` und `Space`, damit sie HTML-Knöpfe auslösen.
+ * Alle anderen Tasten (Laufen, Esc, E, M, H, 1–8) wirken unverändert, auch wenn ein Knopf den Fokus hat.
+ */
+function leftToBrowser(e: KeyboardEvent): boolean {
+  if (e.code !== 'Escape' && targetIn(e, FIELD_SELECTOR)) return true;
+  return (e.code === 'Enter' || e.code === 'Space') && targetIn(e, CONTROL_SELECTOR);
+}
+
 /** Tastatur als Eingabequelle. Gedrückte Tasten werden über `code` gemerkt, nicht gezählt. */
 export class KeyboardSource implements InputSource {
   readonly device: InputDevice = 'keys';
@@ -52,6 +75,7 @@ export class KeyboardSource implements InputSource {
     // Tastenkürzel des Browsers (Strg+D, Cmd+E, Alt+D …) gehören nicht dem Spiel
     if (hasModifier(e)) return;
     if (!HANDLED.has(e.code)) return;
+    if (leftToBrowser(e)) return;
     e.preventDefault();
     this.held.add(e.code);
     const action = ACTION_KEYS[e.code];
@@ -60,8 +84,10 @@ export class KeyboardSource implements InputSource {
 
   private readonly onKeyUp = (e: KeyboardEvent): void => {
     if (!HANDLED.has(e.code)) return;
+    // Loslassen gilt immer (die Taste kann vor dem Fokuswechsel gedrückt worden sein); ein Leertasten-keyup darf aber
+    // nicht unterdrückt werden, wo der Browser daraus den Klick macht.
     this.held.delete(e.code);
-    if (!hasModifier(e)) e.preventDefault();
+    if (!hasModifier(e) && !leftToBrowser(e)) e.preventDefault();
   };
 
   /** Fokus weg, Rechtsklick-Menü, Seite verlassen: ein keyup käme nie an, also alles loslassen. */

@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { computeLayout, type PixelLayout } from './pixel';
+import { canvasToView, computeLayout, type PixelLayout } from './pixel';
 
 /** Gemessener Zustand der Zeichenfläche. */
 export interface PixelGridSnapshot {
