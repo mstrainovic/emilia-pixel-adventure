@@ -1,10 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
-import { readPng, type PngImage } from './helpers/png';
+import { blockProblems, readPng, type GridSnapshot, type PngImage } from './helpers/png';
 
-type Layout = { zoom: number; viewWidth: number; viewHeight: number; offsetX: number; offsetY: number };
-type Snapshot = { deviceWidth: number; deviceHeight: number; dpr: number; layout: Layout };
+type Snapshot = GridSnapshot;
 
 const hub = JSON.parse(readFileSync(fileURLToPath(new URL('../../src/assets/maps/hub.json', import.meta.url)), 'utf8')) as {
   layers: { name: string; objects?: unknown[] }[];
@@ -20,31 +19,6 @@ async function waitForWorld(page: Page): Promise<Snapshot> {
   });
   await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
   return page.evaluate(() => (window as any).__emilia2.pixelGrid as Snapshot);
-}
-
-/** Jeder zoom × zoom-Block im Kamera-Ausschnitt ist einfarbig; liefert die ersten Abweichungen. */
-function blockProblems(png: PngImage, snapshot: Snapshot): string[] {
-  const problems: string[] = [];
-  if (png.width !== snapshot.deviceWidth || png.height !== snapshot.deviceHeight) {
-    return [`Bildgröße ${png.width}×${png.height} statt ${snapshot.deviceWidth}×${snapshot.deviceHeight}`];
-  }
-  const { zoom, viewWidth, viewHeight, offsetX, offsetY } = snapshot.layout;
-  for (let fy = 0; fy < viewHeight; fy++) {
-    for (let fx = 0; fx < viewWidth; fx++) {
-      const x0 = offsetX + fx * zoom;
-      const y0 = offsetY + fy * zoom;
-      const [r, g, b] = png.at(x0, y0);
-      for (let dy = 0; dy < zoom; dy++) {
-        for (let dx = 0; dx < zoom; dx++) {
-          const got = png.at(x0 + dx, y0 + dy);
-          if (got[0] !== r || got[1] !== g || got[2] !== b) {
-            if (problems.length < 10) problems.push(`Bildpunkt ${fx}/${fy}, Pixel ${x0 + dx}/${y0 + dy}: ${got} statt ${[r, g, b]}`);
-          }
-        }
-      }
-    }
-  }
-  return problems;
 }
 
 function colorCount(png: PngImage): number {

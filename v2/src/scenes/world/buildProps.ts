@@ -56,10 +56,12 @@ function drawOrder(a: WorldObject, b: WorldObject): number {
  * Zeichnet die Objekte einer Karte. Der Fußpunkt im Bild (anchorX/anchorY) sitzt waagerecht auf dem Fußpunkt
  * des Objekts und senkrecht auf seiner Standlinie standLineOf(y) = Unterkante seiner Kachel (wie im Vorschaubild
  * tools/maps/preview.mjs). Flaches auf DEPTH.flat, Stehendes auf depthForFoot(Standlinie), siehe depth.ts.
- * Liefert die Anzahl der gezeichneten Objekte.
+ * Liefert die gezeichneten Bilder nach Objekt-ID.
  */
-export function buildProps(scene: Phaser.Scene, objects: readonly WorldObject[], tileHeight: number, label: string): number {
-  let count = 0;
+export function buildProps(
+  scene: Phaser.Scene, objects: readonly WorldObject[], tileHeight: number, label: string,
+): ReadonlyMap<number, Phaser.GameObjects.Sprite> {
+  const sprites = new Map<number, Phaser.GameObjects.Sprite>();
   for (const o of [...objects].sort(drawOrder)) {
     const key = propKey(o.type, o.variant);
     const def = PROP_DEFS[key];
@@ -73,7 +75,7 @@ export function buildProps(scene: Phaser.Scene, objects: readonly WorldObject[],
     sprite.setDepth(def.layer === 'flat' ? DEPTH.flat : depthForFoot(standLine));
     const anim = animationFor(scene, key, def);
     if (anim) sprite.play(anim);
-    count++;
+    sprites.set(o.id, sprite);
   }
-  return count;
+  return sprites;
 }

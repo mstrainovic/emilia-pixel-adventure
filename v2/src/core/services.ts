@@ -1,9 +1,11 @@
 import type Phaser from 'phaser';
+import type { InputHub } from '../input/hub';
 import type { PixelGrid } from './pixelGrid';
 
 /** Spielweite Dienste, die `main.ts` vor dem ersten Szenenstart in `game.registry` legt. */
 export interface Services {
   pixelGrid: PixelGrid;
+  input: InputHub;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

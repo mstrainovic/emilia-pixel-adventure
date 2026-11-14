@@ -115,6 +115,21 @@ function toExit(id: MapId, tiled: TiledMap, o: TiledObject): WorldExit {
   };
 }
 
+/**
+ * Wo die Spielerin auf dieser Karte beginnt, in Bildpunkten. `saved` ist der Fußpunkt aus dem Spielstand in
+ * Kacheln (Gleitkomma). Er gilt nur auf derselben Karte und auf einer freien Kachel innerhalb der Karte;
+ * sonst (andere Karte, feste Kachel, außerhalb, NaN) beginnt sie am Startpunkt der Karte.
+ */
+export function resolveStart(map: WorldMap, saved: { map: MapId; x: number; y: number }): { x: number; y: number } {
+  const fallback = { ...map.spawn };
+  if (saved.map !== map.id || !Number.isFinite(saved.x) || !Number.isFinite(saved.y)) return fallback;
+  // isSolid gilt außerhalb der Karte als fest
+  if (map.solid.isSolid(Math.floor(saved.x), Math.floor(saved.y))) return fallback;
+  const tileWidth = map.widthPx / map.solid.width;
+  const tileHeight = map.heightPx / map.solid.height;
+  return { x: saved.x * tileWidth, y: saved.y * tileHeight };
+}
+
 /** Baut das Kartenmodell aus Tiled-JSON. Wirft, wenn eine Ebene fehlt. Die Kacheln der Figuren sind fest. */
 export function buildWorldMap(id: MapId, tiled: TiledMap): WorldMap {
   const collision = tileLayer(id, tiled, 'collision');

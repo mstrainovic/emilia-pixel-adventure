@@ -4,6 +4,8 @@ import { WorldScene } from './scenes/WorldScene';
 import { PixelGrid } from './core/pixelGrid';
 import { SERVICES_KEY, type Services } from './core/services';
 import { installTestHooks } from './core/testHooks';
+import { InputHub } from './input/hub';
+import { KeyboardSource } from './input/keyboard';
 
 const host = document.getElementById('game');
 if (!host) throw new Error('Spielbereich #game fehlt.');
@@ -30,11 +32,19 @@ const game = new Phaser.Game({
   pixelArt: true,
   antialias: false,
   roundPixels: true,
+  // Zeitschritt = wirklich vergangene Zeit. Phasers Glättung (TimeStep.smoothDelta) kappt ihn nach dem Start,
+  // nach jedem Fokuswechsel (120 Bilder lang) und ohne Fokus auf 1/60 s: unter 60 Bildern je Sekunde liefe
+  // Emilia dann in Zeitlupe. Große Sprünge fangen stepMover (MAX_DT) und die Kamera selbst ab.
+  fps: { smoothStep: false },
   scene: scenes,
 });
 
 const pixelGrid = new PixelGrid(game, host);
-const services: Services = { pixelGrid };
+const input = new InputHub();
+const keyboard = new KeyboardSource(window);
+keyboard.attach();
+input.add(keyboard);
+const services: Services = { pixelGrid, input };
 game.registry.set(SERVICES_KEY, services);
 pixelGrid.start();
 
