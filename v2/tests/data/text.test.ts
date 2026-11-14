@@ -49,6 +49,15 @@ describe('Texte', () => {
     }
     expect(hits).toEqual([]);
   });
+  it('enthält keine zu viel gesetzten Umlaute', () => {
+    // fängt „neü", „Maür", „Feür", „Abenteür", „Qülle"
+    const OVER_UMLAUT = /[aeoäö]ü|qü|aktüll|manüll|pösie|söben/i;
+    const hits = texts.filter((t) => OVER_UMLAUT.test(t));
+    expect(hits).toEqual([]);
+  });
+  it('enthält den Satz „mächtiger stolz" nicht', () => {
+    expect(texts.filter((t) => t.includes('mächtiger stolz'))).toEqual([]);
+  });
   it('verwendet echte Umlaute', () => {
     const joined = texts.join('\n');
     for (const c of ['ä', 'ö', 'ü', 'ß']) expect(joined).toContain(c);

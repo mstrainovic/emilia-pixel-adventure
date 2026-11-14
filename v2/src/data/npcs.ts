@@ -197,7 +197,7 @@ export const NPCS: readonly NpcDef[] = [
       ],
       3: [
         'Du bist die fleißigste Enkelin der ganzen Welt!',
-        'Opa ist mächtiger stolz auf dich!',
+        'Opa ist mächtig stolz auf dich!',
         'Alles was Opa weiß, gehört jetzt auch dir!',
       ],
     },

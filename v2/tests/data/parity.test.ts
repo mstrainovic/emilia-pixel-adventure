@@ -40,7 +40,12 @@ const deUmlaut = (s: string) => s.replace(/ä/g, 'ae').replace(/ö/g, 'oe').repl
 
 /** Tippfehler im Altbestand (Umlaut ohne Ersatzschreibung weggelassen), die bewusst korrigiert wurden:
  *  altes Wort -> Altschreibung der korrigierten Form. */
-const OLD_TYPO_FIXES: Record<string, string> = { Krauter: 'Kraeuter', Zaubertranke: 'Zaubertraenke' };
+const OLD_TYPO_FIXES: Record<string, string> = {
+  Krauter: 'Kraeuter',
+  Zaubertranke: 'Zaubertraenke',
+  // Grammatikfehler im Altbestand (src/data/npcs.js Zeile 227: „Opa ist maechtiger stolz auf dich!")
+  'maechtiger stolz': 'maechtig stolz',
+};
 const fixOld = (s: string): string =>
   Object.entries(OLD_TYPO_FIXES).reduce((acc, [from, to]) => acc.replaceAll(from, to), s);
 
@@ -146,7 +151,7 @@ describe('Dorfbewohner', () => {
       expect(cur.dialogs.map(deUmlaut)).toEqual(old.dialogs.map(fixOld));
       expect(Object.keys(cur.friendshipDialogs)).toEqual(Object.keys(old.friendshipDialogs));
       for (const lvl of Object.keys(old.friendshipDialogs)) {
-        expect((cur.friendshipDialogs as any)[lvl].map(deUmlaut), `${old.id} Stufe ${lvl}`).toEqual(old.friendshipDialogs[lvl]);
+        expect((cur.friendshipDialogs as any)[lvl].map(deUmlaut), `${old.id} Stufe ${lvl}`).toEqual(old.friendshipDialogs[lvl].map(fixOld));
       }
       // Nur diese Felder sind erlaubt; Haar- und Kleidungsfelder entfallen.
       const allowed = ['id', 'name', 'role', 'type', 'favoriteGifts', 'dialogs', 'friendshipDialogs'];
