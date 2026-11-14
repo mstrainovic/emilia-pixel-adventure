@@ -655,7 +655,7 @@
 
 Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1a-welt` (abgezweigt von `plan/etappe-1`), alle 13 Tasks mit eigener Prüfung, danach Schlussprüfung des ganzen Branchs und eine Fix-Welle. Nichts ist gemergt oder gepusht.
 
-**Prüfstand am Ende:** `v2/`: Typprüfung ohne Fehler, Vitest 612 bestanden (3 übersprungen: Tests, die das Pack oder Emilias echte Datei brauchen), Playwright 100 bestanden / 19 übersprungen (Chromium, WebKit, gebautes Paket), Paket-Schutztests 9 von 9, Grafik- und Kartentests mit Pack grün. Stamm: `npm test` und `npm run build` in Ordnung; am alten Spiel ist nichts geändert. Hinweis zur Reihenfolge: Der Stamm-Build leert `dist/`; erst danach `cd v2 && npm run build`, dann liegen `dist/index.html` und `dist/v2/index.html` beide vor (die Auslieferung baut ohnehin getrennt).
+**Prüfstand am Ende:** `v2/`: Typprüfung ohne Fehler, Vitest 613 bestanden (nach dem Versetzen des Lagerfeuers; 3 übersprungen: Tests, die das Pack oder Emilias echte Datei brauchen), Playwright 100 bestanden / 19 übersprungen (Chromium, WebKit, gebautes Paket), Paket-Schutztests 9 von 9, Grafik- und Kartentests mit Pack grün. Stamm: `npm test` und `npm run build` in Ordnung; am alten Spiel ist nichts geändert. Hinweis zur Reihenfolge: Der Stamm-Build leert `dist/`; erst danach `cd v2 && npm run build`, dann liegen `dist/index.html` und `dist/v2/index.html` beide vor (die Auslieferung baut ohnehin getrennt).
 
 ### Was gegenüber dem Plan geändert wurde (Entscheidungen während der Umsetzung)
 
@@ -673,6 +673,7 @@ Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1a-welt` (ab
 12. **Wegverbreiterung:** Die Stiche zu den Werkstätten waren in der Vorlage schon zwei Kacheln breit; verbreitert wurde der Ring um den Dorfplatz, drei Lücken im Hauptweg sind geschlossen (`PATH_WIDEN`, 8 Einträge).
 13. **Probe-Szene** wird weiter in `main.ts` gewählt (hält sie aus dem Produktions-Paket); `fps.smoothStep` ist aus (sonst Zeitlupe unter 60 Bildern je Sekunde); die Kamera zielt mit `centerOn` (Phaser kappt Kachel-Ebenen nach `worldView`, das den Ursprung ignoriert).
 14. **Fix-Welle nach der Schlussprüfung:** keine klebende Taste bei Zusatztasten, Rechtsklick-Menü und verborgener Seite; Fuß auf der unteren Kartenkante bleibt beim Neuladen stehen; Paket-Schutztest sucht weitere Test-Zugänge und prüft den ganzen CSP-Wortlaut.
+15. **Lagerfeuer versetzt (Stil-Prüfung, Wunsch des Auftraggebers am 2026-11-14):** Im alten Spiel stand es mitten auf dem Südweg (20/19). Es steht jetzt auf der Wiese östlich neben dem Weg auf 22/20, in Babas Blickrichtung; der Südweg ist durchgehend frei. Das weicht bewusst von Task 9 ab („Ort des Lagerfeuers unverändert"). Baba bleibt auf 18/20.
 
 **Fehler im Plantext, die bei der Umsetzung auffielen:** `starsky` führt acht `npc`-Objekte *mit* Dorfbewohner-Kennungen (nicht ohne). `resetQuests` im alten Spiel ruft ein nicht vorhandenes `_assignNextQuest()`; ein echter New-Game-Plus-Stand sieht deshalb anders aus als die Vorlage `LEGACY_NGPLUS` (v2 verarbeitet die echte Form richtig; eine Vorlage in echter Form fehlt noch in der Verstümmelungs-Schleife). Mein Testraster fürs Eckenrutschen war zweimal falsch gestellt (0,5-s-Grenze; 5 Bildpunkte Überstand mit Querabsicht).
 
@@ -695,14 +696,14 @@ Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1a-welt` (ab
 
 Ein Tausch der Vorlage ist eine Zeile in `v2/tools/art/selection.mjs`; die vollständige Liste mit Ausschnitten steht in `v2/src/assets/gfx/QUELLEN.md`.
 
-### `COLLISION_CHANGES` (38 Abweichungen der Sperrflächen von der Vorlage)
+### `COLLISION_CHANGES` (40 Abweichungen der Sperrflächen von der Vorlage; die Obergrenze im Test ist damit erreicht)
 
 Die Liste mit Begründung je Kachel steht in `v2/tools/maps/restyle-hub.mjs`; das Werkzeug wirft, wenn ein Eintrag keine Abweichung ist, und der Test prüft sie in beide Richtungen.
 
 - 28 Kacheln neu gesperrt für die vier Häuser hinter den Werkstätten: Küche 7–9/6–7, Werkstatt 29–31/6–7, Alchemie 33–34/8, 32–34/9, 32–33/10, Sägewerk 30–32/19–21.
 - Neu gesperrt: Dorfbrunnen 20/13 (statt des begehbaren Felses auf dem Startpunkt 19/14), Trophäenregal 5/10, die Stammkacheln der beiden rosa Bäume 22/8 und 22/22.
 - Drei Bäume um eine Kachel versetzt, damit ihre Krone nichts verdeckt (jeweils alte Kachel frei, neue gesperrt): 23/3 → 24/3, 23/28 → 24/28, 13/24 → 14/24.
-- Ausnahme im Test „Wegkacheln bleiben begehbar": 20/19 (Lagerfeuer, schon in der Vorlage gesperrt).
+- Lagerfeuer versetzt (Wunsch des Auftraggebers): 20/19 frei, 22/20 gesperrt. Damit ist keine Wegkachel mehr gesperrt; die frühere Ausnahme im Test „Wegkacheln bleiben begehbar" entfällt.
 
 ### Phaser 4 — nachgelesene Aufrufe
 
@@ -710,7 +711,7 @@ Stichwortliste im Kopfkommentar von `v2/src/scenes/world/buildLayers.ts` (Tilema
 
 ### Für die Stil-Prüfung mit dem Auftraggeber
 
-- Gefällt das Dorf (Erdweg statt Sandweg; Tannen wirken wie Büsche; Gartenecke mit Blumen unter den Zäunen unruhig)?
+- Gefällt das Dorf (Erdweg statt Sandweg; Tannen wirken wie Büsche; Gartenecke mit Blumen unter den Zäunen unruhig)? **Antwort 2026-11-14 (anhand von Bildern, unterwegs): „ja, gefällt mir", mit einer Änderung: Das Lagerfeuer stand auf dem Weg und ist versetzt (siehe Punkt 15 oben).**
 - Größen: Kinder sind meist nur einen Bildpunkt kleiner als Erwachsene; Oma ist so hoch wie Emilia.
 - Zuordnung der Figuren (Tabelle oben): Papa ohne Hemd in Blau, Marie in Grün, Baba wirkt jung; Emilia und Mama ähneln sich am meisten. Sind Marie und Liam Kinder oder Erwachsene?
 - Schatten der Figuren ist kaum zu sehen (liegt fast ganz unter der Figur).

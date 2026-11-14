@@ -72,8 +72,8 @@ describe('neu gestaltete Dorfkarte hub', () => {
     expect(objects(hub, 'npcs').map(pick).sort()).toEqual(objects(template, 'npcs').map(pick).sort());
   });
 
-  it('Stationen, Beete, Truhen, Regal, Lagerfeuer, welke Pflanzen, Rohstoffe und Wegweiser liegen wie in der Vorlage', () => {
-    const fixed = ['station', 'garden_plot', 'chest', 'trophy_shelf', 'bonfire', 'wilted_plant', 'resource', 'signpost'];
+  it('Stationen, Beete, Truhen, Regal, welke Pflanzen, Rohstoffe und Wegweiser liegen wie in der Vorlage', () => {
+    const fixed = ['station', 'garden_plot', 'chest', 'trophy_shelf', 'wilted_plant', 'resource', 'signpost'];
     const key = (o: TiledObject) => {
       const id = o.type === 'chest' || o.type === 'resource' ? `#${String(prop(o, 'id'))}` : '';
       const station = o.type === 'station' ? `:${String(prop(o, 'station'))}` : '';
@@ -100,7 +100,22 @@ describe('neu gestaltete Dorfkarte hub', () => {
     expect(tiles(hub, 'collision')[13 * 40 + 20]).not.toBe(0);
   });
 
-  it('jede Wegkachel der Vorlage ist begehbar (bis auf die, die schon die Vorlage sperrt)', () => {
+  it('das Lagerfeuer steht neben dem Weg auf 22/20 (Wunsch des Auftraggebers), nicht mehr auf dem Südweg 20/19', () => {
+    const fires = objects(hub, 'objects').filter((o) => o.type === 'bonfire');
+    expect(fires.map(tileOf)).toEqual(['22/20']);
+    expect(objects(template, 'objects').filter((o) => o.type === 'bonfire').map(tileOf)).toEqual(['20/19']);
+    const col = tiles(hub, 'collision');
+    expect(col[20 * 40 + 22], 'neuer Platz gesperrt').not.toBe(0);
+    expect(col[19 * 40 + 20], 'alter Platz frei').toBe(0);
+    // Der neue Platz ist Wiese, und kein anderes Objekt steht auf seiner Kachel.
+    const weg = new Set(Object.entries(JSON.parse(readFileSync(join(GFX, 'tiles/dorf.json'), 'utf8')) as Record<string, number>)
+      .filter(([k]) => k.startsWith('weg_')).map(([, v]) => v + 1));
+    expect(weg.has(tiles(hub, 'ground')[20 * 40 + 22]!)).toBe(false);
+    expect(objects(hub, 'objects').filter((o) => tileOf(o) === '22/20').map((o) => o.type)).toEqual(['bonfire']);
+    expect(objects(hub, 'npcs').some((o) => tileOf(o) === '22/20')).toBe(false);
+  });
+
+  it('jede Wegkachel der Vorlage ist begehbar, auch die unter dem alten Lagerfeuer', () => {
     const ground = tiles(template, 'ground');
     const oldCol = tiles(template, 'collision');
     const col = tiles(hub, 'collision');
@@ -110,10 +125,10 @@ describe('neu gestaltete Dorfkarte hub', () => {
       if (!isTemplatePath(id)) return;
       const pos = `${i % 40}/${Math.floor(i / 40)}`;
       if (oldCol[i] !== 0) blockedInTemplate.push(pos);
-      else if (col[i] !== 0) blockedNow.push(pos);
+      if (col[i] !== 0) blockedNow.push(pos);
     });
     expect(blockedNow).toEqual([]);
-    // Einzige Ausnahme der Vorlage: das Lagerfeuer steht auf dem Südweg (altes hub.js: collision[19][20] = 1).
+    // Die Vorlage sperrte genau eine Wegkachel: das Lagerfeuer auf dem Südweg (altes hub.js: collision[19][20] = 1).
     expect(blockedInTemplate).toEqual(['20/19']);
   });
 

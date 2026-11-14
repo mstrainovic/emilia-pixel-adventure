@@ -52,6 +52,12 @@ const HOUSE_ROWS = 3;
 const WELL = { x: 20, y: 13 };
 const OLD_WELL_ROCK = { x: 19, y: 14 };
 
+/**
+ * Das Lagerfeuer stand im alten Spiel mitten auf dem Südweg (20/19, die einzige gesperrte Wegkachel).
+ * Auf Wunsch des Auftraggebers (Stil-Prüfung 2026-11-14) steht es östlich neben dem Weg, in Babas Blickrichtung.
+ */
+export const BONFIRE = { from: [20, 19], to: [22, 20] };
+
 /** Objekte, die ihren Platz wechseln (nur Schmuck und Bäume, nie etwas aus der festen Liste). */
 const MOVES = [
   { type: 'tree', from: [23, 3], to: [24, 3], reason: 'Krone würde den Wegweiser 22/3 halb verdecken' },
@@ -101,6 +107,8 @@ export const COLLISION_CHANGES = [
   { x: 22, y: 8, blocked: true, reason: 'Rosa Baum (alter maple_tree): gesperrt ist die Stammkachel wie bei allen Bäumen' },
   { x: 22, y: 22, blocked: true, reason: 'Rosa Baum (alter maple_tree): gesperrt ist die Stammkachel wie bei allen Bäumen' },
   { x: 5, y: 10, blocked: true, reason: 'Trophäenregal ist ein stehendes Möbel; Emilia erreicht es von den Nachbarkacheln' },
+  { x: BONFIRE.from[0], y: BONFIRE.from[1], blocked: false, reason: `Lagerfeuer vom Südweg nach ${BONFIRE.to.join('/')} versetzt (Wunsch des Auftraggebers): der Weg ist hier wieder frei` },
+  { x: BONFIRE.to[0], y: BONFIRE.to[1], blocked: true, reason: `Lagerfeuer steht jetzt neben dem Weg (vorher ${BONFIRE.from.join('/')}, Wunsch des Auftraggebers)` },
   ...MOVES.filter((m) => m.type === 'tree').flatMap((m) => [
     { x: m.from[0], y: m.from[1], blocked: false, reason: `Baum versetzt nach ${m.to.join('/')}: ${m.reason}` },
     { x: m.to[0], y: m.to[1], blocked: true, reason: `Stammkachel des versetzten Baums (vorher ${m.from.join('/')}): ${m.reason}` },
@@ -231,6 +239,11 @@ function restyleObjects(map, objectsLayer, exits) {
       copy.x = move.to[0] * TILE;
       copy.y = move.to[1] * TILE;
     }
+    if (o.type === 'bonfire') {
+      if (!at(o, BONFIRE.from[0], BONFIRE.from[1])) throw new Error(`Lagerfeuer der Vorlage steht auf ${tileX(o)}/${tileY(o)} statt ${BONFIRE.from.join('/')}`);
+      copy.x = BONFIRE.to[0] * TILE;
+      copy.y = BONFIRE.to[1] * TILE;
+    }
     if (o.type === 'maple_tree') {
       copy.type = 'tree';
       copy.properties.push(property('variant', 'maple'));
@@ -274,10 +287,13 @@ function checkConsistency(map, collision, objects, mask, edgeMask) {
     const found = objects.filter((o) => o.type === m.type && at(o, m.to[0], m.to[1])).length;
     if (found !== 1) problems.push(`MOVES ${m.type} ${m.from.join('/')}: am Ziel ${m.to.join('/')} ${found} statt 1 Objekt`);
   }
-  // Schmuck, der am Boden steht oder läuft, gehört nicht auf den Weg.
+  // Schmuck, der am Boden steht oder läuft, und das Lagerfeuer gehören nicht auf den Weg.
   for (const o of objects) {
-    if (['flower', 'bush', 'rock', 'chicken'].includes(o.type) && edgeMask[tileY(o)][tileX(o)]) problems.push(`${o.type} ${tileX(o)}/${tileY(o)} steht auf Weg oder Hof`);
+    if (['flower', 'bush', 'rock', 'chicken', 'bonfire'].includes(o.type) && edgeMask[tileY(o)][tileX(o)]) problems.push(`${o.type} ${tileX(o)}/${tileY(o)} steht auf Weg oder Hof`);
   }
+  // Auf der Kachel des Lagerfeuers steht sonst nichts.
+  const onFire = objects.filter((o) => at(o, BONFIRE.to[0], BONFIRE.to[1]));
+  if (onFire.length !== 1 || onFire[0].type !== 'bonfire') problems.push(`Lagerfeuer ${BONFIRE.to.join('/')}: dort stehen ${onFire.map((o) => o.type).join(', ') || 'keine Objekte'}`);
   // Wegkacheln mit Gras auf zwei gegenüberliegenden Seiten kennt der Kachelsatz nicht.
   for (let y = 0; y < map.height; y++) {
     for (let x = 0; x < map.width; x++) {
