@@ -1213,8 +1213,8 @@
         "w": 6,
         "h": 15
       },
-      "aenderungen": "mittig in 16×16 gesetzt",
-      "verwendung": "Symbol Holzschwert (das Pack hat kein Holzschwert; schlichtes kurzes Schwert)",
+      "aenderungen": "recolor [{\"#f2eaf1\":\"#c8966b\",\"#abc2bc\":\"#a3754e\",\"#8d977f\":\"#816855\"}]; mittig in 16×16 gesetzt",
+      "verwendung": "Symbol Holzschwert (kurzes Schwert, Klinge in Holztönen)",
       "lizenz": "CC0 1.0"
     },
     {

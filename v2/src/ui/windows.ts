@@ -2,6 +2,7 @@ import type { EventBus, GameEvents } from '../core/events';
 import { TEXTS } from '../data/texts';
 import type { InputHub } from '../input/hub';
 import { el } from './el';
+import { snapPosition, snapSize } from './grid';
 
 export interface WindowSpec {
   /** Kennung des Fensters (steht als `data-window` am Fenster, nie im Bild). */
@@ -22,6 +23,27 @@ interface OpenWindow {
   shade: HTMLElement;
   /** Fokus vor dem ersten Fenster; kehrt beim Schließen dorthin zurück. */
   previousFocus: HTMLElement | null;
+  /** Hält das Fenster auf ganzen Gerätepixeln, solange es offen ist. */
+  snapper: ResizeObserver | null;
+}
+
+/**
+ * Das Fenster richtet sich nach seinem Inhalt und steht mittig: Größe auf ganze Bildpunkte, Lage auf ganze
+ * Gerätepixel (grid.ts), sonst wird sein Randbild unscharf. Jetzt und wieder, sobald sich Fenster oder Abdunklung
+ * (Fenstergröße, Inhalt, Schrift geladen) ändern.
+ */
+function snap(win: HTMLElement): void {
+  snapSize(win);
+  snapPosition(win);
+}
+
+function keepSnapped(win: HTMLElement, shade: HTMLElement): ResizeObserver | null {
+  snap(win);
+  if (typeof ResizeObserver !== 'function') return null;
+  const observer = new ResizeObserver(() => snap(win));
+  observer.observe(win);
+  observer.observe(shade);
+  return observer;
 }
 
 function reducedMotion(): boolean {
@@ -53,6 +75,7 @@ export class WindowManager {
     const previousFocus = replaced ? replaced.previousFocus : focusedElement();
     if (replaced) {
       this.current = null;
+      replaced.snapper?.disconnect();
       replaced.shade.remove();
     }
     for (const shade of this.closing) shade.remove();
@@ -81,7 +104,7 @@ export class WindowManager {
     this.root.appendChild(shade);
     this.makeOthersInert(shade);
 
-    this.current = { spec, shade, previousFocus };
+    this.current = { spec, shade, previousFocus, snapper: keepSnapped(win, shade) };
     // Blende: erst nach dem ersten Layout sichtbar schalten, sonst springt der Übergang
     void shade.offsetWidth;
     shade.classList.add('is-open');
@@ -96,6 +119,7 @@ export class WindowManager {
     const open = this.current;
     if (!open) return;
     this.current = null;
+    open.snapper?.disconnect();
     const { shade } = open;
     shade.classList.remove('is-open');
     shade.classList.add('is-closing');

@@ -1,6 +1,8 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { PNG } from 'pngjs';
 import { fileURLToPath } from 'node:url';
 import { test, expect, type Page, type Locator } from '@playwright/test';
+import { readPng, type PngImage } from './helpers/png';
 
 const ARTIFACTS = fileURLToPath(new URL('../../../test-artifacts/etappe-1b/', import.meta.url));
 type PlayerInfo = { x: number; y: number; moving: boolean };
@@ -221,6 +223,94 @@ test.describe('Maßstab der Oberfläche', () => {
     expect(view.w).toBeCloseTo(view.expected, 2);
     await context.close();
   });
+
+  // Mindestgröße 1,5 CSS-Pixel je Bildpunkt (ceil(1,5 × dpr)): ändert PC und iPad nicht, hebt das Handy an
+  for (const shot of [{ width: 812, height: 375, dpr: 2, hud: 3 }, { width: 1024, height: 768, dpr: 2, hud: 4 }]) {
+    test(`bei ${shot.width}×${shot.height}@${shot.dpr}x sind es ${shot.hud} Gerätepixel`, async ({ browser, baseURL }) => {
+      const context = await browser.newContext({ baseURL, viewport: { width: shot.width, height: shot.height }, deviceScaleFactor: shot.dpr });
+      const page = await context.newPage();
+      await openWorld(page, []);
+      await expect.poll(() => hudDevicePixels(page)).toBeCloseTo(shot.hud, 2);
+      await context.close();
+    });
+  }
+});
+
+/*
+ * Randbilder in ganzen Bildpunkten, gemessen im Bild: Chromium setzt Randbreiten auf ganze CSS-Pixel (bei Dichte
+ * 1,25 wird aus 4,8 px ein Rand von 4 px, das Randbild ist dann einen Gerätepixel zu schmal). Geprüft wird je Seite
+ * eine Linie quer durch den Rand: jeder Gerätepixel muss dem Bildpunkt des Randbilds entsprechen (jeder Bildpunkt
+ * genau --hud-px breit), der erste Pixel danach der Fläche.
+ */
+interface Frame { selector: string; image: string; slice: [number, number, number, number]; fill: boolean }
+const FRAMES: Frame[] = [
+  { selector: '.ui-window', image: 'fenster', slice: [5, 5, 5, 5], fill: false },
+  { selector: '.hud-menu', image: 'knopf', slice: [2, 2, 2, 2], fill: true },
+  { selector: '.hotbar .ui-slot[data-slot="7"]', image: 'platz', slice: [3, 1, 1, 3], fill: true },
+  { selector: '.hud-row.ui-panel', image: 'fenster', slice: [5, 5, 5, 5], fill: false },
+];
+const GFX_UI = fileURLToPath(new URL('../../src/assets/gfx/ui/', import.meta.url));
+/** Fläche der Fenster und Tafeln (--c-paper). */
+const PAPER = 'fce2ca';
+
+function hex(rgb: [number, number, number]): string {
+  return rgb.map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
+/** Abweichungen eines Randes vom Randbild, in Gerätepixeln gemessen. */
+function frameProblems(shot: PngImage, frame: Frame, rect: { x0: number; y0: number; x1: number; y1: number }, hud: number): string[] {
+  const img = PNG.sync.read(readFileSync(`${GFX_UI}${frame.image}.png`));
+  const art = (x: number, y: number): string => hex([img.data[(y * img.width + x) * 4]!, img.data[(y * img.width + x) * 4 + 1]!, img.data[(y * img.width + x) * 4 + 2]!]);
+  const [top, right, bottom, left] = frame.slice;
+  const inside = (x: number, y: number): string => (frame.fill ? art(x, y) : PAPER);
+  const problems: string[] = [];
+  const expectLine = (side: string, at: (k: number) => [number, number], want: (k: number) => string, length: number, after: string): void => {
+    for (let k = 0; k <= length; k++) {
+      const [x, y] = at(k);
+      const got = hex(shot.at(x, y));
+      const exp = k < length ? want(k) : after;
+      if (got !== exp) {
+        problems.push(`${frame.selector} ${side}: Gerätepixel ${k} ist ${got} statt ${exp} (Rand ${length} = ${length / hud} × ${hud})`);
+        return;
+      }
+    }
+  };
+  const row = rect.y0 + top * hud + 1;
+  const col = rect.x0 + left * hud + 1;
+  const last = img.width - 1;
+  const lastRow = img.height - 1;
+  expectLine('links', (k) => [rect.x0 + k, row], (k) => art(Math.floor(k / hud), top), left * hud, inside(left, top));
+  expectLine('rechts', (k) => [rect.x1 - 1 - k, row], (k) => art(last - Math.floor(k / hud), top), right * hud, inside(last - right, top));
+  expectLine('oben', (k) => [col, rect.y0 + k], (k) => art(left, Math.floor(k / hud)), top * hud, inside(left, top));
+  expectLine('unten', (k) => [col, rect.y1 - 1 - k], (k) => art(left, lastRow - Math.floor(k / hud)), bottom * hud, inside(left, lastRow - bottom));
+  return problems;
+}
+
+async function deviceRect(page: Page, selector: string, dpr: number): Promise<{ x0: number; y0: number; x1: number; y1: number }> {
+  const box = (await page.locator(selector).boundingBox())!;
+  return { x0: Math.round(box.x * dpr), y0: Math.round(box.y * dpr), x1: Math.round((box.x + box.width) * dpr), y1: Math.round((box.y + box.height) * dpr) };
+}
+
+test.describe('Randbilder in ganzen Bildpunkten', () => {
+  for (const dpr of [1, 1.25, 1.5]) {
+    test(`Fenster, Knopf, Platz und Tafel bei Dichte ${dpr}: jeder Bildpunkt des Rands ist --hud-px breit`, async ({ browser, baseURL, browserName }) => {
+      test.skip(browserName === 'webkit' && !Number.isInteger(dpr), 'WebKit gibt es nur auf Apple-Geräten mit ganzzahliger Pixeldichte');
+      const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 720 }, deviceScaleFactor: dpr });
+      const page = await context.newPage();
+      await openWorld(page, []);
+      const hud = Math.round(await hudDevicePixels(page));
+      const problems: string[] = [];
+      // Anzeige ohne Fenster (die Abdunklung läge sonst darüber)
+      const hudShot = readPng(await page.screenshot({ scale: 'device' }));
+      for (const frame of FRAMES.slice(1)) problems.push(...frameProblems(hudShot, frame, await deviceRect(page, frame.selector, dpr), hud));
+      await openTestWindow(page);
+      await expect(page.locator('.ui-shade')).toHaveCSS('opacity', '1');
+      const windowShot = readPng(await page.screenshot({ scale: 'device' }));
+      problems.push(...frameProblems(windowShot, FRAMES[0]!, await deviceRect(page, FRAMES[0]!.selector, dpr), hud));
+      expect(problems).toEqual([]);
+      await context.close();
+    });
+  }
 });
 
 async function hudDevicePixels(page: Page): Promise<number> {
@@ -251,7 +341,8 @@ test('Bilder des offenen Testfensters für die Durchsicht', async ({ browser, ba
   const box = (await closeButton(page).boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await expect(closeButton(page)).toHaveCSS('border-image-source', /knopf_gedrueckt/);
+  // das Randbild trägt die Randbild-Ebene ::before (kit.css)
+  await expect.poll(() => closeButton(page).evaluate((n) => getComputedStyle(n, '::before').borderImageSource)).toMatch(/knopf_gedrueckt/);
   const win = (await testWindow(page).boundingBox())!;
   writeFileSync(`${ARTIFACTS}task-5-knopf-gedrueckt.png`, await page.screenshot({ clip: { x: win.x + win.width - 90, y: win.y, width: 90, height: 80 } }));
   await page.mouse.up();

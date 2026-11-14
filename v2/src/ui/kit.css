@@ -2,10 +2,17 @@
  * Bausteine der Oberfläche (Spec 10): ein Fenster-, ein Knopf-, ein Platz-Stil. Farben, Schriftgrößen und Abstände
  * nur über die Variablen aus tokens.css. Maßstab (von UiRoot auf #ui gesetzt):
  *   --px      ein Gerätepixel als CSS-Länge (1/dpr px)
- *   --hud-px  ein Bildpunkt der Oberflächen-Grafik: ceil(Zoom / 2) Gerätepixel
+ *   --hud-px  ein Bildpunkt der Oberflächen-Grafik: max(ceil(Zoom / 2), ceil(1,5 × Dichte)) Gerätepixel
+ *   --hud-scale  dasselbe als reine Zahl (--hud-px / 1px), für transform: scale()
  *   --view-x, --view-y, --view-w, --view-h  sichtbares Spielfeld in CSS-Pixeln
  * Pixelbilder werden nur als Ränder (border-image) in ganzen Vielfachen von --hud-px gezeigt; gestreckt wird nur,
  * was in Streckrichtung einfarbig ist (Kanten und Mitte der Bilder).
+ *
+ * Randbild-Ebene: Chromium setzt Randbreiten auf ganze CSS-Pixel (bei Dichte 1,25 würde aus 4,8 px ein Rand von
+ * 4 px, das Randbild einen Gerätepixel zu schmal). Darum trägt nicht das Element den Rand, sondern sein ::before:
+ * in Bildpunkten gebaut (1 px je Bildpunkt, ganze CSS-Pixel, nichts wird gerundet) und mit
+ * transform: scale(var(--hud-scale)) auf die Größe des Elements gebracht. Das Element selbst hat keinen Rand,
+ * sondern einen Innenabstand von Schnitt × --hud-px.
  */
 
 #ui {
@@ -58,6 +65,38 @@
   transition-timing-function: ease-in;
 }
 
+/* ---------- Randbild-Ebene (Fenster, Tafel, Knopf, Platz) ---------- */
+
+.ui-window,
+.ui-panel,
+.ui-button,
+.ui-slot {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+}
+
+.ui-window::before,
+.ui-panel::before,
+.ui-button::before,
+.ui-slot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  box-sizing: border-box;
+  width: calc(100% / var(--hud-scale));
+  height: calc(100% / var(--hud-scale));
+  border-style: solid;
+  transform: scale(var(--hud-scale));
+  transform-origin: 0 0;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* ---------- Fenster ---------- */
+
 .ui-window {
   display: flex;
   flex-direction: column;
@@ -67,15 +106,20 @@
 }
 
 /* Rahmen und Fläche der Fenster; .ui-panel ist dieselbe Tafel ohne Fenster-Verhalten (Aufgabe in der Anzeige) */
+/* Größe und Lage zieht grid.ts auf ganze Bildpunkte nach (min-width/min-height gelten für den Rahmen mit) */
 .ui-window,
 .ui-panel {
+  box-sizing: border-box;
+  padding: calc(5 * var(--hud-px));
+}
+
+.ui-window::before,
+.ui-panel::before {
   background: var(--c-paper);
   background-clip: padding-box;
-  border-style: solid;
-  border-width: calc(5 * var(--hud-px));
+  border-width: 5px;
   /* nine_path_panel.png (16×16): Rahmen 5 Bildpunkte je Seite, die Fläche darin ist Papier */
-  border-image: url('../assets/gfx/ui/fenster.png') 5 / calc(5 * var(--hud-px)) stretch;
-  image-rendering: pixelated;
+  border-image: url('../assets/gfx/ui/fenster.png') 5 / 5px stretch;
 }
 
 /* Kopf: Titel links oben, Schließen-Knopf immer rechts oben */
@@ -109,31 +153,33 @@
   justify-content: center;
   min-width: var(--tap);
   min-height: var(--tap);
-  padding: 0 var(--sp-3);
+  padding: calc(2 * var(--hud-px)) calc(2 * var(--hud-px) + var(--sp-3));
   font-family: var(--font-text);
   font-size: var(--fs-2);
   font-weight: 700;
   line-height: 1;
   color: var(--c-ink);
   background: none;
-  border-style: solid;
-  border-width: calc(2 * var(--hud-px));
-  /* button_normal.png (16×8): Rand 2 Bildpunkte, die Mitte ist die Knopffläche */
-  border-image: url('../assets/gfx/ui/knopf.png') 2 fill / calc(2 * var(--hud-px)) stretch;
-  image-rendering: pixelated;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
+.ui-button::before {
+  border-width: 2px;
+  /* button_normal.png (16×8): Rand 2 Bildpunkte, die Mitte ist die Knopffläche */
+  border-image: url('../assets/gfx/ui/knopf.png') 2 fill / 2px stretch;
+}
+
 /*
  * button_pressed.png (16×8) liegt einen Bildpunkt tiefer: oben 3 (leere Zeile, Umriss, helle Kante), sonst 2.
- * Darum das ganze border-image mit eigenen Schnitten, nie nur das Bild tauschen. border-width bleibt, das Layout
- * springt beim Drücken nicht.
+ * Darum das ganze border-image mit eigenen Schnitten, nie nur das Bild tauschen. Nur die Randbild-Ebene ändert
+ * sich, das Layout springt beim Drücken nicht.
  */
-.ui-button:active,
-.ui-button.is-pressed {
-  border-image: url('../assets/gfx/ui/knopf_gedrueckt.png') 3 2 2 2 fill / calc(3 * var(--hud-px)) calc(2 * var(--hud-px)) calc(2 * var(--hud-px)) calc(2 * var(--hud-px)) stretch;
+.ui-button:active::before,
+.ui-button.is-pressed::before {
+  border-width: 3px 2px 2px;
+  border-image: url('../assets/gfx/ui/knopf_gedrueckt.png') 3 2 2 2 fill / 3px 2px 2px 2px stretch;
 }
 
 .ui-button:focus {
@@ -163,18 +209,19 @@
   justify-content: center;
   min-width: var(--tap);
   min-height: var(--tap);
-  padding: 0;
+  padding: calc(3 * var(--hud-px)) var(--hud-px) var(--hud-px) calc(3 * var(--hud-px));
   font-family: var(--font-num);
   font-size: var(--fs-1);
   color: var(--c-ink);
   background: none;
-  border-style: solid;
-  border-width: calc(3 * var(--hud-px)) var(--hud-px) var(--hud-px) calc(3 * var(--hud-px));
-  /* inventory_cell.png (16×16): Schattenkante oben und links 3, unten und rechts 1 Bildpunkt */
-  border-image: url('../assets/gfx/ui/platz.png') 3 1 1 3 fill / calc(3 * var(--hud-px)) var(--hud-px) var(--hud-px) calc(3 * var(--hud-px)) stretch;
-  image-rendering: pixelated;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+.ui-slot::before {
+  border-width: 3px 1px 1px 3px;
+  /* inventory_cell.png (16×16): Schattenkante oben und links 3, unten und rechts 1 Bildpunkt */
+  border-image: url('../assets/gfx/ui/platz.png') 3 1 1 3 fill / 3px 1px 1px 3px stretch;
 }
 
 /* gewählter Platz: Rahmen in der Akzentfarbe, zwei Bildpunkte breit, außen um den Platz */

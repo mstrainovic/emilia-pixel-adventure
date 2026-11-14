@@ -74,10 +74,12 @@ export class Hotbar {
     const contents = hotbarSlots(state);
     this.slots.forEach((view, i) => {
       const slot = contents[i];
-      const item = slot?.itemId ? getItem(slot.itemId) : null;
-      const amount = item ? slot!.count : 0;
-      if (item) {
-        const src = iconUrl(iconFor(item.id));
+      const itemId = slot?.itemId ?? null;
+      // eine Kennung, die es in den Daten nicht gibt: Beutel und „Gegenstand" statt eines leeren Platzes
+      const name = itemId === null ? null : getItem(itemId)?.name ?? TEXTS['hud.slot.unknown'];
+      const amount = name !== null ? slot!.count : 0;
+      if (itemId !== null) {
+        const src = iconUrl(iconFor(itemId));
         if (view.icon.getAttribute('src') !== src) view.icon.src = src;
         view.icon.hidden = false;
       } else {
@@ -85,9 +87,9 @@ export class Hotbar {
         view.icon.hidden = true;
       }
       view.count.textContent = amount >= 2 ? String(amount) : '';
-      const label = !item ? TEXTS['hud.slot.empty'] : amount >= 2 ? fillText('hud.slot.count', { name: item.name, n: amount }) : item.name;
+      const label = name === null ? TEXTS['hud.slot.empty'] : amount >= 2 ? fillText('hud.slot.count', { name, n: amount }) : name;
       view.button.setAttribute('aria-label', label);
-      view.button.title = item ? item.name : TEXTS['hud.slot.empty'];
+      view.button.title = name ?? TEXTS['hud.slot.empty'];
       const isSelected = i === selected;
       view.button.classList.toggle('is-selected', isSelected);
       view.button.setAttribute('aria-pressed', String(isSelected));

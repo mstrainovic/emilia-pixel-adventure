@@ -277,7 +277,13 @@ export const UI = [
   { id: 'herz', source: 'Ui/Receptacle/Heart.png', x: 0, y: 0, w: 80, h: 16, use: 'Herzen der Anzeige: Zustand n (0 = leer … 4 = voll) bei x = 16 × n' },
   { id: 'muenze', source: 'Items/Treasure/Coin2.png', x: 0, y: 0, w: 10, h: 10, use: 'Münzen in der Anzeige (erstes Bild der drehenden Münze)' },
   // Symbole der Gegenstände (src/data/icons.ts), mittig in ein 16×16-Feld gesetzt (box)
-  { id: 'schwert', source: 'Items/Weapons/Sword2/Sprite.png', x: 0, y: 0, w: 6, h: 15, box: 16, use: 'Symbol Holzschwert (das Pack hat kein Holzschwert; schlichtes kurzes Schwert)' },
+  // Holzschwert: das Pack hat keins; die Klinge des kurzen Schwerts wird in Holztöne aus Palette.png umgefärbt
+  // (hell, mittel, Schatten), Parierstange und Griff bleiben.
+  {
+    id: 'schwert', source: 'Items/Weapons/Sword2/Sprite.png', x: 0, y: 0, w: 6, h: 15, box: 16,
+    recolor: { '#f2eaf1': '#c8966b', '#abc2bc': '#a3754e', '#8d977f': '#816855' },
+    use: 'Symbol Holzschwert (kurzes Schwert, Klinge in Holztönen)',
+  },
   { id: 'beere', source: 'Items/Food/Seed3.png', x: 0, y: 0, w: 8, h: 8, box: 16, use: 'Symbol Beere (rote runde Frucht)' },
   { id: 'holz', source: 'Items/Resource/Branch.png', x: 0, y: 0, w: 16, h: 16, box: 16, use: 'Symbol Holz (Ast)' },
   { id: 'kraut', source: 'Items/Resource/Grass.png', x: 0, y: 0, w: 16, h: 16, box: 16, use: 'Symbol Magisches Kraut (grünes Kraut)' },

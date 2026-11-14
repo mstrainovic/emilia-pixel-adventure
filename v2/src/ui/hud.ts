@@ -6,6 +6,7 @@ import { TEXTS, fillText } from '../data/texts';
 import { heartQuarters, maxHp } from '../systems/progress';
 import { currentQuest } from '../systems/quests';
 import { el } from './el';
+import { snapSize } from './grid';
 import coinUrl from '../assets/gfx/ui/muenze.png?url';
 import './hud.css';
 
@@ -35,6 +36,7 @@ export class Hud {
   private readonly levelNum: HTMLElement;
   private readonly levelFill: HTMLElement;
   private readonly level: HTMLElement;
+  private readonly row: HTMLElement;
   private readonly coins: HTMLElement;
   private readonly coinNum: HTMLElement;
   private readonly quest: HTMLElement;
@@ -51,6 +53,7 @@ export class Hud {
     this.hearts = el('div', 'hud-hearts');
     this.hearts.setAttribute('role', 'img');
     const row = el('div', 'hud-row ui-panel');
+    this.row = row;
     this.level = el('div', 'hud-level');
     this.level.setAttribute('role', 'img');
     this.levelNum = el('span', 'hud-level__num');
@@ -97,7 +100,11 @@ export class Hud {
     this.unsubscribe = [
       bus.on('stats:changed', () => this.refresh()),
       bus.on('quest:changed', () => this.refresh()),
+      // neuer Maßstab: Tafeln wieder auf ganze Bildpunkte
+      services.pixelGrid.onChange(() => this.snapPanels()),
     ];
+    // Schriften laden später nach und ändern die Größe der Tafeln
+    void document.fonts?.ready.then(() => this.snapPanels());
     this.refresh();
   }
 
@@ -114,6 +121,13 @@ export class Hud {
     this.coinNum.textContent = String(coins);
     this.coins.setAttribute('aria-label', fillText('hud.coins', { n: coins }));
     this.renderQuest();
+    this.snapPanels();
+  }
+
+  /** Tafeln richten sich nach ihrem Inhalt: Größe auf ganze Bildpunkte (grid.ts), sonst wird ihr Rand unscharf. */
+  private snapPanels(): void {
+    snapSize(this.row);
+    if (!this.quest.hidden) snapSize(this.quest);
   }
 
   destroy(): void {

@@ -126,11 +126,16 @@ if (testHooksEnabled) {
     uiLog: () => [...uiLog],
     consumeInput: (action: Action) => input.consume(action),
   });
-  // Anzeige: Lebenspunkte setzen und melden (wie später ein Treffer)
+  // Anzeige: Lebenspunkte setzen und melden (wie später ein Treffer); Schnellleiste: Platz belegen
   installTestHooks({
     setHp: (hp: number) => {
       services.state.player.hp = hp;
       bus.emit('stats:changed', {});
+    },
+    // Platz der Schnellleiste direkt belegen, auch mit einer Kennung, die es nicht gibt (Review Focus 5)
+    setSlot: (index: number, itemId: string | null, count: number) => {
+      services.state.inventory.slots[index] = { itemId, count };
+      bus.emit('inventory:changed', {});
     },
   });
 }

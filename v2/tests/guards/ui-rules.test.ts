@@ -44,10 +44,12 @@ function sides<T>(v: T[]): T[] {
   return [a, b as T, c as T, d as T];
 }
 
-/** Breite als Vielfaches von --hud-px: `var(--hud-px)` → 1, `calc(N * var(--hud-px))` → N, sonst null. */
+/**
+ * Breite in Bildpunkten: Die Randbilder liegen auf der Randbild-Ebene ::before (kit.css), die in Bildpunkten gebaut
+ * ist (`Npx` = N Bildpunkte) und mit transform: scale(var(--hud-scale)) vergrößert wird. Sonst null.
+ */
 function hudMultiple(token: string): number | null {
-  if (token === 'var(--hud-px)') return 1;
-  const m = /^calc\((\d+) \* var\(--hud-px\)\)$/.exec(token);
+  const m = /^(\d+)px$/.exec(token);
   return m ? Number(m[1]) : null;
 }
 
@@ -142,7 +144,7 @@ describe('Regeln des Oberflächen-Baukastens (src/ui)', () => {
     expect(PICTOGRAPH.test('×')).toBe(false);
   });
 
-  it('neunteilige Ränder: jedes gestreckte Band ist einfarbig, die Randbreite ist genau Schnitt × --hud-px', () => {
+  it('neunteilige Ränder: jedes gestreckte Band ist einfarbig, die Randbreite ist genau der Schnitt (in Bildpunkten)', () => {
     const slices = nineSlices(byName('kit.css'));
     // Fenster, Knopf, gedrückter Knopf, Platz
     expect(slices.map((s) => s.image).sort()).toEqual(['fenster', 'knopf', 'knopf_gedrueckt', 'platz']);
@@ -153,6 +155,23 @@ describe('Regeln des Oberflächen-Baukastens (src/ui)', () => {
   it('die Prüfung erkennt falsche Schnitte (gedrückter Knopf mit den Schnitten des normalen)', () => {
     const wrong: NineSlice = { image: 'knopf_gedrueckt', slice: [2, 2, 2, 2], fill: true, widths: [2, 2, 2, 2], source: 'Probe' };
     expect(stripeProblems(wrong).length).toBeGreaterThan(0);
+  });
+
+  it('Randbild-Ebene: in Bildpunkten gebaut, mit --hud-scale vergrößert; das Element hält den Rand als Innenabstand', () => {
+    const kit = rules(byName('kit.css'));
+    // jedes border-image steht in einer Regel für ::before
+    const owners = [...kit.matchAll(/([^{}]+)\{[^}]*border-image:/g)].map((m) => (m[1] ?? '').trim());
+    expect(owners.length).toBe(4);
+    for (const selector of owners) expect(selector.split(',').every((s) => s.trim().endsWith('::before')), selector).toBe(true);
+    expect(kit).toContain('transform: scale(var(--hud-scale))');
+    expect(kit).toContain('width: calc(100% / var(--hud-scale))');
+    expect(kit).toContain('height: calc(100% / var(--hud-scale))');
+    // Innenabstand = Schnitt × --hud-px (Knopf: dazu --sp-3 links und rechts)
+    for (const padding of [
+      'calc(5 * var(--hud-px))',
+      'calc(2 * var(--hud-px)) calc(2 * var(--hud-px) + var(--sp-3))',
+      'calc(3 * var(--hud-px)) var(--hud-px) var(--hud-px) calc(3 * var(--hud-px))',
+    ]) expect(values(kit, 'padding'), padding).toContain(padding);
   });
 
   it('ein Randbild wird nie allein über border-image-source getauscht (die Schnitte gehören zum Bild)', () => {

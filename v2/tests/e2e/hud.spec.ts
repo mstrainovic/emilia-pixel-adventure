@@ -79,6 +79,21 @@ test('Lebenspunkte 9: Herzen voll, voll, viertel, leer, leer', async ({ page }) 
   await expect(hearts(page)).toHaveAttribute('aria-label', /^2,25 von 5 Herzen$/);
 });
 
+test('ein unbekannter Gegenstand im Platz zeigt den Beutel, eine neutrale Beschriftung und die Anzahl', async ({ page }) => {
+  await openWorld(page);
+  await page.evaluate(() => (window as any).__emilia2.setSlot(4, 'gibt_es_nicht', 3));
+  const slot = slots(page).nth(4);
+  await expect(slot).toHaveAttribute('aria-label', 'Gegenstand, 3 Stück');
+  await expect(slot).toHaveAttribute('title', 'Gegenstand');
+  await expect(slot.locator('.hotbar__icon')).toHaveAttribute('src', /beutel/);
+  await expect(slot.locator('.hotbar__icon')).toBeVisible();
+  await expect(slot.locator('.hotbar__count')).toHaveText('3');
+  // ein bekannter Gegenstand ohne eigenes Symbol: Beutel mit seinem Namen
+  await page.evaluate(() => (window as any).__emilia2.setSlot(5, 'pearl', 1));
+  await expect(slots(page).nth(5)).toHaveAttribute('aria-label', 'Perle');
+  await expect(slots(page).nth(5).locator('.hotbar__icon')).toHaveAttribute('src', /beutel/);
+});
+
 test('bei offenem Fenster sind Anzeige und Schnellleiste unerreichbar (inert)', async ({ page }) => {
   await openWorld(page);
   const inert = (): Promise<boolean[]> => page.evaluate(() => ['.hud', '.hotbar'].map((s) => (document.querySelector(s) as HTMLElement).inert));
@@ -109,9 +124,30 @@ test('kein Element der Anzeige überdeckt bei 1280×720 die Bildmitte', async ({
   await context.close();
 });
 
+test('Handy quer 812×375@2x: Herzen, Tafel, Aufgabe, Menü-Knopf und Schnellleiste überlappen sich nicht', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 812, height: 375 }, deviceScaleFactor: 2 });
+  const page = await context.newPage();
+  await openWorld(page);
+  await expect(page.locator('.hud-quest')).toBeVisible();
+  const parts = ['.hud-hearts', '.hud-row', '.hud-quest', '.hud-menu', '.hotbar'];
+  const boxes = await Promise.all(parts.map(async (s) => ({ s, box: (await page.locator(s).boundingBox())! })));
+  const overlaps: string[] = [];
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const a = boxes[i]!.box, b = boxes[j]!.box;
+    if (a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height) overlaps.push(`${boxes[i]!.s} / ${boxes[j]!.s}`);
+  }
+  expect(overlaps).toEqual([]);
+  for (const { s, box } of boxes) {
+    expect(box.x, s).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width, s).toBeLessThanOrEqual(812);
+    expect(box.y + box.height, s).toBeLessThanOrEqual(375);
+  }
+  await context.close();
+});
+
 test.describe('Pixelgenau', () => {
   for (const dpr of [1, 1.25, 1.5]) {
-    test(`Herzen, Münze und Symbole liegen bei Dichte ${dpr} auf ganzen Gerätepixeln`, async ({ browser, baseURL, browserName }) => {
+    test(`Herzen, Münze, Symbole und Gesicht liegen bei Dichte ${dpr} auf ganzen Gerätepixeln`, async ({ browser, baseURL, browserName }) => {
       test.skip(browserName === 'webkit' && !Number.isInteger(dpr), 'WebKit gibt es nur auf Apple-Geräten mit ganzzahliger Pixeldichte');
       const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 720 }, deviceScaleFactor: dpr });
       const page = await context.newPage();
@@ -121,9 +157,13 @@ test.describe('Pixelgenau', () => {
           const r = n.getBoundingClientRect();
           return { selector, size, left: r.left, top: r.top, width: r.width, height: r.height };
         });
-        return { dpr: window.devicePixelRatio, list: [...pick('.hud-heart', 16), ...pick('.hud-coins__img', 10), ...pick('.hotbar__icon:not([hidden])', 16)] };
+        return {
+          dpr: window.devicePixelRatio,
+          list: [...pick('.hud-heart', 16), ...pick('.hud-coins__img', 10), ...pick('.hotbar__icon:not([hidden])', 16), ...pick('.hud-quest__face', 38)],
+        };
       });
       expect(boxes.list.filter((b) => b.selector === '.hud-heart')).toHaveLength(5);
+      expect(boxes.list.filter((b) => b.selector === '.hud-quest__face')).toHaveLength(1);
       expect(boxes.list.filter((b) => b.selector.startsWith('.hotbar__icon')).length).toBeGreaterThan(0);
       const problems: string[] = [];
       const whole = (v: number): boolean => Math.abs(v * boxes.dpr - Math.round(v * boxes.dpr)) <= 0.01;

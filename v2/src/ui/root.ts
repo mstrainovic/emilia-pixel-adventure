@@ -4,9 +4,16 @@ import './fonts.css';
 import './tokens.css';
 import './kit.css';
 
-/** Ein Bildpunkt der Oberflächen-Grafik in Gerätepixeln: halb so groß wie ein Bildpunkt der Welt, aufgerundet, mindestens 1. */
-export function hudDevicePixels(zoom: number): number {
-  return Number.isFinite(zoom) && zoom > 0 ? Math.max(1, Math.ceil(zoom / 2)) : 1;
+/**
+ * Ein Bildpunkt der Oberflächen-Grafik in Gerätepixeln: halb so groß wie ein Bildpunkt der Welt (aufgerundet), aber
+ * nie kleiner als 1,5 CSS-Pixel (`ceil(1,5 × dpr)`, Entscheidung des Auftraggebers zu Task 6): sonst wären Herzen
+ * und Symbole auf dem Handy (Zoom 2) nur 8 CSS-Pixel groß. PC und iPad ändert das nicht (1280×720: 2, 1920×1080: 3,
+ * iPad quer @2: 4); Handy quer @2: 3 statt 1.
+ */
+export function hudDevicePixels(zoom: number, dpr: number): number {
+  const byZoom = Number.isFinite(zoom) && zoom > 0 ? Math.ceil(zoom / 2) : 1;
+  const byDensity = Number.isFinite(dpr) && dpr > 0 ? Math.ceil(1.5 * dpr) : 2;
+  return Math.max(1, byZoom, byDensity);
 }
 
 /** Maßstab der Oberfläche als CSS-Variablen (Werte mit Einheit `px`). */
@@ -15,7 +22,9 @@ export function scaleVariables(snapshot: PixelGridSnapshot): Record<string, stri
   const css = (devicePixels: number): string => `${devicePixels / dpr}px`;
   return {
     '--px': css(1),
-    '--hud-px': css(hudDevicePixels(layout.zoom)),
+    '--hud-px': css(hudDevicePixels(layout.zoom, dpr)),
+    // dasselbe als Zahl: Faktor der Randbild-Ebene (kit.css, transform: scale)
+    '--hud-scale': String(hudDevicePixels(layout.zoom, dpr) / dpr),
     '--view-x': css(layout.offsetX),
     '--view-y': css(layout.offsetY),
     '--view-w': css(layout.viewWidth * layout.zoom),

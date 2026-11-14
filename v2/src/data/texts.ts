@@ -22,6 +22,8 @@ export const TEXTS = {
   'hud.menu': 'Menü',
   'hud.hotbar': 'Schnellleiste',
   'hud.slot.empty': 'Leerer Platz',
+  /** Gegenstand mit unbekannter Kennung (Review Focus 5): neutral benannt, mit Beutel-Symbol. */
+  'hud.slot.unknown': 'Gegenstand',
   'hud.slot.count': '{name}, {n} Stück',
   /** Probefenster der Browser-Tests (nur über den Test-Zugang erreichbar). */
   'test.title': 'Probefenster',

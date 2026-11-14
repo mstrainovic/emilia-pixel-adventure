@@ -306,14 +306,22 @@ function buildUi() {
       continue;
     }
     const ziel = `ui/${u.id}.png`;
-    const cut = png.crop(source(u.source), u.x, u.y, u.w, u.h);
+    let cut = png.crop(source(u.source), u.x, u.y, u.w, u.h);
+    // Umfärben (nur Farben aus Palette.png), wie bei den Figuren; die Zuordnung steht in QUELLEN.md
+    const notes = [];
+    if (u.recolor) {
+      cut = png.recolor(cut, u.recolor);
+      notes.push(describeSteps([{ op: 'recolor', args: [u.recolor] }]));
+    }
     if (u.box) {
       // Symbol: mittig in ein leeres box×box-Feld (bei ungerader Differenz ein Pixel mehr rechts bzw. unten)
       if (u.w > u.box || u.h > u.box) throw new Error(`${u.id}: ${u.w}×${u.h} passt nicht in ${u.box}×${u.box}`);
       writeImage(ziel, png.blit(png.emptyImage(u.box, u.box), cut, Math.floor((u.box - u.w) / 2), Math.floor((u.box - u.h) / 2)));
-      record(u, ziel, { x: u.x, y: u.y, w: u.w, h: u.h }, u.w === u.box && u.h === u.box ? 'unverändert ausgeschnitten' : `mittig in ${u.box}×${u.box} gesetzt`);
+      if (u.w !== u.box || u.h !== u.box) notes.push(`mittig in ${u.box}×${u.box} gesetzt`);
+      record(u, ziel, { x: u.x, y: u.y, w: u.w, h: u.h }, notes.length > 0 ? notes.join('; ') : 'unverändert ausgeschnitten');
       continue;
     }
+    if (notes.length > 0) throw new Error(`${u.id}: Umfärben nur für Symbole (box) vorgesehen`);
     writeImage(ziel, cut);
     record(u, ziel, { x: u.x, y: u.y, w: u.w, h: u.h }, 'unverändert ausgeschnitten');
   }
