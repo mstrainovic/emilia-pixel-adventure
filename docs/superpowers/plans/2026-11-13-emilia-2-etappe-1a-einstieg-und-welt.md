@@ -642,9 +642,85 @@
 
 ### Abschluss 1a
 
-- [ ] In `v2/`: `npm run typecheck && npm test && npm run test:e2e && npm run test:bundle` — alles grün. Im Stamm: `npm test && npm run build`, danach `ls dist/index.html dist/v2/index.html`.
-- [ ] `git status` ist sauber; keine fremden Dateien im Stamm; unter `v2/src/assets/gfx/` liegt nichts, das nicht in `quellen.json` steht.
-- [ ] Skill `superpowers:requesting-code-review` für den gesamten Branch; Prüfer gleicht alle im Plan genannten Alt-Quellen gegen den alten Code ab.
+- [x] In `v2/`: `npm run typecheck && npm test && npm run test:e2e && npm run test:bundle` — alles grün. Im Stamm: `npm test && npm run build`, danach `ls dist/index.html dist/v2/index.html`.
+- [x] `git status` ist sauber; keine fremden Dateien im Stamm; unter `v2/src/assets/gfx/` liegt nichts, das nicht in `quellen.json` steht.
+- [x] Skill `superpowers:requesting-code-review` für den gesamten Branch; Prüfer gleicht alle im Plan genannten Alt-Quellen gegen den alten Code ab.
 - [ ] **Stil-Prüfung mit dem Auftraggeber am lebenden Objekt** (lokal über die Browser-Vorschau, mit `?stilprobe=1`; dazu Screenshots nach `test-artifacts/etappe-1a/`). Fragen, eine nach der anderen: Gefällt das Dorf so? Stimmt das Größenverhältnis (Julian kleiner als Emilia und Lena, die kleiner als die Erwachsenen — reicht ein Bildpunkt Unterschied)? Passen die Figuren zu den Personen (Zuordnungstabelle zeigen)? Sind Marie und Liam Kinder oder Erwachsene? Änderungen hier einarbeiten, bevor Plan 1b beginnt.
-- [ ] Abschluss-Abschnitt an diesen Plan anhängen: was gegenüber dem Plan geändert wurde, endgültige Figuren-Zuordnung, Liste `COLLISION_CHANGES`, gefundene Phaser-4-Aufrufe, offene Punkte für 1b.
+- [x] Abschluss-Abschnitt an diesen Plan anhängen: was gegenüber dem Plan geändert wurde, endgültige Figuren-Zuordnung, Liste `COLLISION_CHANGES`, gefundene Phaser-4-Aufrufe, offene Punkte für 1b.
 - [ ] Auftraggeber fragen, ob der Branch in `main` gemergt und veröffentlicht werden soll (unter `/v2/` ist dann das begehbare Dorf ohne Gespräche zu sehen; das alte Spiel bleibt unverändert).
+
+---
+
+## Abschluss Etappe 1a — Stand 2026-11-14 (vor der Stil-Prüfung)
+
+Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1a-welt` (abgezweigt von `plan/etappe-1`), alle 13 Tasks mit eigener Prüfung, danach Schlussprüfung des ganzen Branchs und eine Fix-Welle. Nichts ist gemergt oder gepusht.
+
+**Prüfstand am Ende:** `v2/`: Typprüfung ohne Fehler, Vitest 612 bestanden (3 übersprungen: Tests, die das Pack oder Emilias echte Datei brauchen), Playwright 100 bestanden / 19 übersprungen (Chromium, WebKit, gebautes Paket), Paket-Schutztests 9 von 9, Grafik- und Kartentests mit Pack grün. Stamm: `npm test` und `npm run build` in Ordnung; am alten Spiel ist nichts geändert. Hinweis zur Reihenfolge: Der Stamm-Build leert `dist/`; erst danach `cd v2 && npm run build`, dann liegen `dist/index.html` und `dist/v2/index.html` beide vor (die Auslieferung baut ohnehin getrennt).
+
+### Was gegenüber dem Plan geändert wurde (Entscheidungen während der Umsetzung)
+
+1. **Downloads gebündelt erfragt** (statt je Task): `pngjs`, `@types/pngjs`, `@types/node` und der Testbrowser WebKit; vom Auftraggeber am 2026-11-14 freigegeben.
+2. **Farbprüfung des gebauten Pakets** („mindestens 16 Farben") schon in Task 10 statt 12, weil das Dorf ab Task 10 gezeichnet wird.
+3. **Schachbrett-Probe:** Chromiums Emulation rundet Screenshot und Zeichenfläche bei genau halben Gerätepixeln verschieden; der Test verkleinert in diesen fünf Kombinationen ein Maß um einen CSS-Pixel (alle 36 Kombinationen bleiben).
+4. **WebKit:** Die Schachbrett-Probe läuft dort nur bei ganzzahliger Pixeldichte (1, 2, 3). WebKit gibt es nur auf Apple-Geräten mit ganzzahliger Dichte; gebrochene Dichte ist Windows und Android (Chromium).
+5. **Figuren:** Oma ist mit der Vorlage `OldWoman` nur 15 Bildpunkte hoch (wie Emilia). Höhe wird als höchste Pose über alle Zellen gemessen. Bei den Kindern wurden Haar- statt Körperzeilen entfernt. Mehrere Farben weichen vom alten Spiel ab (siehe Tabelle).
+6. **Eine Zeichenregel:** Der Tiefenschlüssel alles Stehenden ist das y der Linie, auf der sein Bild steht — bei Kartenobjekten die Unterkante ihrer Kachel (`standLineOf`), bei Figuren der Fußpunkt. Orte im Kartenmodell bleiben Kachelmitten.
+7. **Meldungen** mit typografischen Anführungszeichen („…“); das gerade Schlusszeichen im Plan war ein Tippfehler.
+8. **Eckenrutschen:** gleitet im Lauftempo (kein Sprung). Regel bei schräger Eingabe: Zeigt die Absicht überwiegend auf die Wand (Queranteil höchstens die Hälfte), rutscht die Figur um die Ecke, sonst gleitet sie an der Wand (`NUDGE_MAX_CROSS_RATIO = 0.5`). Die Rutschzone endet genau bei `CORNER_NUDGE = 5`.
+9. **Browser-Tests** laufen mit zwei Workern; der Lauftest misst die Haltezeit in der Seite und prüft das Tempo (41–75 Bildpunkte je Sekunde).
+10. **Startablauf:** Bei leerem oder kaputtem v2-Speicher wird `importLegacy` direkt gerufen (nicht erst `legacyOffer(null)`), sonst wäre der verlangte Hinweis `legacy-failed` für einen unlesbaren alten Stand nicht erreichbar. Sitzungen, die nicht speichern dürfen, bekommen einen Speicher ohne Schreibzugriff.
+11. **Weg:** rotbrauner Erdweg aus `TilesetFloor.png` statt „Sandweg" (das Pack hat keinen Sandweg auf Wiese; das alte Spiel hatte „dirt path").
+12. **Wegverbreiterung:** Die Stiche zu den Werkstätten waren in der Vorlage schon zwei Kacheln breit; verbreitert wurde der Ring um den Dorfplatz, drei Lücken im Hauptweg sind geschlossen (`PATH_WIDEN`, 8 Einträge).
+13. **Probe-Szene** wird weiter in `main.ts` gewählt (hält sie aus dem Produktions-Paket); `fps.smoothStep` ist aus (sonst Zeitlupe unter 60 Bildern je Sekunde); die Kamera zielt mit `centerOn` (Phaser kappt Kachel-Ebenen nach `worldView`, das den Ursprung ignoriert).
+14. **Fix-Welle nach der Schlussprüfung:** keine klebende Taste bei Zusatztasten, Rechtsklick-Menü und verborgener Seite; Fuß auf der unteren Kartenkante bleibt beim Neuladen stehen; Paket-Schutztest sucht weitere Test-Zugänge und prüft den ganzen CSP-Wortlaut.
+
+**Fehler im Plantext, die bei der Umsetzung auffielen:** `starsky` führt acht `npc`-Objekte *mit* Dorfbewohner-Kennungen (nicht ohne). `resetQuests` im alten Spiel ruft ein nicht vorhandenes `_assignNextQuest()`; ein echter New-Game-Plus-Stand sieht deshalb anders aus als die Vorlage `LEGACY_NGPLUS` (v2 verarbeitet die echte Form richtig; eine Vorlage in echter Form fehlt noch in der Verstümmelungs-Schleife). Mein Testraster fürs Eckenrutschen war zweimal falsch gestellt (0,5-s-Grenze; 5 Bildpunkte Überstand mit Querabsicht).
+
+### Figuren-Zuordnung (Vorschlag, wird in der Stil-Prüfung entschieden)
+
+| Figur | Vorlage im Pack | Höhe | Aussehen und Abweichung |
+|---|---|---|---|
+| emilia | `Princess` | 15 | dunkelbraunes Haar, rosa Kleid, rosa Schleife |
+| lena | `Woman` | 15 | blond mit Haarband, blaues Kleid |
+| julian | `Villager4` | 13 (14 breit) | blond, rotes Hemd |
+| mama_tanja | `Villager3` | 16 | brauner Bob, rosa Oberteil |
+| papa_milos | `Villager2` | 16 | schwarze Locken, blaue Hose; kein blaues Hemd |
+| marie | `ManGreen` | 16 | blond unter grüner Zipfelmütze; grün statt gelb |
+| liam | `Boy` | 16 | dunkelbraune Strubbelhaare, grünes Hemd |
+| oma | `OldWoman` | 15 | graue lange Haare, malvenfarbenes Kleid |
+| opa | `OldMan3` | 16 | Strohhut, weißer Bart, olivgrünes Gewand |
+| baba | `Cavegirl2` | 16 | rotbraune Haare, rotes Kleid; wirkt jung |
+| deda | `OldMan2` | 16 | dunkelblaue Mütze, weißer Schnurrbart |
+| ferdinand | `Noble` | 16 | türkise Melone und Anzug (Händler) |
+
+Ein Tausch der Vorlage ist eine Zeile in `v2/tools/art/selection.mjs`; die vollständige Liste mit Ausschnitten steht in `v2/src/assets/gfx/QUELLEN.md`.
+
+### `COLLISION_CHANGES` (38 Abweichungen der Sperrflächen von der Vorlage)
+
+Die Liste mit Begründung je Kachel steht in `v2/tools/maps/restyle-hub.mjs`; das Werkzeug wirft, wenn ein Eintrag keine Abweichung ist, und der Test prüft sie in beide Richtungen.
+
+- 28 Kacheln neu gesperrt für die vier Häuser hinter den Werkstätten: Küche 7–9/6–7, Werkstatt 29–31/6–7, Alchemie 33–34/8, 32–34/9, 32–33/10, Sägewerk 30–32/19–21.
+- Neu gesperrt: Dorfbrunnen 20/13 (statt des begehbaren Felses auf dem Startpunkt 19/14), Trophäenregal 5/10, die Stammkacheln der beiden rosa Bäume 22/8 und 22/22.
+- Drei Bäume um eine Kachel versetzt, damit ihre Krone nichts verdeckt (jeweils alte Kachel frei, neue gesperrt): 23/3 → 24/3, 23/28 → 24/28, 13/24 → 14/24.
+- Ausnahme im Test „Wegkacheln bleiben begehbar": 20/19 (Lagerfeuer, schon in der Vorlage gesperrt).
+
+### Phaser 4 — nachgelesene Aufrufe
+
+Stichwortliste im Kopfkommentar von `v2/src/scenes/world/buildLayers.ts` (Tilemap aus Tiled-JSON, `addTilesetImage` über den Namen, `createLayer`, Einzelbilder per `textures.get(key).add(…)`, stabile Sortierung nach `depth`, Animation aus Einzelbildern, Kamera `setViewport`/`setZoom`/`centerOn`). Drei Fallen, die Tests jetzt abdecken: `setOrigin(0,0)` an der Kamera lässt Kachel-Ebenen verschwinden; `fps.smoothStep` bremst unter 60 Bildern je Sekunde; `setFrame()` rechnet den Anker neu (Objektbilder stehen deshalb mit Ursprung 0/0 an ganzzahliger Ecke).
+
+### Für die Stil-Prüfung mit dem Auftraggeber
+
+- Gefällt das Dorf (Erdweg statt Sandweg; Tannen wirken wie Büsche; Gartenecke mit Blumen unter den Zäunen unruhig)?
+- Größen: Kinder sind meist nur einen Bildpunkt kleiner als Erwachsene; Oma ist so hoch wie Emilia.
+- Zuordnung der Figuren (Tabelle oben): Papa ohne Hemd in Blau, Marie in Grün, Baba wirkt jung; Emilia und Mama ähneln sich am meisten. Sind Marie und Liam Kinder oder Erwachsene?
+- Schatten der Figuren ist kaum zu sehen (liegt fast ganz unter der Figur).
+- Zäune, Truhen, Wegweiser, Büsche und Hühner sind wie im alten Spiel durchlaufbar; mit der neuen Tiefensortierung wirkt das wie ein Fehler. Sperren?
+- Lena (Stilprobe) und Deda stehen dicht unter Brunnen und Kessel.
+- Von Hand am echten Gerät: Schärfe bei Windows-Skalierung 125 % und 150 % (Fenster auch zwischen Bildschirmen ziehen) und auf dem iPad; ruckelt etwas beim Laufen?
+
+### Offene Punkte
+
+- **Vorab-Arbeiten für Plan 1b** aus der Schlussprüfung stehen dort im Abschnitt „Vorab aus der Schlussprüfung von 1a".
+- **Erster Lauf der Auslieferung:** WebKit mit WebGL unter Linux und die Zeittests sind dort noch nie gelaufen. Scheitert der Job `v2`, bleibt das alte Spiel unberührt, aber `/v2/` fehlt in dieser Auslieferung.
+- **Übernommener Ort:** Ein alter Stand aus Wald, See … startet im Dorf am Startpunkt; nach dem ersten Bild steht im v2-Stand `hub`. Level, Rucksack, Aufgaben und besuchte Karten bleiben; der alte Schlüssel bleibt bytegleich.
+- **Kleinigkeiten, die bleiben dürfen** (laut Schlussprüfung): toter Ausdruck in `repairQuests`; Filter in `convert.mjs` nur nach Ziel; PNG-Bytes hängen von der zlib-Version ab (Vergleich läuft nur lokal mit Pack); Fußpunkt mehrzeiliger Objekt-Rechtecke (hub hat keine); unbegrenzte Teilschritte in `moveAndSlide`; Bildzeile springt beim Wechsel Gehen/Rennen; `pose`-Getter im Paket.

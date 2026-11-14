@@ -51,6 +51,23 @@ Es gelten die „Vorgaben des Auftraggebers vom 2026-11-13" aus Plan 1a: der alt
 
 ---
 
+## Vorab aus der Schlussprüfung von 1a (vor Task 1 einplanen)
+
+Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch nichts kosten, aber mit Aufgaben, Freundschaft, Touch und dem Laden aus Datei gefährlich werden. Sie gehören an den Anfang dieses Plans und brauchen je eigene Tests. **Dieser Abschnitt ist eine Auftragsliste, noch keine ausgearbeitete Task-Folge** — vor der Ausführung von 1b als „Task 0" ausarbeiten (Dateien, Schnittstellen, Tests) und die Schnittstellen unten in den betroffenen Tasks nachziehen.
+
+1. **Zwei offene Tabs überschreiben sich still** (`v2/src/save/store.ts`, `service.ts`). `save()` sperrt nur bei neuerer Version. Ein alter Tab im Hintergrund speichert alle 60 s und beim Schließen seinen veralteten Stand über den Fortschritt des neuen. Abhilfe: `save()` liest den Eintrag ohnehin — gespeichertes `savedAt` mit dem zuletzt selbst gelesenen oder geschriebenen vergleichen, bei Abweichung nicht schreiben und ein eigenes Ergebnis melden (neuer Fall in `SaveResult`; Hinweis in Task 9).
+2. **Reparatur verliert still** (`v2/src/save/normalize.ts`, `legacy.ts`). Eine aktive Aufgabe mit ungültigem `progress` verschwindet ohne Bericht; ebenso Überlauf ab Platz 96, Kürzen auf `stackSize`, ungültige Stückzahlen. Abhilfe vor Task 2: Aufgabe mit `progress: 0` behalten (wie die Übernahme es tut); jeder stille Verlust setzt `lossy`, damit der Rohtext gesichert wird.
+3. **Der Start meldet eine Reparatur mit Verlust niemandem** (`v2/src/core/services.ts`). Bei `ok` mit `repair.lossy` ist der Hinweis `null`; bei „kaputt + Übernahme gelungen" bleibt nur `save-corrupt`, und Task 9 würde „Wir fangen neu an." zeigen, obwohl der alte Stand geholt wurde. Abhilfe: Rückgabe von `startGame` um den Reparatur-Bericht, das Ergebnis der Übernahme und das Ergebnis des Sofort-Speicherns erweitern; Task 9 bekommt die passenden Hinweise.
+4. **Ersetzen und Neuladen wird vom eigenen Speichern überschrieben.** Task 9 und Task 10 sehen „`replaceWith`, dann Seite neu laden" vor; der Empfänger für `pagehide` speichert beim Neuladen den alten Stand aus dem Arbeitsspeicher über den gerade ersetzten. Abhilfe im Plantext beider Tasks: vor dem Neuladen `save.stop()` rufen (oder `services.state` ersetzen), mit Test.
+5. **Kriechen an der Wand mit laufender Animation** (Task 8, Touch). Außerhalb der Rutschzone lässt eine winzige Querkomponente die Figur an der Wand kriechen, `moving` bleibt wahr. Die Tastatur kann das nicht auslösen, der Stick schon. Abhilfe: `moving` an der wirklichen Bewegung festmachen oder den Stick-Winkel rasten.
+6. **Tastatur und HTML-Oberfläche** (Task 5). `KeyboardSource` unterdrückt Enter und Leertaste am Fenster; HTML-Knöpfe wären damit nicht per Tastatur auslösbar. Entweder bewusst über `InputHub.consume('confirm')` lösen oder Ereignisse aus Bedienelementen ausnehmen.
+7. **Zeiger-Abbildung** (Task 5, Task 8). `PixelGrid.cssToView` liefert ungerundete Werte, die knapp unter 0 oder über der Breite liegen können; der Vertrag steht nicht im Kommentar, die Klasse hat keine Unit-Tests.
+8. **Begehbare Objekte** (vor Task 7 mit dem Auftraggeber entscheiden). Zäune, Truhen, Wegweiser, Büsche und Hühner sind wie im alten Spiel durchlaufbar. Sollen sie sperren, steigt die Obergrenze 40 in `COLLISION_CHANGES`. Das Trophäenregal ist schon gesperrt und wird von der Nachbarkachel bedient.
+9. **Tests nachziehen:** Einheit von `distanceWalked` nach oben begrenzen; Browser-Test für einen Speicher, dessen `getItem` wirft; gespeicherter v2-Ort in einer Wand im Browser; eine Vorlage in echter New-Game-Plus-Form in die Verstümmelungs-Schleife; Fingerabdruck des Spielstands erfasst nur oberste Schlüssel (verschachtelte neue Felder lösen keinen Alarm aus).
+10. **Liste der serbischen Sätze** (`test-artifacts/texte/serbisch.md`, 25 Sätze): Der Satz „Bravo! Du bist mutig! Deda ist stolz!" fehlt dort ohne Vermerk; beim Gegenlesen am Ende dieses Plans mit vorlegen. Offen für den Auftraggeber: ekavisch oder ijekavisch („dve", „na svetu"), Schreibung von „Pita".
+
+---
+
 ### Task 1: Rucksack, Erfahrung und Herzen (reine Logik)
 
 **Files:**
