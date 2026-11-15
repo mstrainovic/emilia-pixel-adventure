@@ -293,6 +293,8 @@ export const UI = [
   // Über den Figuren im Spielbild (Task 7), von der Welt-Szene gezeichnet
   { id: 'taste_e', source: 'Ui/Input/Keyboard/KeyE.png', x: 0, y: 0, w: 13, h: 13, use: 'Tasten-Bild „E" über der ansprechbaren Figur (nur mit Tastatur)' },
   { id: 'hinweis', source: 'Ui/Emote/emote22.png', x: 0, y: 0, w: 14, h: 13, use: 'Hinweis-Symbol (rotes Ausrufezeichen) über dem Dorfbewohner, zu dem die aktuelle Aufgabe führt' },
+  // Touch-Bedienung (Task 8)
+  { id: 'sprechblase', source: 'Ui/Emote/emote20.png', x: 0, y: 0, w: 14, h: 13, use: 'Symbol des Kontext-Knopfs (Touch), wenn er ein Gespräch beginnt: Sprechblase mit drei Punkten' },
 ];
 
 /** Schriften, die nicht aus dem Pack kommen (für QUELLEN.md); die Lizenzdatei wird beim Bauen geprüft. */

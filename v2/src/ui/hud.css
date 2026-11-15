@@ -247,6 +247,32 @@
   pointer-events: none;
 }
 
+/*
+ * Name des Gegenstands nach langem Drücken (Task 8): über dem Platz, mittig dazu (left setzt hotbar.ts auf die Mitte
+ * des Platzes). Die Tafel zieht grid.ts auf ganze Bildpunkte und Gerätepixel nach.
+ */
+.hotbar__tip {
+  position: absolute;
+  bottom: calc(100% + var(--sp-3));
+  left: 0;
+  display: flex;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hotbar__tip[hidden] {
+  display: none;
+}
+
+.hotbar__tip-box {
+  margin: 0;
+  padding: calc(5 * var(--hud-px) + var(--sp-1)) calc(5 * var(--hud-px) + var(--sp-3));
+  font-size: var(--fs-2);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 /* ---------- unten Mitte über der Schnellleiste: Gesprächsfeld (Task 7) ---------- */
 
 /*

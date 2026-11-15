@@ -111,6 +111,8 @@ describe('Quellenverzeichnis src/assets/gfx', () => {
     const expected: Record<string, { quelle: string; size: [number, number] }> = {
       'ui/taste_e.png': { quelle: 'Ui/Input/Keyboard/KeyE.png', size: [13, 13] },
       'ui/hinweis.png': { quelle: 'Ui/Emote/emote22.png', size: [14, 13] },
+      // Kontext-Knopf der Touch-Bedienung (Task 8)
+      'ui/sprechblase.png': { quelle: 'Ui/Emote/emote20.png', size: [14, 13] },
     };
     for (const [ziel, { quelle, size }] of Object.entries(expected)) {
       expect(sources.eintraege.find((e) => e.ziel === ziel)?.quelle, ziel).toBe(quelle);

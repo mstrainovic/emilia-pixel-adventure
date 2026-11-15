@@ -248,6 +248,8 @@ const FRAMES: Frame[] = [
   { selector: '.hud-menu', image: 'knopf', slice: [2, 2, 2, 2], fill: true },
   { selector: '.hotbar .ui-slot[data-slot="7"]', image: 'platz', slice: [3, 1, 1, 3], fill: true },
   { selector: '.hud-row.ui-panel', image: 'fenster', slice: [5, 5, 5, 5], fill: false },
+  // Kontext-Knopf der Touch-Bedienung (Task 8), neben Mama (mit Ziel, also nicht blass)
+  { selector: '.touch-act__button', image: 'knopf', slice: [2, 2, 2, 2], fill: true },
 ];
 const GFX_UI = fileURLToPath(new URL('../../src/assets/gfx/ui/', import.meta.url));
 /** Fläche der Fenster und Tafeln (--c-paper). */
@@ -300,6 +302,16 @@ test.describe('Randbilder in ganzen Bildpunkten', () => {
       await openWorld(page, []);
       const hud = Math.round(await hudDevicePixels(page));
       const problems: string[] = [];
+      // Touch-Bedienung zeigen (eine Berührung oben Mitte) und neben Mama stellen: der Kontext-Knopf hat ein Ziel
+      await page.evaluate(() => {
+        const init = { pointerId: 9, pointerType: 'touch', isPrimary: true, clientX: 640, clientY: 200, bubbles: true };
+        const target = document.elementFromPoint(640, 200)!;
+        target.dispatchEvent(new PointerEvent('pointerdown', init));
+        target.dispatchEvent(new PointerEvent('pointerup', init));
+        (window as any).__emilia2.teleport(9, 11);
+      });
+      await expect(page.locator('.touch-act__button')).toBeVisible();
+      await expect(page.locator('.touch-act__button')).not.toHaveClass(/is-idle/);
       // Anzeige ohne Fenster (die Abdunklung läge sonst darüber)
       const hudShot = readPng(await page.screenshot({ scale: 'device' }));
       for (const frame of FRAMES.slice(1)) problems.push(...frameProblems(hudShot, frame, await deviceRect(page, frame.selector, dpr), hud));

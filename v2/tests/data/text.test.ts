@@ -118,4 +118,9 @@ describe('fillText', () => {
     expect(fillText('toast.levelUp', { n: 2 })).toBe('Level 2!');
     expect(TEXTS['toast.exitSoon']).toBe('Hier geht es bald weiter.');
   });
+  it('Touch-Bedienung: Beschriftung des Kontext-Knopfs je Ziel, Dreh-Hinweis', () => {
+    expect(TEXTS['touch.action']).toBe('Aktion');
+    expect(TEXTS['touch.talk']).toBe('Reden');
+    expect(TEXTS['rotate.hint']).toBe('Bitte dreh das Gerät quer.');
+  });
 });

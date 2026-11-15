@@ -130,6 +130,27 @@ describe('InputHub', () => {
     expect(hub.device).toBe('keys');
   });
 
+  it('noteDevice setzt das Gerät sofort, ohne Bewegung oder Druck (erste Berührung, nächster Tastendruck)', () => {
+    const keys = new FakeSource('keys');
+    const hub = hubWith(keys);
+    hub.noteDevice('touch');
+    expect(hub.device).toBe('touch');
+    // ein Bild ohne Eingabe ändert daran nichts
+    hub.frame(0.016);
+    expect(hub.device).toBe('touch');
+    hub.noteDevice('keys');
+    expect(hub.device).toBe('keys');
+    // und eine Quelle mit Eingabe setzt es wie bisher
+    hub.noteDevice('touch');
+    keys.move = { x: 0, y: 1 };
+    hub.frame(0.016);
+    expect(hub.device).toBe('keys');
+    // reset lässt das Gerät stehen
+    hub.noteDevice('touch');
+    hub.reset();
+    expect(hub.device).toBe('touch');
+  });
+
   it('ungültige Zeit und ungültige Bewegung richten nichts an', () => {
     const s = new FakeSource();
     const hub = hubWith(s);

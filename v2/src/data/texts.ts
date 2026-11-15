@@ -29,6 +29,10 @@ export const TEXTS = {
   'toast.questDone': 'Aufgabe geschafft!',
   'toast.levelUp': 'Level {n}!',
   'toast.exitSoon': 'Hier geht es bald weiter.',
+  // Touch-Bedienung (Task 8): vorgelesene Beschriftung des Kontext-Knopfs (ohne Ziel bzw. beim Reden), Dreh-Hinweis
+  'touch.action': 'Aktion',
+  'touch.talk': 'Reden',
+  'rotate.hint': 'Bitte dreh das Gerät quer.',
   /** Probefenster der Browser-Tests (nur über den Test-Zugang erreichbar). */
   'test.title': 'Probefenster',
   'test.body': 'Hier steht später etwas Schönes.',

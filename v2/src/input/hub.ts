@@ -73,4 +73,12 @@ export class InputHub {
   get device(): InputDevice {
     return this.lastDevice;
   }
+
+  /**
+   * Setzt das zuletzt benutzte Gerät sofort, ohne Bewegung oder Druck: die erste Berührung (`pointerType 'touch'`)
+   * zeigt die Touch-Bedienung, der nächste Tastendruck die Tasten-Hinweise (touchControls.ts).
+   */
+  noteDevice(device: InputDevice): void {
+    this.lastDevice = device;
+  }
 }

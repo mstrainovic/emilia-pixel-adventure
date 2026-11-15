@@ -8,6 +8,7 @@ import { GameSession } from './core/session';
 import { installTestHooks } from './core/testHooks';
 import { InputHub } from './input/hub';
 import { KeyboardSource } from './input/keyboard';
+import { TouchSource } from './input/touch';
 import { openBrowserStorage } from './save/browser';
 import { SaveService } from './save/service';
 import { SaveStore } from './save/store';
@@ -17,6 +18,8 @@ import { Hud } from './ui/hud';
 import { Hotbar } from './ui/hotbar';
 import { DialogueBox } from './ui/dialogueBox';
 import { Toasts } from './ui/toasts';
+import { TouchControls } from './ui/touchControls';
+import { RotateHint } from './ui/rotateHint';
 import { el } from './ui/el';
 import { TEXTS, fillText } from './data/texts';
 import { QUESTS } from './data/quests';
@@ -107,6 +110,9 @@ const input = new InputHub();
 const keyboard = new KeyboardSource(window, document);
 keyboard.attach();
 input.add(keyboard);
+// Berührung: Stick und Kontext-Knopf (ui/touchControls.ts übersetzt die Zeiger-Ereignisse)
+const touch = new TouchSource();
+input.add(touch);
 const save = new SaveService(store, () => services.state, () => Date.now(), (reason, result) => {
   bus.emit('save:result', { reason, result });
 });
@@ -126,6 +132,9 @@ services.hud = new Hud(uiRoot.element, services);
 services.hotbar = new Hotbar(uiRoot.element, services);
 services.dialogue = new DialogueBox(uiRoot.element, services, windows);
 services.toasts = new Toasts(uiRoot.element);
+// Touch-Bedienung: Stick-Zone als erstes Kind (unter Anzeige und Schnellleiste), Kontext-Knopf und Dreh-Hinweis zuletzt
+new TouchControls(uiRoot.element, services, touch, host);
+new RotateHint(uiRoot.element, windows);
 announceProgress(services);
 game.registry.set(SERVICES_KEY, services);
 pixelGrid.start();
@@ -159,6 +168,8 @@ if (testHooksEnabled) {
     paused: () => windows.paused,
     uiLog: () => [...uiLog],
     consumeInput: (action: Action) => input.consume(action),
+    // Touch: zuletzt benutztes Gerät, Vektor und Rennen des Sticks, ob ein Finger ihn hält
+    touchState: () => ({ device: input.device, move: touch.move, run: touch.run, held: touch.held }),
   });
   // Anzeige: Lebenspunkte setzen und melden (wie später ein Treffer); Schnellleiste: Platz belegen
   installTestHooks({

@@ -53,6 +53,7 @@
     "ui/samen_karotte.png",
     "ui/samen_tomate.png",
     "ui/schwert.png",
+    "ui/sprechblase.png",
     "ui/taste_e.png",
     "ui/zahlen.ttf"
   ],
@@ -1329,6 +1330,20 @@
       },
       "aenderungen": "unverändert ausgeschnitten",
       "verwendung": "Hinweis-Symbol (rotes Ausrufezeichen) über dem Dorfbewohner, zu dem die aktuelle Aufgabe führt",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "sprechblase",
+      "ziel": "ui/sprechblase.png",
+      "quelle": "Ui/Emote/emote20.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Symbol des Kontext-Knopfs (Touch), wenn er ein Gespräch beginnt: Sprechblase mit drei Punkten",
       "lizenz": "CC0 1.0"
     }
   ]

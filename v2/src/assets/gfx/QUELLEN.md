@@ -110,6 +110,7 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 | beutel | ui/beutel.png | Items/Object/Bag.png | 0,0 16×16 | unverändert ausgeschnitten | Neutrales Symbol für Gegenstände ohne eigenes Bild | CC0 1.0 |
 | taste_e | ui/taste_e.png | Ui/Input/Keyboard/KeyE.png | 0,0 13×13 | unverändert ausgeschnitten | Tasten-Bild „E" über der ansprechbaren Figur (nur mit Tastatur) | CC0 1.0 |
 | hinweis | ui/hinweis.png | Ui/Emote/emote22.png | 0,0 14×13 | unverändert ausgeschnitten | Hinweis-Symbol (rotes Ausrufezeichen) über dem Dorfbewohner, zu dem die aktuelle Aufgabe führt | CC0 1.0 |
+| sprechblase | ui/sprechblase.png | Ui/Emote/emote20.png | 0,0 14×13 | unverändert ausgeschnitten | Symbol des Kontext-Knopfs (Touch), wenn er ein Gespräch beginnt: Sprechblase mit drei Punkten | CC0 1.0 |
 
 ## Schriften
 
