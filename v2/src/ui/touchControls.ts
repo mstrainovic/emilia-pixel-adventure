@@ -15,7 +15,8 @@ import './kit.css';
  * - Die Stick-Zone (`div.touch-zone`, linke untere Fläche) nimmt immer Berührungen an, auch vor der ersten, damit
  *   schon der erste Daumen steuert. Der Stick erscheint dort, wo er aufsetzt, und gehört genau diesem Finger;
  *   `pointerup`, `pointercancel` und `lostpointercapture` lassen ihn los, ebenso das Anhalten des Spiels (Fenster,
- *   Gespräch, Dreh-Hinweis): sonst liefe Emilia danach weiter. Die Maus steuert den Stick nicht.
+ *   Gespräch, Dreh-Hinweis) und das Verschwinden der Seite (`blur`, `pagehide`, verborgen): sonst liefe Emilia danach
+ *   weiter. Die Maus steuert den Stick nicht.
  * - Der Kontext-Knopf löst `interact` beim Aufsetzen aus (auch mit einem zweiten Finger, während der erste steuert;
  *   ein Klick käme dann nicht). Er zeigt die Sprechblase, wenn er ein Gespräch beginnt, und ist ohne Ziel blass.
  * - Ist ein Gespräch offen, schließt Tippen ins Spielbild oder in die Stick-Zone es (der Knopf schließt es über
@@ -79,6 +80,11 @@ export class TouchControls {
     this.listen(gameArea, 'contextmenu', prevent);
     // Safari: keine Seiten-Zoom-Geste mit zwei Fingern
     this.listen(document, 'gesturestart', prevent);
+    // Fenster verliert den Fokus, Seite wird verlassen oder verborgen: ein pointerup käme nie an – loslassen und die
+    // Zone für einen neuen Finger freigeben (wie die Tastatur, keyboard.ts)
+    this.listen(window, 'blur', this.onLeave);
+    this.listen(window, 'pagehide', this.onLeave);
+    this.listen(document, 'visibilitychange', this.onHidden);
     this.cleanup.push(
       bus.on('ui:paused', ({ paused }) => { if (paused) this.releaseStick(); }),
       bus.on('context:changed', ({ target }) => { this.target = target; this.renderButton(); }),
@@ -164,6 +170,14 @@ export class TouchControls {
       this.button.classList.remove('is-pressed');
     }
     if (e.pointerId === this.stickPointer) this.releaseStick();
+  };
+
+  private readonly onLeave = (): void => {
+    this.releaseStick();
+  };
+
+  private readonly onHidden = (): void => {
+    if (document.visibilityState === 'hidden') this.releaseStick();
   };
 
   private readonly onButtonDown = (e: PointerEvent): void => {

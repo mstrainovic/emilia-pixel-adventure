@@ -6,7 +6,8 @@ import { MAX_LEVEL, HP_PER_HEART, heartsForLevel, convertLegacyXp } from '../cor
 import { ITEM_SUCCESSORS, getItem } from '../data/items';
 import { BOSSES } from '../data/bosses';
 import { QUESTS, QUEST_ORDER } from '../data/quests';
-import { isMapId, HUB_START, type MapId } from '../data/maps';
+import { isMapId, HUB_START } from '../data/maps';
+import { normalizeClock } from '../systems/dayclock';
 import {
   isObj, keysOf, field, finite, counter, nonNegative, stringList, trueKeys, listOrTrueKeys,
   counterRecord, bossRecord, boolRecord, listRecord, type Obj,
@@ -185,11 +186,12 @@ export function readExplorerBook(old: unknown, state: GameState): void {
 
 export function readWorld(save: Obj, state: GameState): void {
   const dn = field(save, 'dayNight');
-  state.dayNight = {
+  // in den gültigen Bereich (Fix-Welle F7): mit phaseTime 1e12 oder phaseIndex 99 stünde die Uhr sonst still
+  state.dayNight = normalizeClock({
     totalTime: finite(field(dn, 'totalTime')) ?? state.dayNight.totalTime,
     phaseIndex: finite(field(dn, 'phaseIndex')) ?? state.dayNight.phaseIndex,
     phaseTime: finite(field(dn, 'phaseTime')) ?? state.dayNight.phaseTime,
-  };
+  });
   const w = field(save, 'weather');
   const current = field(w, 'current');
   state.weather = {

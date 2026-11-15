@@ -194,6 +194,38 @@ describe('normalizeState: Klemmen', () => {
   });
 });
 
+describe('normalizeState: Uhr des Spieltags (Fix-Welle F7)', () => {
+  it.each([
+    ['phaseTime 1e12', { totalTime: 100, phaseIndex: 2, phaseTime: 1e12 }],
+    ['phaseIndex 99', { totalTime: 100, phaseIndex: 99, phaseTime: 3 }],
+    ['phaseIndex −1', { totalTime: 100, phaseIndex: -1, phaseTime: 3 }],
+    ['totalTime negativ', { totalTime: -5, phaseIndex: 1, phaseTime: 3 }],
+  ])('kaputte Uhr (%s): lädt, Werte im gültigen Bereich, kein Verlust gemeldet', (_name, clock) => {
+    const raw = base();
+    raw.dayNight = clock;
+    const { state, report } = run(raw);
+    const { totalTime, phaseIndex, phaseTime } = state.dayNight;
+    expect(Number.isFinite(totalTime) && totalTime >= 0).toBe(true);
+    expect([0, 1, 2, 3]).toContain(phaseIndex);
+    expect(phaseTime >= 0 && phaseTime < 187.5).toBe(true);
+    expect(report).toEqual(CLEAN);
+  });
+
+  it('gültige Uhr bleibt genau so (Identität)', () => {
+    const raw = base();
+    raw.dayNight = { totalTime: 5400.5, phaseIndex: 2, phaseTime: 41.25 };
+    expect(run(raw).state.dayNight).toEqual({ totalTime: 5400.5, phaseIndex: 2, phaseTime: 41.25 });
+  });
+
+  it('alter Stand mit kaputter Uhr: die Übernahme begrenzt sie ebenso', () => {
+    const imported = migrateLegacySave(JSON.stringify({ ...LEGACY_FIRST_COMMIT, dayNight: { totalTime: 7, phaseIndex: 99, phaseTime: 1e12 } }), null, 1);
+    expect(imported.kind).toBe('ok');
+    if (imported.kind !== 'ok') return;
+    expect([0, 1, 2, 3]).toContain(imported.state.dayNight.phaseIndex);
+    expect(imported.state.dayNight.phaseTime).toBeLessThan(187.5);
+  });
+});
+
 describe('normalizeState: hartes Minimum', () => {
   it('liefert null', () => {
     const ok = base();

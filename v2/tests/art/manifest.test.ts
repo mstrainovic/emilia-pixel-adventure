@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 const GFX = fileURLToPath(new URL('../../src/assets/gfx', import.meta.url));
 const BUILD = fileURLToPath(new URL('../../tools/art/build.mjs', import.meta.url));
-const DIRECTORY_FILES = ['LIZENZ-ninja-adventure.txt', 'QUELLEN.md', 'quellen.json'];
+const DIRECTORY_FILES = ['LIZENZ-ninja-adventure.txt', 'LIZENZ-nunito.txt', 'QUELLEN.md', 'quellen.json'];
 const PACK_PAGE = 'https://pixel-boy.itch.io/ninja-adventure-asset-pack';
 const AUTHORS = ['Pixel-boy', 'AAA'];
 const MAX_BYTES = 400 * 1024;
@@ -67,6 +67,13 @@ describe('Quellenverzeichnis src/assets/gfx', () => {
 
   it('die Lizenzdatei beginnt mit „CC0 1.0 Universal"', () => {
     expect(readFileSync(join(GFX, 'LIZENZ-ninja-adventure.txt'), 'utf8').startsWith('CC0 1.0 Universal')).toBe(true);
+  });
+
+  it('die Lizenz der Schrift Nunito liegt bei (SIL Open Font License 1.1, aus dem installierten Paket)', () => {
+    const text = readFileSync(join(GFX, 'LIZENZ-nunito.txt'), 'utf8');
+    expect(text).toContain('This Font Software is licensed under the SIL Open Font License, Version 1.1.');
+    expect(text).toContain('Nunito Project Authors');
+    expect(readFileSync(join(GFX, 'QUELLEN.md'), 'utf8')).toContain('LIZENZ-nunito.txt');
   });
 
   it('QUELLEN.md nennt die Pack-Seite und die Urheber', () => {

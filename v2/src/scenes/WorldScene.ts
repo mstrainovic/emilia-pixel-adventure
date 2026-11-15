@@ -85,6 +85,8 @@ export class WorldScene extends Phaser.Scene {
     this.talkingTo = null;
     this.talkCooldown = 0;
     this.inExit = null;
+    // neue Szene, noch kein Ziel: melden, damit der Touch-Knopf nach einem Kartenwechsel keine alte Sprechblase zeigt
+    this.services.bus.emit('context:changed', { target: null });
     const { state } = this.services;
     if (!state.visitedMaps.includes(id)) state.visitedMaps.push(id);
     this.recordPlayer();

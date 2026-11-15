@@ -132,7 +132,7 @@ Beide Schriften liefert das Spiel selbst aus (`src/ui/fonts.css`), nie von fremd
 
 | Schrift | Herkunft | Dateien | Lizenz | Verwendung |
 | --- | --- | --- | --- | --- |
-| Nunito | npm-Paket @fontsource/nunito (Nunito Project Authors, https://github.com/googlefonts/nunito), Fassung 5.3.0 | latin und latin-ext, je 400 und 700 (woff2), von Vite aus node_modules gebündelt | SIL Open Font License 1.1 | Leseschrift der Oberfläche (--font-text) |
+| Nunito | npm-Paket @fontsource/nunito (Nunito Project Authors, https://github.com/googlefonts/nunito), Fassung 5.3.0 | latin und latin-ext, je 400 und 700 (woff2), von Vite aus node_modules gebündelt | SIL Open Font License 1.1, siehe LIZENZ-nunito.txt | Leseschrift der Oberfläche (--font-text) |
 | EmiliaZahlen | Ninja Adventure Asset Pack: Ui/Font/NormalFont.ttf | ui/zahlen.ttf | CC0 1.0, siehe LIZENZ-ninja-adventure.txt | Schrift EmiliaZahlen: nur Ziffern, „/" und „×" (unicode-range in src/ui/fonts.css) |
 
 ## Figuren

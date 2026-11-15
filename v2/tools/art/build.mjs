@@ -20,7 +20,7 @@ const PACK = {
 const LICENSE_FILE = 'LIZENZ-ninja-adventure.txt';
 const TILE = 16;
 const TILES_PER_ROW = 16;
-const MANAGED = ['tiles', 'props', 'figuren', 'ui', LICENSE_FILE, 'QUELLEN.md', 'quellen.json'];
+const MANAGED = ['tiles', 'props', 'figuren', 'ui', LICENSE_FILE, ...FONTS.map((f) => f.lizenzdatei), 'QUELLEN.md', 'quellen.json'];
 
 const packDir = process.env.NINJA_PACK_DIR;
 if (!packDir || !existsSync(packDir)) {
@@ -327,7 +327,10 @@ function buildUi() {
   }
 }
 
-/** Schriften außerhalb des Packs: Lizenz im installierten Paket prüfen, Fassung für QUELLEN.md lesen. */
+/**
+ * Schriften außerhalb des Packs: Lizenz im installierten Paket prüfen, Fassung für QUELLEN.md lesen. Der Lizenztext
+ * wird unverändert als `lizenzdatei` neben die Lizenz des Packs gelegt (die OFL verlangt, ihn mitzuliefern).
+ */
 function checkFonts() {
   return FONTS.map((f) => {
     const dir = fileURLToPath(new URL(`../../node_modules/${f.paket}/`, import.meta.url));
@@ -336,7 +339,7 @@ function checkFonts() {
       throw new Error(`Lizenz von ${f.paket} ist nicht mehr wie erwartet (${f.lizenz}) – bitte prüfen, nichts erzeugt`);
     }
     const { version } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    return { ...f, fassung: version };
+    return { ...f, fassung: version, lizenztext: readFileSync(join(dir, 'LICENSE')) };
   });
 }
 
@@ -344,7 +347,7 @@ function checkFonts() {
 function fontRows(fonts, cell) {
   const row = (values) => `| ${values.map(cell).join(' | ')} |`;
   return [
-    ...fonts.map((f) => row([f.name, `${f.herkunft}, Fassung ${f.fassung}`, f.dateien, f.lizenz, f.use])),
+    ...fonts.map((f) => row([f.name, `${f.herkunft}, Fassung ${f.fassung}`, f.dateien, `${f.lizenz}, siehe ${f.lizenzdatei}`, f.use])),
     ...UI.filter((u) => u.file).map((u) => row(['EmiliaZahlen', `${PACK.name}: ${u.source}`, `ui/${u.file}`, `${PACK.lizenz}, siehe ${LICENSE_FILE}`, u.use])),
   ];
 }
@@ -400,6 +403,7 @@ buildFigures();
 buildUi();
 
 writeFileSync(join(outDir, LICENSE_FILE), license);
+for (const f of fonts) writeFileSync(join(outDir, f.lizenzdatei), f.lizenztext);
 writeFileSync(join(outDir, 'quellen.json'), JSON.stringify({
   paket: { name: PACK.name, seite: PACK.seite, urheber: PACK.urheber.map((u) => u.name), lizenz: PACK.lizenz, lizenzdatei: LICENSE_FILE },
   dateien: [...files].sort(),

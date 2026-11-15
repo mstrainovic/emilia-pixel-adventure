@@ -234,6 +234,40 @@ for (const end of ['pointercancel', 'lostpointercapture', 'pointerup'] as const)
   });
 }
 
+for (const leave of ['blur', 'pagehide', 'visibilitychange'] as const) {
+  test(`Seite verschwindet beim Laufen (${leave}) → der Stick lässt los, ein neuer Finger steuert wieder`, async ({ page }) => {
+    const errors = watchErrors(page);
+    await openWorld(page);
+    await page.evaluate(() => (window as any).__emilia2.teleport(12, 13));
+    await finger(page, 'pointerdown', 1, THUMB.x, THUMB.y);
+    await finger(page, 'pointermove', 1, THUMB.x + WALK_DX, THUMB.y);
+    await expect.poll(async () => (await player(page)).moving).toBe(true);
+    // wie der Browser: das Fenster verliert den Fokus, die Seite wird verlassen oder verborgen – ein pointerup kommt nie
+    await page.evaluate((how) => {
+      if (how === 'visibilitychange') {
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+        Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        delete (document as any).visibilityState;
+        delete (document as any).hidden;
+      } else {
+        window.dispatchEvent(new Event(how));
+      }
+    }, leave);
+    expect(await touchState(page)).toMatchObject({ held: false, move: { x: 0, y: 0 } });
+    await expect.poll(async () => (await player(page)).moving).toBe(false);
+    await expect(page.locator('.touch-stick')).not.toHaveClass(/is-active/);
+    // die Zone ist frei: ein neuer Finger steuert sofort
+    await finger(page, 'pointerdown', 2, THUMB.x, THUMB.y);
+    await finger(page, 'pointermove', 2, THUMB.x + WALK_DX, THUMB.y);
+    expect((await touchState(page)).held).toBe(true);
+    await expect.poll(async () => (await player(page)).moving).toBe(true);
+    await finger(page, 'pointerup', 2, THUMB.x + WALK_DX, THUMB.y);
+    expect((await touchState(page)).held).toBe(false);
+    expect(errors).toEqual([]);
+  });
+}
+
 test('Finger rutscht weit aus der Zone → Stick bleibt bei Betrag 1 und lässt beim Abheben los', async ({ page }) => {
   await openWorld(page);
   await page.evaluate(() => (window as any).__emilia2.teleport(12, 13));

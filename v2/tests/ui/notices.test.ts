@@ -121,9 +121,10 @@ describe('SaveAlerts', () => {
 
 describe('Hinweise (Toasts): Dauer nach Länge, kein Verdrängen vor 3 s', () => {
   it('Dauer = max(5 s, 4 s + 0,6 s je Wort)', () => {
-    expect(toastDuration('Level 2!')).toBe(5000);
+    expect(toastDuration('Hallo!')).toBe(5000);
+    expect(toastDuration('Level 2!')).toBe(5200);
     expect(toastDuration('Aufgabe geschafft!')).toBe(5200);
-    expect(toastDuration('Hier geht es bald weiter.')).toBe(6400);
+    expect(toastDuration('Hier geht es bald weiter.')).toBe(7000);
     expect(toastDuration(TEXTS['backup.remind'])).toBe(4000 + 600 * 10);
     // Leerzeichen am Rand und doppelte Leerzeichen zählen nicht als Wörter
     expect(toastDuration('  ein   zwei   drei  ')).toBe(5800);

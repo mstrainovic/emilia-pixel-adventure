@@ -21,6 +21,8 @@ export class RotateHint {
   private readonly panel: HTMLElement;
   private readonly query: MediaQueryList | null;
   private snapper: ResizeObserver | null = null;
+  /** Ausstehendes Einrasten aus dem Beobachter (requestAnimationFrame); 0 = keins. */
+  private frame = 0;
 
   constructor(root: HTMLElement, private readonly windows: WindowManager) {
     this.element = el('div', 'rotate-hint');
@@ -50,7 +52,7 @@ export class RotateHint {
 
   destroy(): void {
     this.query?.removeEventListener('change', this.update);
-    this.snapper?.disconnect();
+    this.stopSnapping();
     this.windows.setPaused(ROTATE_REASON, false);
     this.element.remove();
   }
@@ -59,19 +61,30 @@ export class RotateHint {
     const show = this.query?.matches === true;
     this.element.hidden = !show;
     this.windows.setPaused(ROTATE_REASON, show);
-    this.snapper?.disconnect();
-    this.snapper = null;
+    this.stopSnapping();
     if (!show) return;
-    // Tafel auf ganze Bildpunkte und Gerätepixel (grid.ts), auch nach Größenwechsel und Nachladen der Schrift
-    snapSize(this.panel);
-    snapPosition(this.panel);
+    // Tafel auf ganze Bildpunkte und Gerätepixel (grid.ts), auch nach Größenwechsel und Nachladen der Schrift – aus
+    // dem Beobachter erst im nächsten Bild (wie windows.ts), sonst meldete der Browser „ResizeObserver loop …"
+    this.snap();
     if (typeof ResizeObserver === 'function') {
       this.snapper = new ResizeObserver(() => {
-        snapSize(this.panel);
-        snapPosition(this.panel);
+        cancelAnimationFrame(this.frame);
+        this.frame = requestAnimationFrame(() => this.snap());
       });
       this.snapper.observe(this.element);
       this.snapper.observe(this.panel);
     }
   };
+
+  private snap(): void {
+    snapSize(this.panel);
+    snapPosition(this.panel);
+  }
+
+  private stopSnapping(): void {
+    this.snapper?.disconnect();
+    this.snapper = null;
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
+  }
 }

@@ -31,6 +31,8 @@ export class DialogueBox {
   private readonly lines: HTMLElement;
   private open = false;
   private snapper: ResizeObserver | null = null;
+  /** Ausstehendes Einrasten aus dem Beobachter (requestAnimationFrame); 0 = keins. */
+  private frame = 0;
 
   constructor(root: HTMLElement, private readonly services: Services, private readonly windows: WindowManager) {
     this.element = el('div', 'dialogue');
@@ -62,11 +64,15 @@ export class DialogueBox {
     this.open = true;
     this.windows.setPaused(DIALOGUE_REASON, true);
     this.services.input.reset();
-    this.snapper?.disconnect();
+    this.stopSnapping();
     snap(this.box);
     if (typeof ResizeObserver === 'function') {
-      // neue Fenstergröße, neuer Maßstab, nachgeladene Schrift: wieder einrasten
-      this.snapper = new ResizeObserver(() => snap(this.box));
+      // neue Fenstergröße, neuer Maßstab, nachgeladene Schrift: wieder einrasten – erst im nächsten Bild (wie
+      // windows.ts): im Rückruf selbst änderte das Einrasten die Größe des beobachteten Felds („ResizeObserver loop …")
+      this.snapper = new ResizeObserver(() => {
+        cancelAnimationFrame(this.frame);
+        this.frame = requestAnimationFrame(() => snap(this.box));
+      });
       this.snapper.observe(this.box);
       this.snapper.observe(this.element);
     }
@@ -76,10 +82,16 @@ export class DialogueBox {
   hide(): void {
     if (!this.open) return;
     this.open = false;
-    this.snapper?.disconnect();
-    this.snapper = null;
+    this.stopSnapping();
     this.element.hidden = true;
     this.windows.setPaused(DIALOGUE_REASON, false);
+  }
+
+  private stopSnapping(): void {
+    this.snapper?.disconnect();
+    this.snapper = null;
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
   }
 
   get isOpen(): boolean {

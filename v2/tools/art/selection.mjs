@@ -316,6 +316,8 @@ export const FONTS = [
     dateien: 'latin und latin-ext, je 400 und 700 (woff2), von Vite aus node_modules gebündelt',
     lizenz: 'SIL Open Font License 1.1',
     lizenzBeginn: 'This Font Software is licensed under the SIL Open Font License, Version 1.1.',
+    /** Lizenztext aus dem Paket, unverändert neben LIZENZ-ninja-adventure.txt abgelegt. */
+    lizenzdatei: 'LIZENZ-nunito.txt',
     use: 'Leseschrift der Oberfläche (--font-text)',
   },
 ];
