@@ -208,19 +208,19 @@ export const NPCS: readonly NpcDef[] = [
     role: 'Lagerfeuer',
     favoriteGifts: ['mushroom', 'berry'],
     dialogs: [
-      'Dodji ovamo! Setz dich ans Feuer, zlato moje!',
+      'Dođi ovamo! Setz dich ans Feuer, zlato moje!',
       'Bring Pilze und Beeren — Baba kocht was!',
       'In Serbien gab es auch magische Wälder!',
-      'Svaka cast! Du bist so tapfer, Emilia!',
+      'Svaka čast! Du bist so tapfer, Emilia!',
       'Baba hat Pita gemacht — frisch aus dem Ofen!',
-      'Ko rano rani, dve srece grabi! Früh aufstehen bringt Glück!',
+      'Ko rano rani, dve sreće grabi! Früh aufstehen bringt Glück!',
       'Jesi gladna? Baba kocht genug für alle!',
       'Volim te, moja mala! Du bist Babas Schatz!',
     ],
     friendshipDialogs: {
       1: [
-        'Moja mala! Dodji, Baba hat was Leckeres am Feuer!',
-        'Svaka cast, Emilia! Du wirst jeden Tag tapferer!',
+        'Moja mala! Dođi, Baba hat was Leckeres am Feuer!',
+        'Svaka čast, Emilia! Du wirst jeden Tag tapferer!',
         'Baba erzählt dir eine Geschichte aus Serbien!',
       ],
       2: [
@@ -229,8 +229,8 @@ export const NPCS: readonly NpcDef[] = [
         'Hajde, probier mal! Baba kocht mit ganz viel Liebe!',
       ],
       3: [
-        'Volim te najvise na svetu! Baba liebt dich am meisten!',
-        'Moja najdraza unuka! Du bist Babas ganzer Stolz!',
+        'Volim te najviše na svetu! Baba liebt dich am meisten!',
+        'Moja najdraža unuka! Du bist Babas ganzer Stolz!',
         'Baba ist so glücklich mit dir! Ti si moje sunce!',
       ],
     },
@@ -254,17 +254,17 @@ export const NPCS: readonly NpcDef[] = [
       1: [
         'Bravo, moja unuka! Deda hat neue Geschichten für dich!',
         'Donesi kristale — Deda zeigt dir echte Magie!',
-        'Du erinnerst mich an den tapferen Kraljevic Marko!',
+        'Du erinnerst mich an den tapferen Kraljević Marko!',
       ],
       2: [
-        'Moja mala carobnica! Du bist eine echte Zauberin!',
+        'Moja mala čarobnica! Du bist eine echte Zauberin!',
         'Deda verrät dir das Geheimnis der Kristallkugel!',
-        'Svaka cast! Du bist mutig wie ein Zmaj!',
+        'Svaka čast! Du bist mutig wie ein Zmaj!',
       ],
       3: [
         'Ponosan sam na tebe! Deda ist so stolz auf dich!',
         'Du bist die größte Heldin die Deda je gesehen hat!',
-        'Moja najdraza! Deda liebt dich über alles!',
+        'Moja najdraža! Deda liebt dich über alles!',
       ],
     },
   },

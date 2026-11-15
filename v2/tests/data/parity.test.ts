@@ -38,6 +38,12 @@ import { ACHIEVEMENTS as LEGACY_ACH, ACHIEVEMENT_CATEGORIES as LEGACY_ACH_CATS }
 const deUmlaut = (s: string) => s.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue')
   .replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss');
 
+/** Serbische Sonderzeichen zurück in die Schreibung des alten Spiels (dort nur einfache Buchstaben). */
+const deSerbian = (s: string) => s.replace(/đ/g, 'dj').replace(/Đ/g, 'Dj').replace(/[čć]/g, 'c').replace(/[ČĆ]/g, 'C')
+  .replace(/š/g, 's').replace(/Š/g, 'S').replace(/ž/g, 'z').replace(/Ž/g, 'Z');
+/** Satz eines Dorfbewohners in der Schreibung des alten Spiels. */
+const toOld = (s: string) => deSerbian(deUmlaut(s));
+
 /** Tippfehler im Altbestand (Umlaut ohne Ersatzschreibung weggelassen), die bewusst korrigiert wurden:
  *  altes Wort -> Altschreibung der korrigierten Form. */
 const OLD_TYPO_FIXES: Record<string, string> = {
@@ -160,10 +166,10 @@ describe('Dorfbewohner', () => {
       expect(deUmlaut(cur.role)).toBe(old.role);
       expect(cur.type).toBe(old.type);
       expect(cur.favoriteGifts).toEqual(old.favoriteGifts.map(mapId));
-      expect(cur.dialogs.map(deUmlaut)).toEqual(old.dialogs.map(fixOld));
+      expect(cur.dialogs.map(toOld)).toEqual(old.dialogs.map(fixOld));
       expect(Object.keys(cur.friendshipDialogs)).toEqual(Object.keys(old.friendshipDialogs));
       for (const lvl of Object.keys(old.friendshipDialogs)) {
-        expect((cur.friendshipDialogs as any)[lvl].map(deUmlaut), `${old.id} Stufe ${lvl}`).toEqual(old.friendshipDialogs[lvl].map(fixOld));
+        expect((cur.friendshipDialogs as any)[lvl].map(toOld), `${old.id} Stufe ${lvl}`).toEqual(old.friendshipDialogs[lvl].map(fixOld));
       }
       // Nur diese Felder sind erlaubt; Haar- und Kleidungsfelder entfallen.
       const allowed = ['id', 'name', 'role', 'type', 'favoriteGifts', 'dialogs', 'friendshipDialogs'];
@@ -171,12 +177,26 @@ describe('Dorfbewohner', () => {
     });
     expect(NPCS.find((n) => n.id === 'mama_tanja')!.favoriteGifts).toEqual(['goldfish', 'cooked_meat']);
   });
-  it('Serbische Sätze von Baba und Deda sind unverändert', () => {
-    const serbian = ['Dodji ovamo', 'Svaka cast', 'Ko rano rani, dve srece grabi', 'Jesi gladna', 'Volim te',
-      'Moja najdraza', 'Ti si moje sunce', 'Donesi', 'Ponosan sam na tebe', 'Moja mala carobnica', 'Kraljevic Marko', 'Zmaj'];
-    const all = NPCS.filter((n) => n.id === 'baba' || n.id === 'deda')
-      .flatMap((n) => [...n.dialogs, ...Object.values(n.friendshipDialogs).flat()]).join('\n');
+  it('Serbische Sätze von Baba und Deda: mit Sonderzeichen, ekavisch, sonst wie im alten Spiel', () => {
+    // Entscheidung des Auftraggebers vom 2026-11-15 (Liste test-artifacts/texte/serbisch.md): č, ć, š, ž, đ schreiben,
+    // ekavisch lassen („dve", „na svetu"), „Pita" groß, sonst nichts ändern.
+    const serbian = ['Dođi ovamo', 'Moja mala! Dođi,', 'Svaka čast', 'Ko rano rani, dve sreće grabi', 'Jesi gladna', 'Volim te',
+      'Volim te najviše na svetu', 'Moja najdraža unuka', 'Moja najdraža!', 'Ti si moje sunce', 'Donesi mi kristale',
+      'Ponosan sam na tebe', 'Moja mala čarobnica', 'Kraljević Marko', 'Zmaj', 'Baba hat Pita gemacht'];
+    const lines = NPCS.filter((n) => n.id === 'baba' || n.id === 'deda')
+      .flatMap((n) => [...n.dialogs, ...Object.values(n.friendshipDialogs).flat()]);
+    const all = lines.join('\n');
     for (const s of serbian) expect(all, s).toContain(s);
+    // keine Schreibung ohne Sonderzeichen übrig, keine ijekavische Form
+    const plain = /Dodji|\bcast\b|srece|najvise|najdraza|Kraljevic|carobnica|dvije|svijetu/i;
+    expect(lines.filter((l) => plain.test(l))).toEqual([]);
+    // genau elf Sätze tragen Sonderzeichen (Nr. 3, 4, 6, 9, 10, 13, 14, 21, 22, 23, 25 der Liste)
+    expect(lines.filter((l) => /[čćšžđ]/i.test(l)).length).toBe(11);
+  });
+  it('außer Baba und Deda trägt niemand serbische Sonderzeichen', () => {
+    const others = NPCS.filter((n) => n.id !== 'baba' && n.id !== 'deda')
+      .flatMap((n) => [...n.dialogs, ...Object.values(n.friendshipDialogs).flat()]);
+    expect(others.filter((l) => /[čćšžđ]/i.test(l))).toEqual([]);
   });
 });
 

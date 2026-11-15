@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { ITEMS } from '../../src/data/items';
 import { RECIPES } from '../../src/data/recipes';
 import { QUESTS } from '../../src/data/quests';
@@ -81,6 +82,45 @@ describe('Texte', () => {
       for (const t of all) if (wrapLines(t, DIALOG_LINE_CHARS).length > DIALOG_MAX_LINES) tooLong.push(`${n.id}: ${t}`);
     }
     expect(tooLong).toEqual([]);
+  });
+});
+
+describe('Schrift und Texte', () => {
+  /** Bereiche (unicode-range) aller Nunito-Teilsätze aus fonts.css, je Datei. */
+  function nunitoRanges(): { file: string; ranges: [number, number][] }[] {
+    const css = readFileSync(new URL('../../src/ui/fonts.css', import.meta.url), 'utf8');
+    return [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)]
+      .map((m) => m[1]!)
+      .filter((block) => /font-family:\s*'Nunito'/.test(block))
+      .map((block) => ({
+        file: /nunito-([a-z-]+)-\d+-normal/.exec(block)![1]!,
+        ranges: /unicode-range:\s*([^;]+);/.exec(block)![1]!.split(',').map((part) => {
+          const [from, to] = part.trim().replace('U+', '').split('-');
+          return [parseInt(from!, 16), parseInt(to ?? from!, 16)] as [number, number];
+        }),
+      }));
+  }
+  const covers = (ranges: [number, number][], code: number): boolean => ranges.some(([a, b]) => code >= a && code <= b);
+
+  it('jedes Zeichen aller Texte liegt in einem Teilsatz von Nunito (sonst zeichnet der Browser eine Ersatzschrift)', () => {
+    const faces = nunitoRanges();
+    expect(faces.map((f) => f.file).sort()).toEqual(['latin', 'latin', 'latin-ext', 'latin-ext']);
+    const missing = new Set<string>();
+    for (const ch of collectTexts().join('')) {
+      if (!faces.some((f) => covers(f.ranges, ch.codePointAt(0)!))) missing.add(ch);
+    }
+    expect([...missing]).toEqual([]);
+    // Gegenprobe: Kyrillisch gehört zu keinem der beiden Teilsätze
+    expect(faces.some((f) => covers(f.ranges, 'ж'.codePointAt(0)!))).toBe(false);
+  });
+  it('die serbischen Zeichen č, ć, š, ž, đ stehen im Teilsatz latin-ext und kommen in den Texten vor', () => {
+    const ext = nunitoRanges().filter((f) => f.file === 'latin-ext');
+    expect(ext.length).toBe(2);
+    const joined = collectTexts().join('');
+    for (const ch of 'čćšžđ') {
+      for (const f of ext) expect(covers(f.ranges, ch.codePointAt(0)!), ch).toBe(true);
+      expect(joined, ch).toContain(ch);
+    }
   });
 });
 
