@@ -16,7 +16,7 @@ import type { WorldExit } from '../maps/model';
 import { NPCS } from '../data/npcs';
 import { TEXTS } from '../data/texts';
 import { DIALOGUE_REASON } from '../ui/dialogueBox';
-import { faceUrl } from '../ui/hud';
+import { faceUrl } from '../ui/images';
 import { buildLayers } from './world/buildLayers';
 import { buildProps } from './world/buildProps';
 

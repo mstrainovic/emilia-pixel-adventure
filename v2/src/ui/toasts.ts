@@ -1,6 +1,6 @@
 import { el } from './el';
 import { snapPosition, snapSize } from './grid';
-import { iconUrl } from './hotbar';
+import { iconUrl } from './images';
 // Baukasten vor hud.css: gleich spezifische Regeln aus hud.css (etwa der Innenabstand einer Tafel) gelten nur,
 // wenn kit.css vorher geladen ist – auch wenn dieses Modul vor root.ts geladen wird (etwa über WorldScene).
 import './kit.css';

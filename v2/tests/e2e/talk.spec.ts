@@ -158,18 +158,74 @@ test('E gehalten öffnet das Gespräch genau einmal; zwei schnelle Drücke nach 
   await page.keyboard.up('KeyE');
   await frames(page, 5);
   expect(await talkState(page)).toMatchObject({ open: true, talks: 1 });
-  // nach dem Loslassen schließt ein weiterer Druck
-  await pressE(page, false);
-  // zwei Drücke im Abstand von 100 ms gleich nach dem Schließen: kein neues Gespräch
-  await page.keyboard.press('KeyE');
-  await page.waitForTimeout(100);
-  await page.keyboard.press('KeyE');
-  await frames(page, 10);
-  expect(await talkState(page)).toMatchObject({ open: false, talks: 1 });
+  // Nach dem Loslassen schließt ein weiterer Druck, gleich darauf zwei Drücke im Abstand von 100 ms SPIELZEIT – alles
+  // in der Seite, Bild für Bild, ohne Rundreisen und ohne Wanduhr. Gemessen wird, wie viel Spielzeit seit dem Schließen
+  // bei jedem Druck vergangen war; beide müssen in der Sperre (0,3 s) liegen, sonst ist der Lauf ungültig.
+  const run = await page.evaluate(() => new Promise<{ atFirst: number; atSecond: number; talks: number; open: boolean }>((resolve) => {
+    const h = (window as any).__emilia2;
+    const clock = (): number => h.state().dayNight.totalTime;
+    const tap = (): void => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE', key: 'e', bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE', key: 'e', bubbles: true }));
+    };
+    tap();
+    let closedAt = -1, atFirst = -1, atSecond = -1, after = 0;
+    const step = (): void => {
+      const s = h.talkState();
+      if (closedAt < 0) {
+        if (!s.open) { closedAt = clock(); tap(); }
+      } else if (s.open) {
+        // wieder offen: das Spiel steht, die Spielzeit liefe nicht weiter – sofort melden
+        resolve({ atFirst, atSecond, talks: s.talks, open: s.open });
+        return;
+      } else if (atFirst < 0) {
+        // ein Bild später ist der erste Druck abgeholt: so viel Spielzeit war seit dem Schließen vergangen
+        atFirst = clock() - closedAt;
+      } else if (atSecond < 0) {
+        if (clock() - closedAt >= 0.1) { atSecond = clock() - closedAt; tap(); }
+      } else if (++after >= 10) {
+        resolve({ atFirst, atSecond, talks: s.talks, open: s.open });
+        return;
+      }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }));
+  // kein neues Gespräch; beide Drücke lagen sicher in der Sperre (ein Bild Verzug für das Abholen eingerechnet)
+  expect(run, 'ein Druck in der Sperre hat das Gespräch wieder geöffnet').toMatchObject({ open: false, talks: 1 });
+  expect(run.atFirst, 'erster Druck kam erst nach der Sperre – Rechner hat gestockt, Lauf ungültig').toBeLessThan(0.15);
+  expect(run.atSecond, 'zweiter Druck kam erst nach der Sperre – Rechner hat gestockt, Lauf ungültig').toBeLessThan(0.2);
   // nichts klemmt: nach der Sperre öffnet E wieder
   await cooledDown(page);
   await pressE(page, true);
   expect((await talkState(page)).talks).toBe(2);
+  expect(errors).toEqual([]);
+});
+
+test('Esc, Enter, Leertaste und ein Klick auf das Feld schließen das Gespräch genau einmal, ohne es wieder zu öffnen', async ({ page }) => {
+  const errors = watchErrors(page);
+  await openWorld(page);
+  await besideMama(page);
+  const ways: Array<[string, () => Promise<void>]> = [
+    ['Esc', () => page.keyboard.press('Escape')],
+    ['Enter', () => page.keyboard.press('Enter')],
+    ['Leertaste', () => page.keyboard.press('Space')],
+    ['Klick', () => box(page).click()],
+  ];
+  let talks = 0;
+  for (const [name, close] of ways) {
+    await cooledDown(page);
+    await pressE(page, true);
+    talks += 1;
+    await close();
+    await expect.poll(async () => (await talkState(page)).open, { message: name }).toBe(false);
+    await expect(box(page), name).toBeHidden();
+    await frames(page, 10);
+    expect(await talkState(page), name).toMatchObject({ open: false, talks });
+    expect(await page.evaluate(() => (window as any).__emilia2.paused()), name).toBe(false);
+    // auch auf diesen Wegen dreht Mama sich zurück
+    expect((await mama(page)).facing, name).toBe('down');
+  }
   expect(errors).toEqual([]);
 });
 

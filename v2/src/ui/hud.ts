@@ -1,26 +1,17 @@
 import type { Services } from '../core/services';
 import { HP_PER_HEART, MAX_LEVEL, xpToNext } from '../core/levels';
 import { QUEST_GIVERS } from '../data/quests';
-import { FIGURES } from '../data/sprites';
 import { TEXTS, fillText } from '../data/texts';
 import { heartQuarters, maxHp } from '../systems/progress';
 import { currentQuest } from '../systems/quests';
 import { el } from './el';
 import { snapSize } from './grid';
+import { faceUrl } from './images';
 import coinUrl from '../assets/gfx/ui/muenze.png?url';
 // Baukasten vor hud.css: gleich spezifische Regeln aus hud.css (etwa der Innenabstand einer Tafel) gelten nur,
 // wenn kit.css vorher geladen ist – auch wenn dieses Modul vor root.ts geladen wird (etwa über WorldScene).
 import './kit.css';
 import './hud.css';
-
-/** Gesichter der Dorfbewohner (38×38, von art:build aus dem Faceset der Vorlage). */
-const FACE_URLS = import.meta.glob<string>('../assets/gfx/figuren/*-gesicht.png', { query: '?url', import: 'default', eager: true });
-
-/** Gesicht eines Dorfbewohners (Aufgabe in der Anzeige, Gesprächsfeld); `null` ohne Figur oder Bild. */
-export function faceUrl(npcId: string | undefined): string | null {
-  const face = npcId !== undefined ? FIGURES[npcId]?.face : undefined;
-  return face !== undefined ? FACE_URLS[`../assets/gfx/${face}`] ?? null : null;
-}
 
 /** Zahl für die Vorlese-Beschriftung, deutsch (2,25). */
 const number = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
