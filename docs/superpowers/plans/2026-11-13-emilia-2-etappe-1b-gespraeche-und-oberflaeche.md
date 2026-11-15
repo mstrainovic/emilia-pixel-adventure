@@ -578,6 +578,18 @@ Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1b-oberflaec
 
 **Prüfstand am Ende (`0b9b79c`):** `v2/`: Typprüfung ohne Fehler, Vitest 932 bestanden / 1 übersprungen (mit Pack), Playwright 261 bestanden / 35 übersprungen (Chromium, WebKit, gebautes Paket), Paket-Schutztests 19 von 19. Stamm: `npm test` und `npm run build` in Ordnung; am alten Spiel ist nichts geändert. Auf dem Rechner der Auslieferung (GitHub) sind die neuen Browser-Tests noch nie gelaufen.
 
+**Nachtrag 2026-11-15 — Probelauf auf GitHub (vom Auftraggeber je Lauf freigegeben, ohne Auslieferung):** Mess-Branch `diag/etappe-1b-probelauf` mit eigenem Workflow (dieselben Prüfungen wie `deploy.yml`, nur Leserechte), nach dem dritten Lauf wieder gelöscht. `main` und die Live-Seite blieben unberührt.
+
+| Lauf | Stand | Ergebnis |
+|------|-------|----------|
+| 43680284295 | `a2e7114` | rot: 7 Browser-Tests gescheitert, 3 erst im zweiten Anlauf grün |
+| 43690325450 | `83dbb89` | rot: 1 Browser-Test gescheitert (256 bestanden) |
+| 43692101225 | `31b2003` | **grün:** 257 bestanden / 41 übersprungen, kein zweiter Anlauf; Vitest 930 / 3 übersprungen (ohne Pack); Paket-Schutztests 19 von 19; altes Spiel grün |
+
+Alle Fehler lagen in den Tests, am Spiel wurde dafür nichts geändert. Der Rechner dort zeichnet ohne Grafikkarte: Ein Bild dauert mit der HTML-Oberfläche rund 0,1 s, Bildschirmfotos bei hoher Pixeldichte 20 bis 30 s je Test. Korrekturen (`83dbb89`, `31b2003`): Stick-Messung zählt `min(dt, MAX_DT)` je Bild; Tests mit Bildschirmfoto der laufenden Figur lesen ihren Ort vor und nach dem Foto (`figureSpan` in `walk.spec.ts`); nach `page.reload()` nur warten, nicht noch einmal `goto`; reine „Bilder für die Durchsicht“-Tests laufen dort nicht (`process.env.CI`); Zeitgrenze dort 90 s. Der Fokusring der Schnellleiste ist behoben (`a2e7114`, mit Browser-Test).
+
+**Prüfstand `31b2003` lokal:** Typprüfung ohne Fehler, Vitest 932 bestanden / 1 übersprungen (mit Pack), Playwright 263 bestanden / 35 übersprungen, Paket-Schutztests 19 von 19, Stamm in Ordnung.
+
 ### Was gegenüber dem Plan geändert wurde
 
 1. **Vorab-Arbeiten ausgearbeitet** als Task 0a (Speichern) und 0b (Eingabe); Vorab 4 und 5 stehen im Text von Task 8–10. Ein `SaveStore` statt zweien in `main.ts`.
@@ -599,7 +611,7 @@ Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1b-oberflaec
 
 ### Offene Punkte
 
-- **Vor dem Veröffentlichen empfohlen:** (a) Probelauf der Browser-Tests auf GitHub ohne Auslieferung (eigener Branch mit eigenem Workflow, wie beim Messen in 1a) — braucht die Freigabe zum Pushen; ein roter Lauf nach dem Merge nähme `/v2/` vom Netz. (b) Fokusring der acht Plätze der Schnellleiste fehlt seit der Fix-Welle bei Tastaturfokus (`hud.css`: der Block `.hotbar .ui-slot:focus { outline: none }` steht nach `:focus-visible`); kleine Korrektur mit Browser-Test.
+- **Vor dem Veröffentlichen empfohlen — beides erledigt (siehe Nachtrag oben):** (a) Probelauf der Browser-Tests auf GitHub ohne Auslieferung, im dritten Lauf grün. (b) Fokusring der acht Plätze der Schnellleiste bei Tastaturfokus. Kommen vor dem Merge noch Browser-Tests dazu, lohnt ein neuer Probelauf (braucht wieder die Freigabe zum Pushen).
 - **Nur am Gerät prüfbar (Auftraggeber):** iPad — Stick mit zweitem Finger, Wischen in der Hilfe, „Spielstand sichern" (Download-Abfrage, Ablage in „Dateien") und „Spielstand laden"; iPadOS-Fassung notieren (für das volle Layout etwa iPadOS 16: `inert`, CSS `round()`, `subgrid`). PC — Schärfe der Rahmen bei Windows-Skalierung 125 % und 150 % (nur in der Emulation geprüft). Bildrate mit `?fps=1`.
 - **Fragen an den Auftraggeber:** endgültige Stil-Entscheidung; Lesbarkeit der Schrift für Emilia; serbische Sätze (`test-artifacts/texte/serbisch.md`, dazu der dort fehlende Satz „Bravo! Du bist mutig! Deda ist stolz!"; ekavisch oder ijekavisch; „Pita"); überarbeitete Texte ansehen; Anzeige ändert sich schon unter dem offenen Gespräch, der Hinweis „Aufgabe geschafft!" kommt danach.
 - **Sätze, die Tasten nennen, die es noch nicht gibt** (aus dem alten Spiel übernommen, nicht geändert): Mama, Liam, Oma („mit F"), Papa („Leertaste zum Kämpfen"), Aufgabe `star_collector` („P-Taste"), Opa („mit E", am iPad falsch). Anpassen, wenn Heilen, Angeln, Kämpfen und Erfolge umziehen.
