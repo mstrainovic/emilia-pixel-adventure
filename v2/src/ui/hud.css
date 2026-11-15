@@ -202,7 +202,13 @@
 /*
  * Fokus außerhalb von Fenstern (Menü-Knopf, Plätze, Kontext-Knopf) liegt über Gras und Weg: Ring in Tinte (8,4 : 1
  * auf Gras, 6,1 : 1 auf Weg) mit einem Bildpunkt Papier dazwischen, statt des Akzents (unter 3 : 1).
+ * Die Regel für :focus (kein Ring nach Maus oder Finger) muss VOR :focus-visible stehen: beide wiegen gleich viel,
+ * die spätere gewinnt.
  */
+.hotbar .ui-slot:focus {
+  outline: none;
+}
+
 .hud-menu:focus-visible,
 .touch-act__button:focus-visible,
 .hotbar .ui-slot:focus-visible {
@@ -255,10 +261,6 @@
     0 0 0 calc(2 * var(--hud-px)) var(--c-accent),
     0 0 0 calc(3 * var(--hud-px)) var(--c-ink),
     0 0 0 calc(4 * var(--hud-px)) var(--c-paper);
-}
-
-.hotbar .ui-slot:focus {
-  outline: none;
 }
 
 /* absolut, mittig im Platz: Rahmen links und oben 3 Bildpunkte (kit.css), Inhalt Platz − 4, Symbol 16 */

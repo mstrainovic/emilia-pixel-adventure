@@ -118,6 +118,33 @@ test('Fokus per Tab auf dem Menü-Knopf: Ring in Tinte mit einem Bildpunkt Papie
   expect(ring.shadow).toContain('rgb(252, 226, 202)');
 });
 
+test('Fokus per Tab auf den Plätzen der Schnellleiste: Ring in Tinte, beim gewählten Platz außen herum', async ({ page }) => {
+  await openWorld(page);
+  await page.keyboard.press('Digit3');
+  await frames(page, 3);
+  await expect(slots(page).nth(2)).toHaveClass(/is-selected/);
+  const tabTo = async (index: number) => {
+    const slot = slots(page).nth(index);
+    for (let i = 0; i < 16 && !(await slot.evaluate((n) => n === document.activeElement)); i++) await page.keyboard.press('Tab');
+    await expect(slot).toBeFocused();
+    return slot.evaluate((n) => {
+      const s = getComputedStyle(n);
+      return { color: s.outlineColor, style: s.outlineStyle, width: parseFloat(s.outlineWidth), offset: parseFloat(s.outlineOffset), shadow: s.boxShadow };
+    });
+  };
+  const plain = await tabTo(0);
+  expect(plain.style).toBe('solid');
+  expect(plain.color).toBe('rgb(20, 27, 27)');
+  expect(plain.width).toBeGreaterThan(0);
+  expect(plain.offset).toBeGreaterThan(0);
+  expect(plain.shadow).toContain('rgb(252, 226, 202)');
+  // gewählter Platz: der Fokusring liegt außerhalb des Rings der Auswahl
+  const selected = await tabTo(2);
+  expect(selected.style).toBe('solid');
+  expect(selected.color).toBe('rgb(20, 27, 27)');
+  expect(selected.offset).toBeGreaterThan(plain.offset);
+});
+
 test('Lebenspunkte 9: Herzen voll, voll, viertel, leer, leer', async ({ page }) => {
   await openWorld(page);
   await page.evaluate(() => (window as any).__emilia2.setHp(9));
