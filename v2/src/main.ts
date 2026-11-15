@@ -23,7 +23,7 @@ import { RotateHint } from './ui/rotateHint';
 import { Menu } from './ui/menu';
 import { Help } from './ui/help';
 import { FpsMeter } from './ui/fps';
-import { Notices, toastWhenRunning } from './ui/notices';
+import { Notices, SaveReplacer, toastWhenRunning } from './ui/notices';
 import { Backup } from './ui/backup';
 import { el } from './ui/el';
 import { TEXTS, fillText } from './data/texts';
@@ -123,6 +123,7 @@ const services = {
   startRepair: start.repair, importSave: start.importSave,
   session: new GameSession(start.state, bus),
   uiRoot, windows,
+  replacer: new SaveReplacer(store, save, start.persist),
 } as Services;
 services.session.start();
 services.hud = new Hud(uiRoot.element, services);

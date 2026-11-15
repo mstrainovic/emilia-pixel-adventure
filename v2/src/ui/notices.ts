@@ -59,26 +59,51 @@ export class SaveAlerts {
 }
 
 /**
+ * Ausgang von SaveReplacer.replace: `replaced` – jetzt neu laden; `failed` – nichts ersetzt, das Speichern läuft
+ * weiter; `busy` – schon ersetzt, die Seite lädt gleich neu: nichts tun.
+ */
+export type ReplaceOutcome = 'replaced' | 'failed' | 'busy';
+
+/**
  * Ersetzt den gespeicherten Stand (der bisherige liegt danach unter BACKUP_SAVE_KEY) und hält dann das Speichern an –
  * sonst schriebe das Speichern beim Verlassen der Seite den alten Stand aus dem Arbeitsspeicher über den gerade
- * ersetzten (Plan 1b, Vorab 4). `true`: jetzt neu laden. `false`: nichts ersetzt, das Speichern läuft weiter.
- * Gemeinsam für die Übernahme des alten Stands und das Laden aus Datei (backup.ts).
+ * ersetzten (Plan 1b, Vorab 4). Eine Stelle je Sitzung für die Übernahme des alten Stands (Notices) und das Laden aus
+ * Datei (backup.ts), mit zwei Sperren:
+ * - Höchstens einmal: Bis die Seite neu lädt, bleibt „Ja" bedienbar. Ein zweites Ersetzen (Doppeltippen) legte den
+ *   eben geladenen Stand unter BACKUP_SAVE_KEY und der vorige ginge verloren.
+ * - In einer Sitzung, die nicht speichern darf (`persist` falsch), nie – auch wenn der Speicher inzwischen wieder
+ *   lesbar und beschreibbar wäre.
  */
-export function replaceSaved(
-  store: Pick<SaveStore, 'replaceWith'>, save: Pick<SaveService, 'stop'>, state: GameState, now: number,
-): boolean {
-  if (store.replaceWith(state, now).kind !== 'saved') return false;
-  save.stop();
-  return true;
+export class SaveReplacer {
+  private done = false;
+
+  constructor(
+    private readonly store: Pick<SaveStore, 'replaceWith'>,
+    private readonly save: Pick<SaveService, 'stop'>,
+    private readonly persist: boolean,
+  ) {}
+
+  /** Wahr, sobald ersetzt wurde (die Seite lädt dann neu). */
+  get replaced(): boolean {
+    return this.done;
+  }
+
+  replace(state: GameState, now: number): ReplaceOutcome {
+    if (this.done) return 'busy';
+    if (!this.persist) return 'failed';
+    if (this.store.replaceWith(state, now).kind !== 'saved') return 'failed';
+    this.done = true;
+    this.save.stop();
+    return 'replaced';
+  }
 }
 
-/** „Ja" auf die Frage nach dem alten Stand: holen, dann wie replaceSaved. `false`: nichts ersetzt, weiterspielen. */
-export function acceptLegacy(
-  store: Pick<SaveStore, 'importLegacy' | 'replaceWith'>, save: Pick<SaveService, 'stop'>, now: number,
-): boolean {
+/** „Ja" auf die Frage nach dem alten Stand: holen, dann ersetzen (SaveReplacer). */
+export function acceptLegacy(store: Pick<SaveStore, 'importLegacy'>, replacer: SaveReplacer, now: number): ReplaceOutcome {
+  if (replacer.replaced) return 'busy';
   const imported = store.importLegacy(now);
-  if (imported.kind !== 'ok') return false;
-  return replaceSaved(store, save, imported.state, now);
+  if (imported.kind !== 'ok') return 'failed';
+  return replacer.replace(imported.state, now);
 }
 
 /**
@@ -163,14 +188,18 @@ export class Notices {
   }
 
   private askLegacy(): void {
-    const { store, save, state, windows } = this.services;
+    const { store, save, state, windows, replacer } = this.services;
     let decided = false;
     const yes = (): void => {
+      // ein zweites „Ja" (Doppeltippen, bevor die Seite neu lädt) tut nichts
+      if (decided) return;
       decided = true;
-      if (acceptLegacy(store, save, Date.now())) {
+      const outcome = acceptLegacy(store, replacer, Date.now());
+      if (outcome === 'replaced') {
         this.reload();
         return;
       }
+      if (outcome === 'busy') return;
       windows.close();
       this.toast(TEXTS['notice.legacy-failed']);
     };

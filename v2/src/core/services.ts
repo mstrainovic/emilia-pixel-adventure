@@ -17,6 +17,7 @@ import type { Menu } from '../ui/menu';
 import type { Help } from '../ui/help';
 import type { FpsMeter } from '../ui/fps';
 import type { Backup } from '../ui/backup';
+import type { SaveReplacer } from '../ui/notices';
 
 /** Was beim Start zu erklären ist (Fenster „Hinweis“, ui/notices.ts). */
 export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
@@ -115,6 +116,8 @@ export interface Services {
   fps: FpsMeter;
   /** Sicherung als Datei (zwei Knöpfe im Menü) und Erinnerung daran; die Welt-Szene ruft je Bild `backup.tick`. */
   backup: Backup;
+  /** Ersetzt den gespeicherten Stand höchstens einmal je Sitzung und nie ohne `persist` (alter Stand, Datei). */
+  replacer: SaveReplacer;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

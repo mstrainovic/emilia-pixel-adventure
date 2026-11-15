@@ -5,7 +5,7 @@ import { parseImport, serializeForExport } from '../save/store';
 import { backupFilename, downloadText, shouldRemind } from '../save/file';
 import { TEXTS } from '../data/texts';
 import { MENU_ID, type Menu } from './menu';
-import { openNotice, replaceSaved, toastWhenRunning } from './notices';
+import { openNotice, toastWhenRunning } from './notices';
 
 /** Kennung des Fensters mit der Rückfrage vor dem Laden aus Datei. */
 export const BACKUP_LOAD_ID = 'backup-load';
@@ -32,8 +32,10 @@ export function exportBackup(
  * - „Spielstand sichern" (exportBackup), danach Menü zu und Hinweis „Gesichert!".
  * - „Spielstand laden": Dateiauswahl (`.json`) → parseImport. Passt die Datei nicht: Hinweis, nichts ändert sich.
  *   Passt sie: Rückfrage mit „Ja"/„Nein" (Schließen jeder Art = „Nein"); „Ja" ersetzt den gespeicherten Stand, hält
- *   das Speichern an und lädt die Seite neu (replaceSaved, wie die Übernahme des alten Stands). Kann nicht gespeichert
- *   werden (auch in einer Sitzung ohne Speichern): kein Neuladen, Hinweis „Hier kann das Spiel nicht speichern.".
+ *   das Speichern an und lädt die Seite neu (services.replacer, wie die Übernahme des alten Stands; ein zweites „Ja"
+ *   vor dem Neuladen tut nichts). Reihenfolge in einer Sitzung ohne Speichern: Datei prüfen („passt nicht" wie sonst),
+ *   Rückfrage, erst „Ja" endet mit dem Hinweis. Kann nicht gespeichert werden: kein Neuladen, Hinweis „Hier kann das
+ *   Spiel nicht speichern.".
  * - Erinnerung höchstens einmal je Sitzung, wenn `shouldRemind` wahr ist: beim Start und dann je Minute Spielzeit.
  * Alle Hinweise über toastWhenRunning (sie warten, solange ein Fenster offen ist).
  */
@@ -120,11 +122,15 @@ export class Backup {
   }
 
   private load(state: GameState): void {
-    const { store, save, windows } = this.services;
-    if (replaceSaved(store, save, state, Date.now())) {
+    const { replacer, windows } = this.services;
+    // höchstens einmal je Sitzung; nie in einer Sitzung ohne Speichern (SaveReplacer)
+    const outcome = replacer.replace(state, Date.now());
+    if (outcome === 'replaced') {
       this.reload();
       return;
     }
+    // schon ersetzt (zweites „Ja" vor dem Neuladen): nichts tun
+    if (outcome === 'busy') return;
     windows.close();
     this.toast(TEXTS['notice.storage-unavailable']);
   }

@@ -216,10 +216,11 @@ test('alter Stand neuer als die letzte Übernahme: Frage; „Nein" merkt es sich
   expect((await state(page)).progression.level).toBe(1);
   const before = await readKey(page, SAVE_KEY);
 
-  // „Ja": holen, ersetzen, Speichern anhalten, neu laden
+  // „Ja" doppelt getippt: holen, ersetzen, Speichern anhalten, neu laden – nur einmal (sonst läge unter
+  // BACKUP_SAVE_KEY der eben geholte Stand statt des vorigen)
   await Promise.all([
     page.waitForEvent('load'),
-    win(page, 'legacy').locator('.notice__button', { hasText: 'Ja' }).click(),
+    win(page, 'legacy').locator('.notice__button', { hasText: 'Ja' }).dblclick(),
   ]);
   await waitForWorld(page);
   // gespeichert ist der geholte Stand, nicht der alte aus dem Arbeitsspeicher (das Speichern beim Verlassen schrieb nicht)

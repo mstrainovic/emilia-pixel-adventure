@@ -165,9 +165,10 @@ test('sichern lädt die Datei herunter; laden mit „Nein" ändert nichts, mit �
   await expect(anyWindow(page)).toHaveCount(0);
   expect(await readKey(page, SAVE_KEY)).toBe(storedBefore);
 
-  // und noch einmal, jetzt „Ja": die Seite lädt neu, die Aufgabe heißt wieder „Guten Morgen!"
+  // und noch einmal, jetzt „Ja", doppelt getippt: die Seite lädt neu, die Aufgabe heißt wieder „Guten Morgen!"; ersetzt
+  // wird nur einmal (unten: unter BACKUP_SAVE_KEY liegt der vorige Stand, nicht der geladene)
   await importFile(page, file);
-  await win(page, 'backup-load').locator('.notice__button', { hasText: 'Ja' }).click();
+  await win(page, 'backup-load').locator('.notice__button', { hasText: 'Ja' }).dblclick();
   await page.waitForFunction(() => (window as any).__testVorDemLaden === undefined && (window as any).__emilia2?.ready === true);
   await waitForWorld(page);
   await expect(questName(page)).toHaveText('Guten Morgen!');

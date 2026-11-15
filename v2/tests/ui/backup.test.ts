@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { exportBackup } from '../../src/ui/backup';
-import { replaceSaved } from '../../src/ui/notices';
+import { SaveReplacer } from '../../src/ui/notices';
 import { createNewGameState, type GameState } from '../../src/core/state';
-import { parseImport, type SaveResult } from '../../src/save/store';
+import { BACKUP_SAVE_KEY, SAVE_KEY, SaveStore, parseImport, type SaveResult } from '../../src/save/store';
 
 const NOW = new Date(2026, 10, 13, 9, 0).getTime();
 
@@ -44,30 +44,63 @@ describe('exportBackup („Spielstand sichern")', () => {
   });
 });
 
-describe('replaceSaved (Laden aus Datei und Übernahme des alten Stands)', () => {
+describe('SaveReplacer (Laden aus Datei und Übernahme des alten Stands)', () => {
   const loaded = createNewGameState(9);
 
-  function fakes(replaced: SaveResult) {
+  function fakes(replaced: SaveResult, persist = true) {
     const calls: string[] = [];
     const store = {
       replaceWith: vi.fn((state: GameState, now: number) => { calls.push(`replaceWith:${now}:${state === loaded}`); return replaced; }),
     };
     const save = { stop: vi.fn(() => { calls.push('stop'); }) };
-    return { calls, store, save };
+    return { calls, replacer: new SaveReplacer(store, save, persist) };
   }
 
   it('ersetzt, hält dann das Speichern an – in dieser Reihenfolge', () => {
-    const { calls, store, save } = fakes({ kind: 'saved' });
-    expect(replaceSaved(store, save, loaded, 77)).toBe(true);
+    const { calls, replacer } = fakes({ kind: 'saved' });
+    expect(replacer.replace(loaded, 77)).toBe('replaced');
+    expect(replacer.replaced).toBe(true);
     expect(calls).toEqual(['replaceWith:77:true', 'stop']);
   });
 
   it.each<SaveResult>([{ kind: 'full' }, { kind: 'unavailable' }, { kind: 'blocked-newer', storedVersion: 2 }])(
-    'Ersetzen scheitert (%o): Speichern läuft weiter, kein Neuladen',
+    'Ersetzen scheitert (%o): Speichern läuft weiter, kein Neuladen, ein neuer Versuch ist möglich',
     (result) => {
-      const { calls, store, save } = fakes(result);
-      expect(replaceSaved(store, save, loaded, 77)).toBe(false);
-      expect(calls).toEqual(['replaceWith:77:true']);
+      const { calls, replacer } = fakes(result);
+      expect(replacer.replace(loaded, 77)).toBe('failed');
+      expect(replacer.replace(loaded, 78)).toBe('failed');
+      expect(replacer.replaced).toBe(false);
+      expect(calls).toEqual(['replaceWith:77:true', 'replaceWith:78:true']);
     },
   );
+
+  it('Sitzung ohne Speichern: ersetzt nie, auch wenn der Speicher inzwischen schreiben könnte', () => {
+    const { calls, replacer } = fakes({ kind: 'saved' }, false);
+    expect(replacer.replace(loaded, 77)).toBe('failed');
+    expect(calls).toEqual([]);
+  });
+
+  it('doppelt getippt („Ja" zweimal vor dem Neuladen): nur einmal ersetzt, die Sicherung bleibt der vorige Stand', () => {
+    const storage = memory();
+    const store = new SaveStore(storage);
+    const previous = createNewGameState(1);
+    previous.progression.completedQuests = ['first_steps'];
+    expect(store.save(previous, 2).kind).toBe('saved');
+    const previousRaw = storage.getItem(SAVE_KEY);
+    const replaceWith = vi.spyOn(store, 'replaceWith');
+    const save = { stop: vi.fn() };
+    const replacer = new SaveReplacer(store, save, true);
+    expect(replacer.replace(loaded, 10)).toBe('replaced');
+    expect(replacer.replace(loaded, 11)).toBe('busy');
+    expect(replaceWith).toHaveBeenCalledTimes(1);
+    expect(save.stop).toHaveBeenCalledTimes(1);
+    expect(storage.getItem(BACKUP_SAVE_KEY)).toBe(previousRaw);
+    expect(JSON.parse(storage.getItem(SAVE_KEY)!).progression.completedQuests).toEqual([]);
+  });
 });
+
+/** Speicher im Arbeitsspeicher (wie localStorage, nur getItem/setItem). */
+function memory(entries: Record<string, string> = {}): Pick<Storage, 'getItem' | 'setItem'> {
+  const map = new Map(Object.entries(entries));
+  return { getItem: (k) => map.get(k) ?? null, setItem: (k, v) => { map.set(k, v); } };
+}
