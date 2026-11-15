@@ -113,17 +113,17 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - **Start-Bericht (Vorab 3):** `startGame` liefert bei `ok` mit `repair.lossy` den Hinweis `save-repaired` und immer `repair`; bei „kaputt + Übernahme gelungen" `save-corrupt-legacy` (statt `save-corrupt`); bei „kaputt" ohne oder mit gescheiterter Übernahme weiter `save-corrupt`. `importSave` ist das Ergebnis von `store.save` direkt nach der Übernahme. Der Test-Zugang bekommt `startRepair` und `importSave`.
 - **Fingerabdruck (Vorab 9):** `save-fingerprint.mjs` schreibt `stateKeys` als sortierte Liste **aller** Schlüsselpfade von `createNewGameState(0)` (verschachtelt mit Punkt, z. B. `player.hp`, `progression.stats.npcsSpoken`; Felder werden nicht in Listen hinein verfolgt, `inventory.slots` ist ein Pfad). Der bestehende Vergleichstest prüft dieselbe Form.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `store.test.ts`, zwei Tabs: Zwei `SaveStore` A und B über demselben Speicher, beide `load()`; B speichert zur Zeit 2000 → `saved`; A speichert zur Zeit 3000 → `blocked-other-tab`, der Eintrag ist bytegleich der von B. B speichert noch einmal → `saved`. A nach erneutem `load()` → `saved`. Eintrag wird von außen gelöscht → A speichert → `saved`. Eintrag ist `kaputt` → `saved`, Rohtext unter `REJECTED_SAVE_KEY`. Eintrag mit `formatVersion: 2` und fremdem `savedAt` → `blocked-newer`. `replaceWith` bei fremdem Stempel → `saved`, danach `save` desselben Speichers → `saved`. Ein `SaveStore` ohne `load()` → erstes `save` `saved`.
   - `normalize.test.ts`: aktive Aufgabe `wood_collector` mit `progress: 'x'`, `-3`, `NaN`, fehlend → bleibt mit `progress: 0`, steht in `resetQuests`, `lossy` falsch. Platz mit `berry` und `count: stackSize + 7` → im Stand `stackSize`, im Bericht `{ berry, 7 }`, `lossy` wahr. Platz mit `berry` und `count: 0`, `-1`, `'viel'` → Platz leer, Bericht `{ berry, 0 }`, `lossy` wahr. 100 Plätze, alle 48 vorderen belegt, Platz 97 hält `wood` 3 → Bericht `{ wood, 3 }`, `lossy` wahr. Gültiger Stand → Bericht leer, Stand unverändert (Identität bleibt).
   - `services.test.ts`: v2-Stand mit unbekanntem Gegenstand → `notice: 'save-repaired'`, `repair.lossy` wahr, `persist` wahr. v2-Stand kaputt + alter Stand `LEGACY_FIRST_COMMIT` → `save-corrupt-legacy`, `importSave.kind === 'saved'`, Level aus dem alten Stand. v2-Stand kaputt, kein alter → `save-corrupt`, `importSave` `null`. Leer + alter Stand, `setItem` wirft `QuotaExceededError` → `legacy-imported`, `importSave.kind === 'full'`. Gültiger Stand → `notice` `null`, `repair` `null`.
   - `legacySaves.ts` und `legacy.test.ts`: Vorlage `LEGACY_NGPLUS_REAL` in der Form, die das alte Spiel nach „Neues Spiel Plus" wirklich schreibt (aus `src/systems/Progression.js`, `resetQuests`, und `src/systems/SaveManager.js` ablesen; Fundstellen mit Zeilen im Kommentar) — sie läuft in der bestehenden Verstümmelungs-Schleife mit.
   - Fingerabdruck: Der Vergleichstest schlägt fehl, wenn im frischen Stand ein verschachteltes Feld dazukommt (Test mit einer Kopie der Pfadliste, der ein Pfad fehlt).
   - `persist.spec.ts`: (1) Speicher, dessen `getItem` wirft (per `addInitScript` `Storage.prototype.getItem` ersetzen) → Spiel startet, `startNotice === 'storage-unavailable'`, Emilia läuft, keine Seitenfehler, `saveNow()` meldet nicht `saved`. (2) v2-Stand mit Ort mitten in einer Wand (Kachel 20/13, Dorfbrunnen) → Emilia steht nach dem Start auf dem Startpunkt 19/14, keine Fehler. (3) Zwei Seiten im selben Kontext: beide laden; Seite 2 `saveNow()` → `saved`; Seite 1 `saveNow()` → `blocked-other-tab`, der Eintrag stammt von Seite 2.
-- [ ] **Step 2: Tests schlagen fehl** — `cd v2 && npx vitest run tests/save tests/core`
-- [ ] **Step 3: Umsetzen**, danach `npm run save:fingerprint`.
-- [ ] **Step 4: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
-- [ ] **Step 5: Commit** — `git add v2/src/save v2/src/core/services.ts v2/src/main.ts v2/tools/save-fingerprint.mjs v2/tests` · `fix(v2): Speichern gegen zweiten Tab und stille Verluste gesichert, Start meldet Reparaturen`
+- [x] **Step 2: Tests schlagen fehl** — `cd v2 && npx vitest run tests/save tests/core`
+- [x] **Step 3: Umsetzen**, danach `npm run save:fingerprint`.
+- [x] **Step 4: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
+- [x] **Step 5: Commit** — `git add v2/src/save v2/src/core/services.ts v2/src/main.ts v2/tools/save-fingerprint.mjs v2/tests` · `fix(v2): Speichern gegen zweiten Tab und stille Verluste gesichert, Start meldet Reparaturen`
 
 ---
 
@@ -145,14 +145,14 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - **Tastatur und HTML-Knöpfe (Vorab 6):** `KeyboardSource` lässt `Enter` und `Space` dem Browser, wenn das Ziel des Ereignisses in einem Bedienelement liegt (`target.closest('button, a[href], input, select, textarea, [contenteditable="true"]')` trifft): kein `preventDefault`, keine Handlung `confirm`, die Taste gilt nicht als gehalten. Alle anderen Tasten (Laufen, Esc, E, M, H, 1–8) wirken unverändert, auch wenn ein Knopf den Fokus hat. In Eingabefeldern (`input`, `textarea`, `select`, `contenteditable`) gehört **jede** Taste außer `Escape` dem Feld. So lösen Enter und Leertaste HTML-Knöpfe aus, und kein Tastendruck zählt doppelt.
 - **Zeiger-Abbildung (Vorab 7):** `canvasToView` ist die reine Rechnung hinter `PixelGrid.cssToView`: `x = (canvasX − offsetX) / zoom`, `y` ebenso; ungerundet; `inside` ist wahr genau für `0 ≤ x < viewWidth` und `0 ≤ y < viewHeight`. Werte außerhalb werden **nicht** gekappt (der schwarze Rand liefert negative Werte oder Werte ab der Feldbreite); nicht endliche Eingaben → `{ x: NaN, y: NaN, inside: false }`. Der Vertrag steht als Kommentar an beiden Stellen.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `keyboard.test.ts`: `Enter` und `Space` mit Ziel in einem `button` → kein `preventDefault`, `drainPressed()` leer; dieselben Tasten mit Ziel `body` → `confirm`, `preventDefault` gerufen. `KeyD` mit Ziel in einem `button` → `move.x === 1`. `KeyD` und `KeyE` mit Ziel in einem `input` → keine Bewegung, keine Handlung, kein `preventDefault`; `Escape` dort → `cancel`. Ziel ohne `closest` (z. B. `window`) → wie `body`.
   - `pixel.test.ts`: Layout Zoom 5, Rand 0/0, Feld 384×216: `(0, 0)` → `{ 0, 0, inside: true }`; `(1919, 1079)` → `x` 383,8, `inside` wahr; `(1920, 500)` → `x` 384, `inside` falsch. Layout mit Rand 3/7: `(2, 7)` → `x` negativ, `inside` falsch; `(3, 7)` → `{ 0, 0, true }`. `NaN` → `inside` falsch.
   - `keys.spec.ts`: Ein im Test eingefügter `<button>` bekommt den Fokus; `Enter` löst seinen `click` aus (Zähler 1), `Space` ebenso (Zähler 2); `D` bewegt Emilia trotz Fokus auf dem Knopf.
   - `walk.spec.ts`: Nach einem gemessenen Lauf über `walked` Bildpunkte ist der Zuwachs von `state().progression.stats.distanceWalked` zwischen `walked / 16 × 0,9` und `walked / 16 × 1,1` (Einheit Kacheln, nach oben begrenzt).
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
-- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
-- [ ] **Step 4: Commit** — `git add v2/src/input/keyboard.ts v2/src/core/pixel.ts v2/src/core/pixelGrid.ts v2/tests` · `fix(v2): Enter und Leertaste lösen HTML-Knöpfe aus, Zeiger-Abbildung mit Vertrag und Tests`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen.
+- [x] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
+- [x] **Step 4: Commit** — `git add v2/src/input/keyboard.ts v2/src/core/pixel.ts v2/src/core/pixelGrid.ts v2/tests` · `fix(v2): Enter und Leertaste lösen HTML-Knöpfe aus, Zeiger-Abbildung mit Vertrag und Tests`
 
 ---
 
@@ -182,7 +182,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Ein neues Spiel beginnt mit dem Holzschwert auf Platz 0. Bei einem Stufenaufstieg werden die Herzen ganz aufgefüllt.
 - **Achtung, Folge für Laden und Übernahme:** `normalize.ts` (`defaults`, `scratch`) und `legacy.ts` benutzen `createNewGameState(0)` als leere Ablage. Mit dem Schwert im frischen Stand bekäme jeder geladene oder übernommene Stand mit leerem Platz 0 ein Schwert geschenkt, und überzählige Plätze brächten eines mit. Diese Stellen müssen mit **leeren** Plätzen arbeiten (eine kleine Hilfsfunktion, die die 48 Plätze leert, oder ein eigener leerer Ausgangsstand); `normalizeState` bleibt auf einem gültigen Stand die Identität.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `addItem(state, 'berry', 5)` in ein neues Spiel → Rest 0, Platz 1 = `{ berry, 5 }` (Platz 0 hält das Schwert).
   - Stapeln: Platz 1 hält `berry` mit `stackSize − 2`; `addItem(…, 'berry', 5)` → Platz 1 voll, 3 im nächsten freien Platz.
   - Unbekannte Kennung → Rest = `count`, nichts geändert. `count` ≤ 0 oder keine ganze Zahl → Rest 0, nichts geändert.
@@ -193,10 +193,10 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   - `addXp`: Level 1, `xp` 0, `+20` → Level 1, `xp` 20; `+60` → Level 2, `xp` 10 (Bedarf 50), `levelsGained: 1`, `hp === maxHp`; `+10000` von Level 29 → Level 30, `xp` 0; negative oder nicht endliche Menge → nichts.
   - `createNewGameState`: Platz 0 = `{ sword_wood, 1 }`, `pendingItems` = `[]`. `normalizeState` ergänzt ein fehlendes `pendingItems` zu `[]` und entfernt Einträge mit unbekannter Kennung (als `droppedItems`).
   - Kein geschenktes Schwert: ein gespeicherter Stand mit leerem Platz 0 hat nach `normalizeState` weiter einen leeren Platz 0; ein Stand mit 60 Plätzen (Platz 0 leer, 12 überzählige mit Beeren) bekommt kein Schwert; ein alter Stand (`LEGACY_FIRST_COMMIT`) ohne Schwert hat nach der Übernahme keines.
-- [ ] **Step 2: Tests schlagen fehl** — `cd v2 && npx vitest run tests/systems tests/core tests/save`
-- [ ] **Step 3: Umsetzen**, danach `npm run save:fingerprint` (neues Feld mit Vorgabe: Regel 1, keine neue Version).
-- [ ] **Step 4: Alles grün** — `cd v2 && npm run typecheck && npm test`
-- [ ] **Step 5: Commit** — `git add v2/src/systems v2/src/core/state.ts v2/src/save/normalize.ts v2/tests` · `feat(v2): Rucksack-Logik, Erfahrung und Herzen`
+- [x] **Step 2: Tests schlagen fehl** — `cd v2 && npx vitest run tests/systems tests/core tests/save`
+- [x] **Step 3: Umsetzen**, danach `npm run save:fingerprint` (neues Feld mit Vorgabe: Regel 1, keine neue Version).
+- [x] **Step 4: Alles grün** — `cd v2 && npm run typecheck && npm test`
+- [x] **Step 5: Commit** — `git add v2/src/systems v2/src/core/state.ts v2/src/save/normalize.ts v2/tests` · `feat(v2): Rucksack-Logik, Erfahrung und Herzen`
 
 ---
 
@@ -222,7 +222,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Alt-Quelle: `src/systems/Progression.js` — Reihenfolge Zeilen 6–16; Zählen und Abschließen `_checkQuestType` Zeilen 290–314 (Ziel passt, wenn `def.target === target` oder `def.target === 'any'`); nächste Aufgabe `_unlockNextQuest` Zeilen 316–325; Vorbelegen aus schon Erlebtem `_prepopulateQuestProgress` Zeilen 331–400; erste Aufgabe `initNewGame` Zeilen 506–509 (`first_steps`). Aufgabengeber: `src/systems/FriendshipSystem.js`, `QUEST_NPC_MAP` Zeilen 38–64.
 - Regeln: Beim Abschluss wandert die Aufgabe nach `completedQuests` (in der Reihenfolge von `QUEST_ORDER`) und verschwindet aus `activeQuests`; `xpReward` über `addXp`; `itemReward` über `addItem`, der Rest nach `pendingItems`; die nächste Aufgabe wird aktiv und aus den Zählern vorbelegt (`talk` aus `stats.npcsSpoken`, `collect` aus `stats.itemsCollected`, `heal` aus `stats.plantsHealed`, `craft` aus `stats.itemsCrafted`, `pet` aus `stats.unicornsPetted`, `visit` aus `visitedMaps`); ist sie dadurch schon erfüllt, schließt sie sofort ab (Kette, höchstens 25 Runden). Ein `talk`-Signal trägt den Dorfbewohner in `stats.npcsSpoken` ein. Aufgabentypen außerhalb von `QuestSignal` (`kill`, `fish`, `boss` …) werden aktiv, zählen aber erst in ihren Etappen.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - Neues Spiel: `ensureActiveQuest` → `activeQuests` = `{ first_steps: { progress: 0 } }`; zweiter Aufruf ändert nichts.
   - `reportSignal({ type: 'talk', target: 'oma', amount: 1 })` → keine Änderung an Aufgaben, `npcsSpoken` enthält `oma`.
   - `reportSignal({ type: 'talk', target: 'mama_tanja', amount: 1 })` → ein `QuestChange` `{ questId: 'first_steps', completed: true, xp: 20, levelsGained: 0 }`; danach `completedQuests` = `['first_steps']`, `xp` 20, fünf Beeren im Rucksack, `activeQuests` = `{ wood_collector: { progress: 0 } }` (Werte aus `v2/src/data/quests.ts`: `xpReward: 20`, `itemReward: [{ berry, 5 }]`).
@@ -231,9 +231,9 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   - Vorbelegen mit Kette: zusätzlich `itemsCollected: { wood: 9 }` → auch `wood_collector` erledigt (Bedarf 5), `nature_healer` aktiv.
   - Signal mit `amount` 0, negativ oder `NaN` → nichts. Alle 25 Aufgaben erledigt → `ensureActiveQuest` liefert `[]`, `currentQuest` `null`.
   - `parity.test.ts`: `QUEST_GIVERS` ist gleich dem aus `FriendshipSystem.js` gelesenen `QUEST_NPC_MAP` (Block per regulärem Ausdruck ausschneiden wie beim bestehenden Test für `QUEST_ORDER`); jeder Geber ist eine Kennung aus `NPCS`, jede Aufgabe eine aus `QUESTS`.
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
-- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test`
-- [ ] **Step 4: Commit** — `git add v2/src/systems/quests.ts v2/src/data/quests.ts v2/tests` · `feat(v2): Aufgaben-Grundlogik mit Vorbelegen und Belohnungen`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen.
+- [x] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test`
+- [x] **Step 4: Commit** — `git add v2/src/systems/quests.ts v2/src/data/quests.ts v2/tests` · `feat(v2): Aufgaben-Grundlogik mit Vorbelegen und Belohnungen`
 
 ---
 
@@ -261,13 +261,13 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Alt-Quellen: `src/systems/DayNight.js` (`PHASE_DURATION = 187.5`, vier Phasen, Start in Phase 1); `src/systems/FriendshipSystem.js` (Schwellen Zeile 35; Reden +2 einmal je Tag, Zeilen 85–91; Aufgabe +10, Zeilen 126–131; Höchstwert 100).
 - Bewusste Abweichung vom alten Spiel: Dort wurde als Tag immer 0 übergeben (`src/core/Game.js` Zeile 278, `this.dayNight?.day || 0` — das Feld `day` gibt es nicht), Reden zählte also nur ein einziges Mal. Ab jetzt zählt es wie in Spec 6.7 einmal je Spieltag.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - Uhr: 187,5 s in Schritten von 0,5 s → `phaseIndex` von 1 auf 2, `phaseTime` 0 (± 0,01); nach 750 s wieder Phase 1 und `dayNumber` 1; `dt` 5 zählt als 1; `dt` negativ oder `NaN` → nichts.
   - Stufen: 0 → 0, 19 → 0, 20 → 1, 49 → 1, 50 → 2, 80 → 3, 100 → 3.
   - Reden: neuer Dorfbewohner, Tag 0 → `{ gained: 2, points: 2, level: 0, levelUp: false }`, `lastTalkDay` 0; noch einmal Tag 0 → `gained: 0`; Tag 1 → `points: 4`. Von 18 auf 20 → `levelUp: true`. Bei 99 → 100, bei 100 → `gained: 0`.
   - Aufgabe: `questFriendship(state, 'first_steps')` → Mama `+10`; Kennung ohne Geber → `null`.
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
-- [ ] **Step 3: Alles grün**, **Commit** — `git add v2/src/systems v2/tests/systems` · `feat(v2): Spieltag und Freundschaft beim Reden`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen.
+- [x] **Step 3: Alles grün**, **Commit** — `git add v2/src/systems v2/tests/systems` · `feat(v2): Spieltag und Freundschaft beim Reden`
 
 ---
 
@@ -311,16 +311,16 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Zeilenwahl (ersetzt die alte Dialogwand; Alt-Quelle `src/systems/DialogSystem.js`: dort liefen alle Sätze nacheinander, Zeilen 98–106, und mit 50 % Zufall die Freundschafts-Sätze, Zeilen 75–96): ein Gespräch zeigt **einen** Satz. Stufe 0 → `dialogs[talkCount % n]`. Stufe 1–3 → bei geradem `talkCount` der Freundschafts-Satz `friendshipDialogs[level][(talkCount / 2) % m]`, bei ungeradem `dialogs[((talkCount − 1) / 2) % n]`. `talkCount` zählt die Sitzung je Dorfbewohner und wird nicht gespeichert.
 - Ablauf von `talkTo`: Satz wählen (mit der Stufe **vor** dem Gespräch) → `reportSignal(talk)` → `talkFriendship` → für jede abgeschlossene Aufgabe `questFriendship` → Ereignisse in dieser Reihenfolge: `npc:talked`, je `quest:changed`, je `friendship:changed`, `inventory:changed` und `stats:changed` (nur wenn sich etwas geändert hat).
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `wrapLines('Hallo Schatz! Die Welt wartet — aber iss erstmal was!', 36)` → zwei Zeilen, jede ≤ 36 Zeichen, zusammengesetzt wieder der Satz; ein Wort länger als 36 Zeichen bleibt ungeteilt in eigener Zeile; leerer Text → `[]`.
   - `text.test.ts`, neu: jeder Satz in `dialogs` und `friendshipDialogs` aller Dorfbewohner ergibt mit `wrapLines(…, 36)` höchstens 2 Zeilen (Stand heute: 150 Sätze, längster 67 Zeichen, alle bestehen).
   - `pickLine` für Mama: Stufe 0, Zähler 0, 1, 8 → `dialogs[0]`, `dialogs[1]`, `dialogs[0]`; Stufe 2, Zähler 0 → `friendshipDialogs[2][0]`, Zähler 1 → `dialogs[0]`, Zähler 2 → `friendshipDialogs[2][1]`. Dorfbewohner ohne Sätze → `''`.
   - Sitzung, neues Spiel nach `start()`: `talkTo('mama_tanja')` → `TalkView` mit `name: 'Mama Tanja'` und 1–2 Zeilen; Ereignisfolge genau: `npc:talked`, ein `quest:changed` (`first_steps`, `completed: true`), zweimal `friendship:changed` (Reden: Punkte 2; Aufgabe: Punkte 12), `inventory:changed`, `stats:changed`. Für die neu aktive Aufgabe gibt es kein eigenes Ereignis; die Anzeige liest nach jedem `quest:changed` `currentQuest` neu.
   - `talkTo('niemand')` → `null`, kein Ereignis. Zweites Gespräch mit Mama am selben Tag → Satz `dialogs[1]`, kein `friendship:changed`.
   - `tick`: nach `tick` über zusammen 750 s und erneutem Gespräch → Punkte 14.
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen; `main.ts` legt die Sitzung in `services` und ruft `start()`.
-- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test`
-- [ ] **Step 4: Commit** — `git add v2/src/systems/dialogue.ts v2/src/core v2/src/main.ts v2/tests` · `feat(v2): Gespräche mit einem Satz, Spielsitzung meldet Ereignisse`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen; `main.ts` legt die Sitzung in `services` und ruft `start()`.
+- [x] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test`
+- [x] **Step 4: Commit** — `git add v2/src/systems/dialogue.ts v2/src/core v2/src/main.ts v2/tests` · `feat(v2): Gespräche mit einem Satz, Spielsitzung meldet Ereignisse`
 
 ---
 
@@ -363,17 +363,17 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Fenster-Verhalten (Spec 10): schließt mit ✕, Esc und Tippen daneben; hält das Spiel an (`ui:paused`); blendet 120 ms ein und aus (bei `prefers-reduced-motion` ohne Blende); meldet `ui:sound`; der Tastaturfokus liegt im Fenster und kehrt danach zurück; beim Öffnen wird `input.reset()` gerufen, damit keine Taste klebt.
 - Tastatur in der Oberfläche (aus Task 0b): Enter und Leertaste auf einem HTML-Knopf mit Fokus gehören dem Browser und lösen den Knopf aus; `KeyboardSource` meldet dafür kein `confirm`. Knöpfe außerhalb von Fenstern (Anzeige, Schnellleiste, Touch) geben den Fokus nach einem Zeiger-Klick wieder ab (`blur()`), damit die Leertaste danach nicht den Knopf, sondern das Spiel bedient.
 
-- [ ] **Step 1: Farben wählen.** Skill `ui-ux-pro-max` heranziehen: aus `Palette.png` des Packs die acht Farben so wählen, dass `--c-ink` auf `--c-paper` ein Kontrastverhältnis von mindestens 7:1 hat und `--c-accent` auf `--c-paper` mindestens 3:1; die Verhältnisse als Kommentar in `tokens.css` festhalten.
-- [ ] **Step 2: Schrift einbinden.** Paket `@fontsource/nunito` installieren; in `node_modules/@fontsource/nunito/` die Lizenzdatei lesen (erwartet: SIL Open Font License 1.1) und die Dateinamen der Teilsätze nachsehen; `fonts.css` bindet nur `latin` und `latin-ext` in 400 und 700 ein. `art:build` kopiert `NormalFont.ttf` nach `gfx/ui/zahlen.ttf` und schreibt beide Schriften mit Herkunft und Lizenz nach `QUELLEN.md`. Weicht die Lizenz ab: anhalten und den Auftraggeber fragen.
-- [ ] **Step 3: Tests schreiben.**
+- [x] **Step 1: Farben wählen.** Skill `ui-ux-pro-max` heranziehen: aus `Palette.png` des Packs die acht Farben so wählen, dass `--c-ink` auf `--c-paper` ein Kontrastverhältnis von mindestens 7:1 hat und `--c-accent` auf `--c-paper` mindestens 3:1; die Verhältnisse als Kommentar in `tokens.css` festhalten.
+- [x] **Step 2: Schrift einbinden.** Paket `@fontsource/nunito` installieren; in `node_modules/@fontsource/nunito/` die Lizenzdatei lesen (erwartet: SIL Open Font License 1.1) und die Dateinamen der Teilsätze nachsehen; `fonts.css` bindet nur `latin` und `latin-ext` in 400 und 700 ein. `art:build` kopiert `NormalFont.ttf` nach `gfx/ui/zahlen.ttf` und schreibt beide Schriften mit Herkunft und Lizenz nach `QUELLEN.md`. Weicht die Lizenz ab: anhalten und den Auftraggeber fragen.
+- [x] **Step 3: Tests schreiben.**
   - `ui-rules.test.ts` (liest `v2/src/ui/**`): Farbwerte (`#…`, `rgb(`, `hsl(`) stehen nur in `tokens.css`; `tokens.css` definiert genau die acht Farb-Variablen; `font-size` kommt nur als `var(--fs-1…4)` vor; `font-family` nur als `var(--font-text)` oder `var(--font-num)`; kein Emoji in `src/ui` und `src/data/texts.ts`; `kit.css` verwendet `env(safe-area-inset-top)`, `-right`, `-bottom` und `-left`.
   - `text.test.ts`: `TEXTS` wird mitgesammelt (Umlaut-Regeln gelten); die Wörter „Quest", „Item", „Inventar", „Crafting", „Achievement" kommen als ganze Wörter in keinem Text aus `TEXTS` vor.
   - `ui.spec.ts`: nach dem Start ist `document.fonts.check('16px Nunito')` wahr und alle Anfragen gingen an die eigene Adresse. Testfenster über den Test-Zugang öffnen (`openTestWindow()`): sichtbar, Titel in `--fs-3`, ✕ rechts oben mit mindestens 48 × 48 CSS-Pixeln; `D` bewegt Emilia nicht; Esc schließt, danach bewegt `D` wieder; erneut öffnen, daneben klicken → zu; erneut öffnen, ✕ → zu. Während das Fenster offen ist, Fenstergröße auf 1024×768 und danach auf 811×375 ändern → das Fenster bleibt jedes Mal ganz im Bild, das Spiel bleibt angehalten, Esc schließt weiter (Review Focus 4).
   - `ui.spec.ts`, Maßstab: bei Dichte 1, 1,25 und 1,5 ist `--hud-px × devicePixelRatio` eine ganze Zahl ≥ 1 (± 0,01); bei 1920×1080 (Zoom 5) ist sie 3, bei 1280×720 (Zoom 3) ist sie 2.
   - `ui.spec.ts`, Tastatur: Im offenen Testfenster hat ✕ den Fokus; `Enter` schließt das Fenster (der Knopf wird ausgelöst), und danach liegt kein `confirm` im Eingabe-Puffer (`E` neben niemandem tut nichts, `D` bewegt Emilia).
-- [ ] **Step 4: Tests schlagen fehl**, dann umsetzen. `WorldScene.update`: Schritt 2 der Reihenfolge aus Plan 1a ist jetzt `windows.handleInput(input)`; bei `windows.paused` entfallen Spielerin und Uhr, Kamera und Zeichnen laufen weiter.
-- [ ] **Step 5: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
-- [ ] **Step 6: Commit** — `git add v2/src/ui v2/src/data/texts.ts v2/index.html v2/src/main.ts v2/src/scenes v2/tools/art/selection.mjs v2/src/assets/gfx v2/tests v2/package.json v2/package-lock.json` · `feat(v2): Oberflächen-Baukasten mit Fenster-Verwalter und lokalen Schriften`
+- [x] **Step 4: Tests schlagen fehl**, dann umsetzen. `WorldScene.update`: Schritt 2 der Reihenfolge aus Plan 1a ist jetzt `windows.handleInput(input)`; bei `windows.paused` entfallen Spielerin und Uhr, Kamera und Zeichnen laufen weiter.
+- [x] **Step 5: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
+- [x] **Step 6: Commit** — `git add v2/src/ui v2/src/data/texts.ts v2/index.html v2/src/main.ts v2/src/scenes v2/tools/art/selection.mjs v2/src/assets/gfx v2/tests v2/package.json v2/package-lock.json` · `feat(v2): Oberflächen-Baukasten mit Fenster-Verwalter und lokalen Schriften`
 
 ---
 
@@ -402,14 +402,14 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Schnellleiste: acht Plätze, Symbol und (ab 2) Anzahl, der gewählte Platz mit Rahmen in `--c-accent`; Tasten 1–8 und Klick wählen; `title` und `aria-label` nennen den Namen des Gegenstands.
 - Symbole in dieser Etappe für: `sword_wood`, `berry`, `wood`, `magic_herb`, `seed_carrot`, `seed_tomato` (Start und Belohnungen der ersten drei Aufgaben), aus `Items/` des Packs gewählt. Alles andere zeigt `beutel` (ein Beutel-Bild aus dem Pack). Die übrigen Symbole kommen mit dem Rucksack in Etappe 2.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `icons.test.ts`: die sechs Gegenstände haben ein eigenes Symbol, das in `quellen.json` steht; `iconFor('made_up')` und `iconFor('pearl')` → `'beutel'`; `beutel` steht in `quellen.json` (Review Focus 5).
   - `hud.spec.ts`, neues Spiel: fünf volle Herzen (`aria-label` „5 von 5 Herzen"); Level „1"; Münzen „0"; Aufgabe „Guten Morgen!" mit Mamas Gesicht; Schnellleiste: Platz 1 Holzschwert, gewählt. Taste `3` → Platz 3 gewählt; Klick auf Platz 1 → Platz 1 gewählt und in `state.inventory.selectedHotbar` 0.
   - Über den Test-Zugang `hp` auf 9 setzen und `stats:changed` melden → Herzen voll, voll, viertel, leer, leer.
   - Pixelgenau bei Dichte 1, 1,25, 1,5: Breite eines Herzens × `devicePixelRatio` ist ein ganzzahliges Vielfaches von 16, linke und obere Kante × `devicePixelRatio` sind ganze Zahlen (± 0,01).
   - Kein Element der Anzeige überdeckt bei 1280×720 die Bildmitte (Rechteck 160×90 CSS-Pixel um die Mitte bleibt frei).
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen. Die Anzeige hört auf `stats:changed`, `inventory:changed`, `quest:changed` und zeichnet nur dann neu.
-- [ ] **Step 3: Alles grün**, **Commit** — `git add v2/src/ui v2/src/data/icons.ts v2/tools/art/selection.mjs v2/src/assets/gfx v2/src/main.ts v2/tests` · `feat(v2): Grundanzeige mit Herzen, Level, Münzen, Aufgabe und Schnellleiste`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen. Die Anzeige hört auf `stats:changed`, `inventory:changed`, `quest:changed` und zeichnet nur dann neu.
+- [x] **Step 3: Alles grün**, **Commit** — `git add v2/src/ui v2/src/data/icons.ts v2/tools/art/selection.mjs v2/src/assets/gfx v2/src/main.ts v2/tests` · `feat(v2): Grundanzeige mit Herzen, Level, Münzen, Aufgabe und Schnellleiste`
 
 ---
 
@@ -444,16 +444,16 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Dorfbewohner: dreht sich beim Gespräch zur Spielerin (`facingToward`) und danach zurück. Über dem Kopf des Dorfbewohners, zu dem die aktuelle `talk`-Aufgabe führt, schwebt ein Hinweis-Symbol aus `Ui/Emote/` (Spec 6.7).
 - Hinweise: Aufgabe erledigt → „Aufgabe geschafft!" mit den Symbolen der Belohnung; Stufenaufstieg → „Level 2!"; im Ausgang → „Hier geht es bald weiter." (einmal je Betreten). Nach einer erledigten Aufgabe wird gespeichert (`save.saveNow('quest')`).
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `interaction.test.ts`: Figur 20 Bildpunkte entfernt → `talk`; 30 entfernt → `null`; zwei Figuren gleich weit, eine rechts, Blick nach rechts → die rechte; Figur der Karte ohne Eintrag in `knownNpcIds` → nie Ziel (Review Focus 5); Spielerin im Rechteck eines Ausgangs und keine Figur in Reichweite → `exit`. `facingToward`: Ziel weiter rechts als oben → `'right'`; genau schräg → waagrechte Richtung.
   - `talk.spec.ts`: neben Mama teleportieren → Tasten-Bild sichtbar, Symbol über Mamas Kopf sichtbar. `E` → Feld sichtbar mit „Mama Tanja" und höchstens zwei Zeilen; Mama blickt zu Emilia; `D` bewegt Emilia nicht. `E` → Feld zu; Hinweis „Aufgabe geschafft!"; Aufgabe in der Anzeige jetzt „Opas Auftrag" mit „0/5"; Schnellleiste zeigt Beeren „5"; `state.friendship.mama_tanja.points === 12`; das Symbol über Mamas Kopf ist weg.
   - `E` gedrückt halten (Wiederholung der Tastatur, 1,5 s) → das Feld öffnet genau einmal; nach dem Loslassen und einem weiteren Druck schließt es; zwei Drücke im Abstand von 100 ms nach dem Schließen öffnen es nicht erneut (Review Focus 2).
   - Zweites Gespräch am selben Tag → anderer Satz, Punkte bleiben 12. Uhr über den Test-Zugang um 750 s vorstellen → Gespräch → 14.
   - Seite neu laden → Aufgabe bleibt „Opas Auftrag", Beeren bleiben.
   - In den Nordausgang laufen → Hinweis „Hier geht es bald weiter.", die Karte wechselt nicht, kein Fehler.
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
-- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
-- [ ] **Step 4: Commit** — `git add v2/src v2/tools/art/selection.mjs v2/tests` · `feat(v2): mit den Dorfbewohnern reden, erste Aufgabe, Freundschaft`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen.
+- [x] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
+- [x] **Step 4: Commit** — `git add v2/src v2/tools/art/selection.mjs v2/tests` · `feat(v2): mit den Dorfbewohnern reden, erste Aufgabe, Freundschaft`
 
 ---
 
@@ -478,7 +478,7 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Seite: `touch-action: none`, keine Textauswahl, kein Kontextmenü, kein Seiten-Zoom durch Doppeltippen im Spielbereich.
 - Handy im Hochformat (`(orientation: portrait) and (max-width: 600px) and (pointer: coarse)`): ein freundlicher Dreh-Hinweis über dem ganzen Bild, das Spiel hält an (`windows.setPaused('rotate', true)`). Tablets laufen in beiden Lagen.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `touch.test.ts`, Einrasten (Vorab 5: sonst kriecht Emilia mit laufender Animation an einer Wand entlang, wenn der Daumen fast gerade auf die Wand zeigt): `stickVector(100, 100, 104, 140)` (Queranteil 0,1) → `x` genau 0, `y` 1; `stickVector(100, 100, 120, 140)` (Queranteil 0,5) → `x` > 0. Mit dem Bewegungsmodell (`stepMover`, festes Gitter mit einer Wand unter der Figur, außerhalb der Rutschzone): Absicht aus `stickVector(100, 100, 104, 140)` → nach 30 Schritten `moving === false` und kein Versatz in x.
   - `touch.test.ts`: `stickVector(100, 100, 104, 100)` → Betrag 0; `(100, 100, 124, 100)` → `x` 0,5 (± 0,02), `y` 0; `(100, 100, 300, 100)` → `x` 1, Betrag 1; schräg → Betrag höchstens 1. Quelle: nach `stickStart(1, …)` und `stickMove(1, …)` liefert `move` den Vektor; `stickMove(2, …)` eines fremden Fingers ändert nichts; `stickEnd(1)` → `move` 0/0; `press('interact')` ist genau einmal in `drainPressed()`; Auslenkung 0,96 → `run === true`.
   - `touch.spec.ts` (läuft in `chromium` und `webkit`, je in einem eigenen Kontext 1080×810, Dichte 2, `hasTouch`; Berührungen als `PointerEvent` mit `pointerType: 'touch'` und eigener `pointerId` je Finger, im Seitenkontext ausgelöst — das geht in beiden Browsern): Finger 1 setzt links unten auf und zieht 40 Pixel nach rechts → Emilia läuft nach rechts; halbe Auslenkung → halbes Tempo (± 20 %). Neben Mama: Finger 1 hält den Stick, Finger 2 tippt den Kontext-Knopf → Gespräch öffnet (Review Focus 3). Berührung abbrechen (`pointercancel`) → `moving === false` binnen 200 ms. Finger rutscht 300 Pixel aus der Zone → Stick bleibt bei Betrag 1 und lässt beim Abheben los.
@@ -486,9 +486,9 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
   - 500 ms auf Platz 1 drücken → der Name „Holzschwert" erscheint; kurzes Tippen wählt nur.
   - Nach der ersten Berührung sind Stick-Zone und Knöpfe sichtbar, das Tasten-Bild „E" nicht; nach einem Tastendruck umgekehrt.
   - Fenster 390×844 (Hochformat, Touch) → Dreh-Hinweis sichtbar, Emilia bewegt sich nicht; 844×390 → Hinweis weg; 820×1180 (Tablet hochkant) → kein Hinweis, Stick funktioniert.
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
-- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
-- [ ] **Step 4: Commit** — `git add v2/src/input v2/src/ui v2/src/main.ts v2/tests` · `feat(v2): vollständige Touch-Bedienung mit Stick, Kontext-Knopf und Dreh-Hinweis`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen.
+- [x] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
+- [x] **Step 4: Commit** — `git add v2/src/input v2/src/ui v2/src/main.ts v2/tests` · `feat(v2): vollständige Touch-Bedienung mit Stick, Kontext-Knopf und Dreh-Hinweis`
 
 ---
 
@@ -506,9 +506,9 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Bildraten-Anzeige (Spec 9): Taste F2 blendet oben in der Mitte die Bilder je Sekunde ein und aus (Ziffernschrift); aus beim Start. Dafür bekommt `Action` den Wert `'fps'` und `KeyboardSource` die Taste `F2` (zusätzlich geändert: `v2/src/input/actions.ts`, `v2/src/input/keyboard.ts`, `v2/tests/input/keyboard.test.ts`).
 - Das Menü öffnet über `hud.onMenu` (Task 6) und über die Handlung `menu`.
 
-- [ ] **Step 1: Tests schreiben** (`menu.spec.ts`): `M` → Fenster „Menü" mit Knopf „Hilfe"; Klick → Fenster „Hilfe" mit dem Bild der Taste E und dem Wort „reden"; Esc → zu, Emilia läuft wieder. `H` öffnet die Hilfe direkt. Nach einer Berührung: Menü-Knopf → Menü → Hilfe zeigt den Stick statt der Tasten. Stand mit `formatVersion: 2` → Hinweis `save-newer` als Text sichtbar. `setItem` wirft → nach dem zweiten `saveNow()` genau ein Hinweis „Speichern hat nicht geklappt.", auch nach dem vierten Versuch nur einer. `F2` → eine Zahl zwischen 1 und 240 erscheint, `F2` → weg. Alter Stand (`LEGACY_FIRST_COMMIT` mit späterem `timestamp`) neuer als die letzte Übernahme → das Fenster mit der Frage erscheint; „Nein" → `legacyDeclinedAt` gesetzt, nach dem Neuladen keine Frage; `timestamp` des alten Stands noch einmal erhöht → die Frage kommt wieder; „Ja" → nach dem Neuladen Level 3, der vorige v2-Stand liegt unter `BACKUP_SAVE_KEY`, der alte Schlüssel ist bytegleich; der gespeicherte Stand ist nach dem Neuladen der geholte, nicht der alte aus dem Arbeitsspeicher (Vorab 4). Hinweise `save-repaired` und `save-corrupt-legacy` erscheinen mit ihrem Text. Zwei Seiten im selben Kontext: Seite 2 speichert, Seite 1 `saveNow()` zweimal → auf Seite 1 genau ein Hinweis „… in einem anderen Fenster offen …" und kein „Speichern hat nicht geklappt.".
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen.
-- [ ] **Step 3: Alles grün**, **Commit** — `git add v2/src v2/tools/art/selection.mjs v2/src/assets/gfx v2/tests` · `feat(v2): Menü, Hilfe, Hinweise zu Start und Speichern`
+- [x] **Step 1: Tests schreiben** (`menu.spec.ts`): `M` → Fenster „Menü" mit Knopf „Hilfe"; Klick → Fenster „Hilfe" mit dem Bild der Taste E und dem Wort „reden"; Esc → zu, Emilia läuft wieder. `H` öffnet die Hilfe direkt. Nach einer Berührung: Menü-Knopf → Menü → Hilfe zeigt den Stick statt der Tasten. Stand mit `formatVersion: 2` → Hinweis `save-newer` als Text sichtbar. `setItem` wirft → nach dem zweiten `saveNow()` genau ein Hinweis „Speichern hat nicht geklappt.", auch nach dem vierten Versuch nur einer. `F2` → eine Zahl zwischen 1 und 240 erscheint, `F2` → weg. Alter Stand (`LEGACY_FIRST_COMMIT` mit späterem `timestamp`) neuer als die letzte Übernahme → das Fenster mit der Frage erscheint; „Nein" → `legacyDeclinedAt` gesetzt, nach dem Neuladen keine Frage; `timestamp` des alten Stands noch einmal erhöht → die Frage kommt wieder; „Ja" → nach dem Neuladen Level 3, der vorige v2-Stand liegt unter `BACKUP_SAVE_KEY`, der alte Schlüssel ist bytegleich; der gespeicherte Stand ist nach dem Neuladen der geholte, nicht der alte aus dem Arbeitsspeicher (Vorab 4). Hinweise `save-repaired` und `save-corrupt-legacy` erscheinen mit ihrem Text. Zwei Seiten im selben Kontext: Seite 2 speichert, Seite 1 `saveNow()` zweimal → auf Seite 1 genau ein Hinweis „… in einem anderen Fenster offen …" und kein „Speichern hat nicht geklappt.".
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen.
+- [x] **Step 3: Alles grün**, **Commit** — `git add v2/src v2/tools/art/selection.mjs v2/src/assets/gfx v2/tests` · `feat(v2): Menü, Hilfe, Hinweise zu Start und Speichern`
 
 ---
 
@@ -534,14 +534,14 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 - Grund für diesen Task schon in Etappe 1: Safari auf dem iPad kann `localStorage` nach längerer Nichtnutzung löschen (Spec 11.1, „Schutz vor Verlust").
 - Verhalten: Das Menü bekommt zwei weitere Knöpfe. „Spielstand sichern": speichert, lädt die Datei herunter, setzt `lastBackupAt`, Hinweis „Gesichert!". „Spielstand laden": Dateiauswahl (`.json`) → `parseImport`; passt die Datei nicht, Hinweis „Diese Datei passt nicht." und nichts ändert sich; passt sie, fragt ein Fenster „Diesen Spielstand laden? Der jetzige wird ersetzt." mit „Ja" und „Nein"; bei „Ja" `replaceWith`, dann `save.stop()` (Vorab 4, wie in Task 9) und Seite neu laden. Erinnerung einmal je Sitzung als Hinweis „Zeit für eine Sicherung: Menü, dann Spielstand sichern", wenn `shouldRemind` wahr ist: noch nie gesichert und mindestens 30 Minuten gespielt (`dayNight.totalTime ≥ 1800`), oder die letzte Sicherung ist älter als 7 Tage.
 
-- [ ] **Step 1: Tests schreiben.**
+- [x] **Step 1: Tests schreiben.**
   - `backupFilename(new Date(2026, 10, 13))` → `'emilia2-spielstand-2026-11-13.json'`.
   - `shouldRemind`: neues Spiel → `false`; `totalTime` 1800, nie gesichert → `true`; gestern gesichert → `false`; vor 8 Tagen gesichert → `true`; `lastBackupAt` in der Zukunft (Uhr verstellt) → `false`.
   - `normalizeState` ergänzt ein fehlendes `lastBackupAt` zu `null`.
   - `backup.spec.ts` (Chromium und WebKit): Menü → „Spielstand sichern" → ein Download mit Namen nach dem Muster `emilia2-spielstand-JJJJ-MM-TT.json`, Inhalt ist JSON mit `formatVersion: 1`; Hinweis „Gesichert!". Danach mit Mama reden (Aufgabe wechselt), Menü → „Spielstand laden" mit der eben gesicherten Datei → Rückfrage → „Ja" → nach dem Neuladen heißt die Aufgabe wieder „Guten Morgen!" und unter `BACKUP_SAVE_KEY` liegt der ersetzte Stand. Dasselbe mit „Nein" → nichts ändert sich. Eine Datei mit dem Inhalt `kaputt` → Hinweis „Diese Datei passt nicht.", nichts ändert sich. Stand mit `totalTime` 1800 und `lastBackupAt: null` → die Erinnerung erscheint genau einmal.
-- [ ] **Step 2: Tests schlagen fehl**, dann umsetzen; danach `npm run save:fingerprint` (neues Feld mit Vorgabe, keine neue Version).
-- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
-- [ ] **Step 4: Commit** — `git add v2/src/save v2/src/core/state.ts v2/src/ui v2/src/data/texts.ts v2/tests` · `feat(v2): Spielstand als Datei sichern und laden, Erinnerung daran`
+- [x] **Step 2: Tests schlagen fehl**, dann umsetzen; danach `npm run save:fingerprint` (neues Feld mit Vorgabe, keine neue Version).
+- [x] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e`
+- [x] **Step 4: Commit** — `git add v2/src/save v2/src/core/state.ts v2/src/ui v2/src/data/texts.ts v2/tests` · `feat(v2): Spielstand als Datei sichern und laden, Erinnerung daran`
 
 ---
 
@@ -553,19 +553,62 @@ Die Schlussprüfung von Plan 1a (2026-11-14) hat Punkte benannt, die in 1a noch 
 **Interfaces:**
 - Produces: `walkToTile(page, tileX, tileY, timeoutMs)` — hält echte Richtungstasten, bis `player()` höchstens 6 Bildpunkte neben der Kachelmitte steht (liest nur den Ort über den Test-Zugang, bewegt nicht selbst).
 
-- [ ] **Step 1: Test schreiben.** Frischer Browser-Kontext: starten → mit `walkToTile` vom Startpunkt (19/14) über den Weg zu Mama (Kachel 8/12, eine Kachel unter ihr) → `E` → Gespräch → `E` → Aufgabe „Opas Auftrag" → `3` wählt Platz 3 → `H` → Hilfe → Esc → Seite neu laden → Ort höchstens eine Kachel daneben, Aufgabe und Beeren unverändert, Platz 3 gewählt. Über den ganzen Lauf: keine Konsolenfehler, keine fremden Anfragen, beide alten Schlüssel unverändert.
-- [ ] **Step 2: Derselbe Ablauf gegen das gebaute Paket** (`playthrough.preview.spec.ts`, ohne Test-Zugang): nur Tasten und sichtbare Texte; Emilia wird mit festen Tastendauern zu Mama geführt, geprüft wird am Text der Anzeige. Der Weg ist so gewählt, dass Wände und feste Gegenstände Emilia ausrichten (jede Strecke endet an etwas Festem, die Taste wird reichlich länger gehalten als nötig), denn der Rechner der Auslieferung stockt nach dem Seitenstart bis zu 1 s; vor dem ersten Tastendruck wartet der Test, bis die Anzeige sichtbar ist.
-- [ ] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
-- [ ] **Step 4: Commit** — `git add v2/tests/e2e` · `test(v2): Durchspiel-Test für das Dorf`
+- [x] **Step 1: Test schreiben.** Frischer Browser-Kontext: starten → mit `walkToTile` vom Startpunkt (19/14) über den Weg zu Mama (Kachel 8/12, eine Kachel unter ihr) → `E` → Gespräch → `E` → Aufgabe „Opas Auftrag" → `3` wählt Platz 3 → `H` → Hilfe → Esc → Seite neu laden → Ort höchstens eine Kachel daneben, Aufgabe und Beeren unverändert, Platz 3 gewählt. Über den ganzen Lauf: keine Konsolenfehler, keine fremden Anfragen, beide alten Schlüssel unverändert.
+- [x] **Step 2: Derselbe Ablauf gegen das gebaute Paket** (`playthrough.preview.spec.ts`, ohne Test-Zugang): nur Tasten und sichtbare Texte; Emilia wird mit festen Tastendauern zu Mama geführt, geprüft wird am Text der Anzeige. Der Weg ist so gewählt, dass Wände und feste Gegenstände Emilia ausrichten (jede Strecke endet an etwas Festem, die Taste wird reichlich länger gehalten als nötig), denn der Rechner der Auslieferung stockt nach dem Seitenstart bis zu 1 s; vor dem ersten Tastendruck wartet der Test, bis die Anzeige sichtbar ist.
+- [x] **Step 3: Alles grün** — `cd v2 && npm run typecheck && npm test && npm run test:e2e && npm run test:bundle`
+- [x] **Step 4: Commit** — `git add v2/tests/e2e` · `test(v2): Durchspiel-Test für das Dorf`
 
 ---
 
 ### Abschluss 1b und Abschluss Etappe 1
 
-- [ ] In `v2/`: `npm run typecheck && npm test && npm run test:e2e && npm run test:bundle` — alles grün. Im Stamm: `npm test && npm run build`, danach `ls dist/index.html dist/v2/index.html`.
-- [ ] `git status` ist sauber; `QUELLEN.md` nennt jede Grafik und beide Schriften.
-- [ ] Skills `design:accessibility-review` und `design:ux-copy` über die Oberfläche (Kontraste der acht Farben, Lesbarkeit für eine Leseanfängerin, Begriffe); Befunde einarbeiten.
-- [ ] Skill `superpowers:requesting-code-review` für den gesamten Branch; Prüfer gleicht die genannten Alt-Quellen gegen den alten Code ab.
+- [x] In `v2/`: `npm run typecheck && npm test && npm run test:e2e && npm run test:bundle` — alles grün. Im Stamm: `npm test && npm run build`, danach `ls dist/index.html dist/v2/index.html`.
+- [x] `git status` ist sauber; `QUELLEN.md` nennt jede Grafik und beide Schriften.
+- [x] Skills `design:accessibility-review` und `design:ux-copy` über die Oberfläche (Kontraste der acht Farben, Lesbarkeit für eine Leseanfängerin, Begriffe); Befunde einarbeiten.
+- [x] Skill `superpowers:requesting-code-review` für den gesamten Branch; Prüfer gleicht die genannten Alt-Quellen gegen den alten Code ab.
 - [ ] **Mit dem Auftraggeber am lebenden Objekt**, eine Frage nach der anderen: endgültige Stil-Entscheidung (Spec 12, Etappe 1) — bleibt es bei „Ninja Adventure" in dieser Form? Ist die Schrift für Emilia gut lesbar? Dann die Liste `test-artifacts/texte/serbisch.md` (aus Plan 1a, Task 6) im Chat zeigen und die serbischen Sätze gegenlesen lassen; freigegebene Schreibweisen in `v2/src/data/npcs.ts` übernehmen und in `tests/data/parity.test.ts` als benannte Abweichung vom alten Text führen (`SERBIAN_FIXES`, alter Satz → neuer Satz).
-- [ ] Abschluss-Abschnitt an diesen Plan anhängen (Änderungen gegenüber dem Plan, offene Punkte, Übergabe an Etappe 2: Rucksack-Fenster, übrige Symbole, Werkstätten öffnen sich direkt, Kartenwechsel, zwei offene Tabs).
+- [x] Abschluss-Abschnitt an diesen Plan anhängen (Änderungen gegenüber dem Plan, offene Punkte, Übergabe an Etappe 2: Rucksack-Fenster, übrige Symbole, Werkstätten öffnen sich direkt, Kartenwechsel, zwei offene Tabs).
 - [ ] Auftraggeber fragen, ob der Branch in `main` gemergt und veröffentlicht werden soll.
+
+---
+
+## Abschluss Etappe 1b — Stand 2026-11-15 (vor den Fragen an den Auftraggeber)
+
+Umgesetzt per Subagent-Driven Development auf dem Branch `v2/etappe-1b-oberflaeche` (abgezweigt von `v2/etappe-1a-welt` @ `60e10cf`), 13 Tasks (0a, 0b, 1–11), jeder mit eigener Prüfung; danach Durchsicht von Barrierefreiheit und Texten, Gesamtprüfung des Branches und eine Fix-Welle mit Nachprüfung. Nichts ist gemergt oder gepusht.
+
+**Prüfstand am Ende (`0b9b79c`):** `v2/`: Typprüfung ohne Fehler, Vitest 932 bestanden / 1 übersprungen (mit Pack), Playwright 261 bestanden / 35 übersprungen (Chromium, WebKit, gebautes Paket), Paket-Schutztests 19 von 19. Stamm: `npm test` und `npm run build` in Ordnung; am alten Spiel ist nichts geändert. Auf dem Rechner der Auslieferung (GitHub) sind die neuen Browser-Tests noch nie gelaufen.
+
+### Was gegenüber dem Plan geändert wurde
+
+1. **Vorab-Arbeiten ausgearbeitet** als Task 0a (Speichern) und 0b (Eingabe); Vorab 4 und 5 stehen im Text von Task 8–10. Ein `SaveStore` statt zweien in `main.ts`.
+2. **Maßstab der Anzeige:** `--hud-px = max(ceil(zoom / 2), ceil(1,5 × Pixeldichte))` Gerätepixel statt `floor(zoom / 2)` — hält die geplante Größe nach der Zoom-Änderung aus 1a und gibt dem Handy größere Herzen (24 statt 16 CSS-Pixel). PC und iPad unverändert gegenüber der Absicht des Plans.
+3. **Baukasten umgebaut (Task 6):** Randbilder liegen auf `::before` und werden mit `transform: scale(var(--hud-scale))` vergrößert; das Element hält den Rand als Innenabstand; `src/ui/grid.ts` rastet Größe und Lage ein. Grund: Bei Pixeldichte 1,25 wurden Rahmen sonst einen Gerätepixel zu schmal gezeichnet. Eingerastet wird nie direkt im `ResizeObserver`, sondern im nächsten Bild.
+4. **Ziffernschrift:** nur bei Vielfachen von 9 Gerätepixeln scharf; ihre Größe ist deshalb `round(nearest, var(--fs-N), calc(9 * var(--px)))` — die eine Ausnahme von „nur `--fs-1…4`".
+5. **Schließen-Zeichen** ist „×" aus Nunito statt „✕"; das **Holzschwert** ist holzfarben umgefärbt (Vorlage `Weapons/Sword2`); der **Stick** ist aus Formen des Baukastens (im Pack gibt es keinen Ring).
+6. **Flache Felder in `Services`** für alles, was die Szene braucht (`windows`, `hud`, `hotbar`, `dialogue`, `toasts`, `session`, `backup`, `replacer` …); der **Menü-Knopf** gehört zur Anzeige (`hud.onMenu`); neues Ereignis `context:changed`; neue Handlung `fps` (F2 und `?fps=1`).
+7. **Fenster:** `WindowManager(root, bus, input)`; der Rest der Oberfläche ist `inert`, solange ein Fenster offen ist; Tab kreist im Fenster; Fragen (`dismiss: 'buttons'`) schließen nicht durch Tippen daneben.
+8. **Hinweise zu Start und Speichern sind Fenster, die bestätigt werden** (statt kurzer Hinweise): Start-Hinweise, „Speichern klappt gerade nicht", „Das Spiel ist zweimal offen" (mit „Neu laden", kommt wieder, solange gesperrt), Sicherungs-Erinnerung beim Start (mit „Jetzt sichern"). Dazu die dauerhafte Marke „Nicht gespeichert" in der Anzeige. Kurze Hinweise bleiben nach Länge stehen (mindestens 5 s).
+9. **Frage zum alten Spielstand:** nur „Nein" merkt die Ablehnung; × und Esc heißen „später". Ein Spielstand wird je Sitzung höchstens einmal ersetzt (`SaveReplacer`, gegen Doppeltippen), nie in einer Sitzung ohne Speichern.
+10. **„Spielstand sichern"** ist in einer Sitzung mit neuerem gespeichertem Stand gesperrt (dort hielte man ein leeres neues Spiel in der Hand).
+11. **Texte** nach der Durchsicht überarbeitet (`v2/src/data/texts.ts`): u. a. „Okay" statt „Gut", „Level 1" statt nur „1", „wählen" statt „Schnellleiste" in der Hilfe, Fenstertitel „Alter Spielstand" und „Spielstand laden?", „Datei ist fertig. Sie liegt bei den Downloads." statt „Gesichert!". Sätze der Dorfbewohner und Aufgabentexte sind unverändert.
+12. **Reihenfolge je Bild** (`WorldScene.update`): Eingabe → Fenster → offenes Gespräch (nimmt E/Enter/Leertaste/Esc ab, verwirft den Rest) → Schnellleiste, Menü/Hilfe, Reden → Spielerin und Uhr (nur wenn nicht angehalten) → Kamera und Zeichnen.
+13. **Uhr und kaputte Stände:** Phase und Zeit werden beim Laden begrenzt; die Uhr kann nicht hängen.
+14. `tsconfig.json`: `noUnusedLocals` ist an. `LIZENZ-nunito.txt` (SIL OFL 1.1) liegt bei den Grafiken.
+
+**Fehler im Plantext, die auffielen:** Mama steht auf Kachel 8/11 (nicht 8/12); `createNewGameState` diente als leere Ablage (mit dem Startschwert hätte jedes Laden ein Schwert geschenkt — jetzt `createEmptyGameState`); „New Game Plus" des alten Spiels bricht mit einem Fehler ab (`_assignNextQuest` fehlt), ein echter Stand hat deshalb eine andere Form als die alte Vorlage (neue Vorlage `LEGACY_NGPLUS_REAL`).
+
+### Offene Punkte
+
+- **Vor dem Veröffentlichen empfohlen:** (a) Probelauf der Browser-Tests auf GitHub ohne Auslieferung (eigener Branch mit eigenem Workflow, wie beim Messen in 1a) — braucht die Freigabe zum Pushen; ein roter Lauf nach dem Merge nähme `/v2/` vom Netz. (b) Fokusring der acht Plätze der Schnellleiste fehlt seit der Fix-Welle bei Tastaturfokus (`hud.css`: der Block `.hotbar .ui-slot:focus { outline: none }` steht nach `:focus-visible`); kleine Korrektur mit Browser-Test.
+- **Nur am Gerät prüfbar (Auftraggeber):** iPad — Stick mit zweitem Finger, Wischen in der Hilfe, „Spielstand sichern" (Download-Abfrage, Ablage in „Dateien") und „Spielstand laden"; iPadOS-Fassung notieren (für das volle Layout etwa iPadOS 16: `inert`, CSS `round()`, `subgrid`). PC — Schärfe der Rahmen bei Windows-Skalierung 125 % und 150 % (nur in der Emulation geprüft). Bildrate mit `?fps=1`.
+- **Fragen an den Auftraggeber:** endgültige Stil-Entscheidung; Lesbarkeit der Schrift für Emilia; serbische Sätze (`test-artifacts/texte/serbisch.md`, dazu der dort fehlende Satz „Bravo! Du bist mutig! Deda ist stolz!"; ekavisch oder ijekavisch; „Pita"); überarbeitete Texte ansehen; Anzeige ändert sich schon unter dem offenen Gespräch, der Hinweis „Aufgabe geschafft!" kommt danach.
+- **Sätze, die Tasten nennen, die es noch nicht gibt** (aus dem alten Spiel übernommen, nicht geändert): Mama, Liam, Oma („mit F"), Papa („Leertaste zum Kämpfen"), Aufgabe `star_collector` („P-Taste"), Opa („mit E", am iPad falsch). Anpassen, wenn Heilen, Angeln, Kämpfen und Erfolge umziehen.
+- **Zurückgestellt aus der Fix-Welle:** ein wartender Hinweis kann hinter einem gleich danach öffnenden Fenster ungesehen ablaufen; in einer Sitzung mit neuerem Stand kommt nach 30 Minuten trotzdem „Zeit zum Sichern"; schließt man das Menü bei offener Dateiauswahl, kann die Rückfrage ein wartendes Speicher-Fenster ersetzen (die Marke „Nicht gespeichert" bleibt).
+
+### Übergabe an Etappe 2
+
+- Rucksack-Fenster, übrige Symbole (bis dahin Beutel), Werkstätten öffnen sich direkt, Kartenwechsel (Ausgänge zeigen heute „Hier geht es bald weiter.").
+- Aufgaben: Aufrufer pflegen die Zähler in `stats` **vor** `reportSignal` (nur `talk` pflegt selbst); Ziele vom Typ `visit` gegen `MapId` prüfen; Vorbelegung für `heal`/`coral` (`stats.coralHealed`) und `sunken_treasure` (`grottoZones`) nachholen; `kill`, `fish`, `boss` zählen erst in ihren Etappen.
+- Stände, die unter 1a frisch begonnen wurden, haben kein Holzschwert (bewusst kein Geschenk beim Laden) — in der Kampf-Etappe bedenken. Für `BACKUP_SAVE_KEY` gibt es keinen Rückweg in der Oberfläche.
+- Aufräumen zu Beginn: `hud.css` (433 Zeilen) und `kit.css` teilen (Gespräch/Hinweise, Touch/Dreh-Hinweis heraus); `main.ts` über eine Aufbau-Funktion statt `as Services`; Stylesheet-Reihenfolge über `@layer`; Stift wie Finger behandeln; Bedien-Hinweis beim allerersten Start (die Texte `hint.*` sind vorbereitet, aber ungenutzt); doppelte Helfer in den Durchspiel-Tests.
+- Die Einordnung aller zurückgestellten Kleinigkeiten (vor Veröffentlichung, spätere Etappe, kann entfallen) stammt aus der Gesamtprüfung vom 2026-11-15; die wichtigen stehen oben.
