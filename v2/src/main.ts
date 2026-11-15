@@ -20,6 +20,10 @@ import { DialogueBox } from './ui/dialogueBox';
 import { Toasts } from './ui/toasts';
 import { TouchControls } from './ui/touchControls';
 import { RotateHint } from './ui/rotateHint';
+import { Menu } from './ui/menu';
+import { Help } from './ui/help';
+import { FpsMeter } from './ui/fps';
+import { Notices, toastWhenRunning } from './ui/notices';
 import { el } from './ui/el';
 import { TEXTS, fillText } from './data/texts';
 import { QUESTS } from './data/quests';
@@ -33,16 +37,8 @@ import type { Action } from './input/actions';
  * sobald es weiterläuft – so stehen sie nicht neben dem Gesprächsfeld und laufen nicht ungesehen ab.
  */
 function announceProgress(services: Services): void {
-  const { bus, windows } = services;
-  const waiting: Array<() => void> = [];
-  const announce = (text: string, icons?: readonly string[]): void => {
-    const show = (): void => services.toasts.show(text, icons);
-    if (windows.paused) waiting.push(show);
-    else show();
-  };
-  bus.on('ui:paused', ({ paused }) => {
-    if (!paused) for (const show of waiting.splice(0)) show();
-  });
+  const { bus } = services;
+  const announce = toastWhenRunning(services);
   bus.on('quest:changed', (change) => {
     if (!change.completed) return;
     const rewards = (QUESTS[change.questId]?.itemReward ?? []).map((r) => iconFor(r.itemId));
@@ -135,11 +131,21 @@ services.toasts = new Toasts(uiRoot.element);
 // Touch-Bedienung: Stick-Zone als erstes Kind (unter Anzeige und Schnellleiste), Kontext-Knopf und Dreh-Hinweis zuletzt
 new TouchControls(uiRoot.element, services, touch, host);
 new RotateHint(uiRoot.element, windows);
+// Menü (M, Menü-Knopf) mit dem Knopf „Hilfe"; Hilfe (H); Bildraten-Anzeige (F2). Weitere Menü-Knöpfe mit menu.add.
+services.help = new Help(windows, input);
+services.menu = new Menu(windows);
+services.menu.add({ id: 'help', label: TEXTS['menu.help'], onSelect: () => services.help.open() });
+// nicht bei offenem Gespräch oder angehaltenem Spiel (der Knopf ist bei offenem Fenster ohnehin inert)
+services.hud.onMenu = () => { if (!windows.paused) services.menu.open(); };
+services.fps = new FpsMeter(uiRoot.element);
 announceProgress(services);
+const notices = new Notices(services, () => window.location.reload());
 game.registry.set(SERVICES_KEY, services);
 pixelGrid.start();
 // alle 60 s, beim Verstecken und beim Verlassen der Seite (wie Etappe 0)
 if (start.persist) save.start(document, window);
+// Hinweis beim Start, danach die Frage nach dem alten Stand (erst jetzt: die Oberfläche hat ihren Maßstab)
+notices.start();
 
 if (testHooksEnabled) {
   const publish = (): void => installTestHooks({ pixelGrid: pixelGrid.snapshot });

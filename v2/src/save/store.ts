@@ -17,7 +17,8 @@ export const REJECTED_SAVE_KEY = 'emilia2_save_rejected';
 /** Der Stand, den eine Übernahme oder ein Laden aus Datei ersetzt hat. */
 export const BACKUP_SAVE_KEY = 'emilia2_save_backup';
 
-export type SaveReason = 'timer' | 'map-change' | 'quest' | 'boss' | 'build' | 'campfire' | 'page-hide';
+export type SaveReason = 'timer' | 'map-change' | 'quest' | 'boss' | 'build' | 'campfire' | 'page-hide'
+  | 'legacy-declined';   // „Nein" auf die Frage nach einem neueren alten Stand (Task 9)
 
 export type LoadResult =
   | { kind: 'ok'; state: GameState; repair: RepairReport | null }   // null = nichts repariert
@@ -211,6 +212,11 @@ export class SaveStore {
   /** Liest den alten Stand (nur lesend) und übersetzt ihn; speichert nichts. */
   importLegacy(now: number): LegacyImportResult {
     return migrateLegacySave(this.read(LEGACY_SAVE_KEY), this.read(LEGACY_MUTED_KEY), now);
+  }
+
+  /** Zeitstempel des alten Stands (nur lesend), etwa um eine Ablehnung zu merken; `null` ohne lesbaren Stempel. */
+  legacyStamp(): number | null {
+    return legacyTimestamp(this.read(LEGACY_SAVE_KEY));
   }
 
   /**

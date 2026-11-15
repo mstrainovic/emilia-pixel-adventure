@@ -111,6 +111,20 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 | taste_e | ui/taste_e.png | Ui/Input/Keyboard/KeyE.png | 0,0 13×13 | unverändert ausgeschnitten | Tasten-Bild „E" über der ansprechbaren Figur (nur mit Tastatur) | CC0 1.0 |
 | hinweis | ui/hinweis.png | Ui/Emote/emote22.png | 0,0 14×13 | unverändert ausgeschnitten | Hinweis-Symbol (rotes Ausrufezeichen) über dem Dorfbewohner, zu dem die aktuelle Aufgabe führt | CC0 1.0 |
 | sprechblase | ui/sprechblase.png | Ui/Emote/emote20.png | 0,0 14×13 | unverändert ausgeschnitten | Symbol des Kontext-Knopfs (Touch), wenn er ein Gespräch beginnt: Sprechblase mit drei Punkten | CC0 1.0 |
+| taste_w | ui/taste_w.png | Ui/Input/Keyboard/KeyW.png | 0,0 13×13 | unverändert ausgeschnitten | Taste W in der Hilfe (laufen) | CC0 1.0 |
+| taste_a | ui/taste_a.png | Ui/Input/Keyboard/KeyA.png | 0,0 13×13 | unverändert ausgeschnitten | Taste A in der Hilfe (laufen) | CC0 1.0 |
+| taste_s | ui/taste_s.png | Ui/Input/Keyboard/KeyS.png | 0,0 13×13 | unverändert ausgeschnitten | Taste S in der Hilfe (laufen) | CC0 1.0 |
+| taste_d | ui/taste_d.png | Ui/Input/Keyboard/KeyD.png | 0,0 13×13 | unverändert ausgeschnitten | Taste D in der Hilfe (laufen) | CC0 1.0 |
+| taste_shift | ui/taste_shift.png | Ui/Input/Keyboard/KeyShift.png | 0,0 30×13 | unverändert ausgeschnitten | Taste Shift in der Hilfe (rennen) | CC0 1.0 |
+| taste_1 | ui/taste_1.png | Ui/Input/Keyboard/Key1.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 1 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_2 | ui/taste_2.png | Ui/Input/Keyboard/Key2.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 2 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_3 | ui/taste_3.png | Ui/Input/Keyboard/Key3.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 3 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_4 | ui/taste_4.png | Ui/Input/Keyboard/Key4.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 4 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_5 | ui/taste_5.png | Ui/Input/Keyboard/Key5.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 5 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_6 | ui/taste_6.png | Ui/Input/Keyboard/Key6.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 6 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_7 | ui/taste_7.png | Ui/Input/Keyboard/Key7.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 7 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_8 | ui/taste_8.png | Ui/Input/Keyboard/Key8.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 8 in der Hilfe (Schnellleiste) | CC0 1.0 |
+| taste_esc | ui/taste_esc.png | Ui/Input/Keyboard/KeyEscape.png | 0,0 18×13 | unverändert ausgeschnitten | Taste Esc in der Hilfe (schließen) | CC0 1.0 |
 
 ## Schriften
 

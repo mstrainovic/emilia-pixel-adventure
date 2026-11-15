@@ -1,0 +1,196 @@
+/*
+ * Menü, Hilfe, Hinweis-Fenster und Bildraten-Anzeige (Task 9). Farben, Schriftgrößen und Abstände nur über die
+ * Variablen aus tokens.css; Pixelbilder in ganzen Vielfachen von --hud-px (--w, --h: Größe in Bildpunkten, gesetzt
+ * von help.ts). Elemente mit Randbild (Knöpfe, Platz) rasten menu.ts, help.ts und notices.ts per grid.ts ein.
+ */
+
+/* ---------- Menü: große Knöpfe untereinander ---------- */
+
+/*
+ * Alle Knöpfe gleich breit: die Spalte ist so breit wie ihr breitester Knopf (max-content), die anderen strecken sich
+ * darauf. Nicht auf die Breite des Fensters strecken: grid.ts rastet die Knöpfe ein, das Fenster wüchse sonst mit.
+ */
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-3);
+  width: max-content;
+  margin: 0 auto;
+}
+
+.menu__button {
+  min-width: 240px;
+  min-height: 64px;
+  font-size: var(--fs-3);
+}
+
+/* ---------- Hinweis und Frage: ein Satz, große Knöpfe darunter ---------- */
+
+.notice__text {
+  max-width: 28em;
+  margin: 0 0 var(--sp-4);
+  font-size: var(--fs-2);
+  line-height: 1.4;
+}
+
+.notice__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+
+.notice__button {
+  min-width: 128px;
+  min-height: 64px;
+  font-size: var(--fs-3);
+}
+
+/* ---------- Hilfe: je Zeile Bild und ein Wort ---------- */
+
+.help {
+  display: grid;
+  grid-template-columns: max-content auto;
+  gap: var(--sp-3) var(--sp-4);
+  align-items: center;
+}
+
+.help__row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+/* Bild einer Zeile: grid.ts setzt es auf ganze Bildpunkte und Gerätepixel (left/top relativ) */
+.help__pic {
+  position: relative;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: var(--hud-px);
+}
+
+/* W über A S D */
+.help__pic--cross {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+}
+
+.help__pic--cross > :first-child {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.help__pic--cross > :not(:first-child) {
+  grid-row: 2;
+}
+
+.help__key,
+.help__icon {
+  display: block;
+  width: calc(var(--w) * var(--hud-px));
+  height: calc(var(--h) * var(--hud-px));
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.help__word {
+  font-size: var(--fs-2);
+  font-weight: 700;
+}
+
+/* Stick wie in der Touch-Bedienung, auf dem Papier mit Holzring; rennen: Knauf ganz am Rand */
+.help__stick {
+  --r: calc(12 * var(--hud-px));
+  position: relative;
+  box-sizing: border-box;
+  width: calc(2 * var(--r));
+  height: calc(2 * var(--r));
+  border: calc(2 * var(--hud-px)) solid var(--c-wood);
+  border-radius: 50%;
+  background: var(--c-shade);
+}
+
+.help__stick.is-run {
+  margin-right: calc(var(--r) / 2);
+}
+
+.help__knob {
+  position: absolute;
+  top: calc(50% - var(--r) / 2);
+  left: calc(50% - var(--r) / 2);
+  box-sizing: border-box;
+  width: var(--r);
+  height: var(--r);
+  border: calc(2 * var(--hud-px)) solid var(--c-paper);
+  border-radius: 50%;
+  background: var(--c-wood);
+}
+
+.help__stick.is-run .help__knob {
+  transform: translateX(var(--r));
+}
+
+/* Kontext-Knopf, Platz und Kreuz als Bild: keine Tippfläche, Größe in ganzen Bildpunkten */
+.help__act,
+.help__slot,
+.help__close {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  cursor: default;
+}
+
+.help__act,
+.help__close {
+  width: calc(24 * var(--hud-px));
+  height: calc(24 * var(--hud-px));
+}
+
+.help__close {
+  font-size: var(--fs-4);
+}
+
+.help__act .help__icon {
+  position: absolute;
+  top: round(nearest, calc((100% - 13 * var(--hud-px)) / 2), var(--px));
+  left: round(nearest, calc((100% - 14 * var(--hud-px)) / 2), var(--px));
+}
+
+/* Platz: Rand links und oben 3, rechts und unten 1 Bildpunkt (kit.css), Symbol 16 */
+.help__slot {
+  width: calc(20 * var(--hud-px));
+  height: calc(20 * var(--hud-px));
+}
+
+.help__slot .help__icon {
+  position: absolute;
+  top: calc(3 * var(--hud-px));
+  left: calc(3 * var(--hud-px));
+}
+
+/* ---------- Bildraten-Anzeige (F2): oben in der Mitte, Ziffernschrift, fängt keine Zeiger ab ---------- */
+
+.fps {
+  position: absolute;
+  top: max(var(--sp-2), env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 3ch;
+  padding: var(--sp-1) var(--sp-2);
+  font-family: var(--font-num);
+  font-size: round(nearest, var(--fs-2), calc(9 * var(--px)));
+  line-height: 1;
+  text-align: center;
+  color: var(--c-coin);
+  background: var(--c-ink);
+  pointer-events: none;
+}
+
+.fps[hidden] {
+  display: none;
+}

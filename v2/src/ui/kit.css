@@ -156,9 +156,12 @@ body,
   line-height: 1.2;
 }
 
+/* scrollt, wenn der Inhalt höher ist als das Bild (Hilfe auf dem Handy quer); per Finger trotz touch-action der Seite */
 .ui-window__body {
   min-height: 0;
   overflow: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   padding: var(--sp-3) var(--sp-4) var(--sp-4);
 }
 

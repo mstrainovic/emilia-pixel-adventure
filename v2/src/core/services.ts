@@ -13,8 +13,11 @@ import type { Hud } from '../ui/hud';
 import type { Hotbar } from '../ui/hotbar';
 import type { DialogueBox } from '../ui/dialogueBox';
 import type { Toasts } from '../ui/toasts';
+import type { Menu } from '../ui/menu';
+import type { Help } from '../ui/help';
+import type { FpsMeter } from '../ui/fps';
 
-/** Was beim Start zu erklären ist (die Anzeige dazu kommt in Plan 1b). */
+/** Was beim Start zu erklären ist (Fenster „Hinweis“, ui/notices.ts). */
 export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
   | 'storage-unavailable' | 'legacy-imported' | 'legacy-failed';
 
@@ -23,7 +26,7 @@ export interface GameStart {
   notice: StartNotice | null;
   /** Falsch: in dieser Sitzung wird nie gespeichert (neuerer Stand oder Speicher nicht lesbar). */
   persist: boolean;
-  /** Der alte Stand ist neuer als die letzte Übernahme oder Ablehnung (die Frage dazu stellt Plan 1b). */
+  /** Der alte Stand ist neuer als die letzte Übernahme oder Ablehnung (die Frage dazu stellt ui/notices.ts). */
   legacyNewer: boolean;
   /** Bericht des Ladens, wenn etwas repariert wurde; sonst `null`. */
   repair: RepairReport | null;
@@ -103,6 +106,12 @@ export interface Services {
   dialogue: DialogueBox;
   /** Kurze Hinweise (3 s sichtbar, höchstens zwei zugleich). */
   toasts: Toasts;
+  /** Fenster „Menü“ (Taste M, Menü-Knopf); weitere Knöpfe mit `menu.add`. */
+  menu: Menu;
+  /** Fenster „Hilfe“ (Taste H, Knopf im Menü). */
+  help: Help;
+  /** Bildraten-Anzeige (F2); die Welt-Szene meldet jedes Bild. */
+  fps: FpsMeter;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

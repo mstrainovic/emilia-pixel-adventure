@@ -139,6 +139,7 @@ describe('KeyboardSource', () => {
       ['Escape', 'cancel'],
       ['KeyH', 'help'],
       ['KeyM', 'menu'],
+      ['F2', 'fps'],
       ...[1, 2, 3, 4, 5, 6, 7, 8].map((n): [string, string] => [`Digit${n}`, `hotbar${n}`]),
     ];
     for (const [code, action] of table) {

@@ -40,7 +40,14 @@ function snap(win: HTMLElement): void {
 function keepSnapped(win: HTMLElement, shade: HTMLElement): ResizeObserver | null {
   snap(win);
   if (typeof ResizeObserver !== 'function') return null;
-  const observer = new ResizeObserver(() => snap(win));
+  // erst im nächsten Bild: Einrasten ändert die Größe des beobachteten Fensters; direkt im Beobachter meldet der
+  // Browser sonst „ResizeObserver loop completed with undelivered notifications" (etwa wenn beim Start ein Fenster
+  // offen ist und die Schrift nachlädt, Task 9)
+  let frame = 0;
+  const observer = new ResizeObserver(() => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => snap(win));
+  });
   observer.observe(win);
   observer.observe(shade);
   return observer;

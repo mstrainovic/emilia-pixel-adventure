@@ -33,6 +33,32 @@ export const TEXTS = {
   'touch.action': 'Aktion',
   'touch.talk': 'Reden',
   'rotate.hint': 'Bitte dreh das Gerät quer.',
+  // Menü und Hilfe (Task 9): je Bedienung ein Bild und genau ein Wort
+  'menu.title': 'Menü',
+  'menu.help': 'Hilfe',
+  'help.title': 'Hilfe',
+  'help.move': 'laufen',
+  'help.run': 'rennen',
+  'help.talk': 'reden',
+  'help.hotbar': 'Schnellleiste',
+  'help.close': 'schließen',
+  // Hinweise beim Start (Fenster „Hinweis" mit „Gut"), je Wert von StartNotice
+  'notice.title': 'Hinweis',
+  'notice.ok': 'Gut',
+  'notice.save-corrupt': 'Dein Spielstand war kaputt. Wir fangen neu an.',
+  'notice.save-corrupt-legacy': 'Dein Spielstand war kaputt. Wir haben den aus dem alten Spiel geholt.',
+  'notice.save-repaired': 'Dein Spielstand wurde repariert. Vielleicht fehlt etwas.',
+  'notice.save-newer': 'Bitte lade die Seite neu, damit dein Spielstand passt.',
+  'notice.storage-unavailable': 'Hier kann das Spiel nicht speichern.',
+  'notice.legacy-imported': 'Dein Spielstand aus dem alten Spiel ist da!',
+  'notice.legacy-failed': 'Der alte Spielstand konnte nicht geholt werden.',
+  // Hinweise beim Speichern (je Sitzung höchstens einmal)
+  'save.failed': 'Speichern hat nicht geklappt.',
+  'save.otherTab': 'Das Spiel ist noch in einem anderen Fenster offen. Bitte lade die Seite neu.',
+  // Frage beim Start, wenn im alten Spiel weitergespielt wurde (Spec 11.1, „Übergangszeit")
+  'legacy.question': 'Im alten Spiel bist du weitergekommen. Den Stand von dort holen?',
+  'legacy.yes': 'Ja',
+  'legacy.no': 'Nein',
   /** Probefenster der Browser-Tests (nur über den Test-Zugang erreichbar). */
   'test.title': 'Probefenster',
   'test.body': 'Hier steht später etwas Schönes.',

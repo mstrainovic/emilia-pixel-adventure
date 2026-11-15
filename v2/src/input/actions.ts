@@ -5,6 +5,8 @@ export type Action =
   | 'cancel'
   | 'menu'
   | 'help'
+  /** Bildraten-Anzeige ein- und ausblenden (Spec 9). */
+  | 'fps'
   | 'hotbar1'
   | 'hotbar2'
   | 'hotbar3'

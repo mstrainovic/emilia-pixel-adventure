@@ -328,6 +328,15 @@ describe('legacyOffer', () => {
   it('bietet bei v2-Stand ohne bisherige Übernahme einen alten Stand mit Zeitstempel an', () => {
     expect(new SaveStore(mem(legacy(2000))).legacyOffer(createNewGameState(1))).toBe('newer');
   });
+
+  it('legacyStamp: Zeitstempel des alten Stands (für „Nein" auf die Frage), nur lesend', () => {
+    const m = mem(legacy(2000));
+    expect(new SaveStore(m).legacyStamp()).toBe(2000);
+    expect(m.writtenKeys).toEqual([]);
+    expect(new SaveStore(mem(legacy())).legacyStamp()).toBeNull();
+    expect(new SaveStore(mem()).legacyStamp()).toBeNull();
+    expect(new SaveStore(throwing()).legacyStamp()).toBeNull();
+  });
 });
 
 

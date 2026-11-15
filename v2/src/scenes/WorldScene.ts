@@ -17,6 +17,7 @@ import { NPCS } from '../data/npcs';
 import { TEXTS } from '../data/texts';
 import { DIALOGUE_REASON } from '../ui/dialogueBox';
 import { faceUrl } from '../ui/images';
+import { handleMenuKeys } from '../ui/menu';
 import { buildLayers } from './world/buildLayers';
 import { buildProps } from './world/buildProps';
 
@@ -156,10 +157,12 @@ export class WorldScene extends Phaser.Scene {
   /**
    * Einzige Stelle mit der Reihenfolge je Bild:
    * 1. Eingabe sammeln (input.frame)
-   * 2. Abnehmer der Oberfläche nehmen ihre Drücke ab (windows.handleInput: Esc schließt ein offenes Fenster)
-   * 3. Gespräch offen: `interact`, `confirm` oder `cancel` schließt es; alle anderen Drücke werden verworfen, damit
-   *    nach dem Schließen nichts nachfeuert. Sonst, wenn das Spiel nicht angehalten ist (Fenster, Gespräch,
-   *    Dreh-Hinweis): Tasten 1–8 der Schnellleiste (hotbar.handleInput), dann `interact` → Gespräch mit dem
+   * 2. Abnehmer der Oberfläche nehmen ihre Drücke ab (windows.handleInput: Esc schließt ein offenes Fenster); F2
+   *    (`fps`) blendet die Bildraten-Anzeige ein und aus, immer
+   * 3. Gespräch offen: `interact`, `confirm` oder `cancel` schließt es; alle anderen Drücke werden verworfen (auch M
+   *    und H), damit nach dem Schließen nichts nachfeuert. Sonst: M und H öffnen Menü bzw. Hilfe oder schließen sie
+   *    wieder (handleMenuKeys, auch bei offenem Fenster); dann, wenn das Spiel nicht angehalten ist (Fenster,
+   *    Gespräch, Dreh-Hinweis): Tasten 1–8 der Schnellleiste (hotbar.handleInput), dann `interact` → Gespräch mit dem
    *    ansprechbaren Dorfbewohner oder nichts (während der Sperre nach einem Gespräch nur abgenommen).
    * 4. Nur wenn das Spiel nicht angehalten ist: Spielerin rechnen, die gelaufene Strecke in den Spielstand schreiben,
    *    die Uhr des Spieltags weiterstellen (session.tick), Sperre ablaufen lassen, Ausgänge prüfen
@@ -170,9 +173,11 @@ export class WorldScene extends Phaser.Scene {
    */
   override update(_time: number, delta: number): void {
     const dt = delta / 1000;
-    const { input, windows, session, hotbar, dialogue } = this.services;
+    const { input, windows, session, hotbar, dialogue, menu, help, fps } = this.services;
     input.frame(dt);
     windows.handleInput(input);
+    if (input.consume('fps')) fps.toggle();
+    fps.frame(dt);
     // per Tippen auf das Feld geschlossen (zwischen zwei Bildern)
     if (this.talkingTo && !dialogue.isOpen) this.endTalk();
     if (dialogue.isOpen) {
@@ -181,9 +186,12 @@ export class WorldScene extends Phaser.Scene {
         this.endTalk();
       }
       input.clearPresses();
-    } else if (!windows.paused) {
-      hotbar.handleInput(input);
-      if (input.consume('interact')) this.interact();
+    } else {
+      handleMenuKeys(input, windows, menu, help);
+      if (!windows.paused) {
+        hotbar.handleInput(input);
+        if (input.consume('interact')) this.interact();
+      }
     }
     if (!windows.paused) {
       const before = this.player.state;

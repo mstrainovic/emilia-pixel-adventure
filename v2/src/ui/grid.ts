@@ -38,6 +38,46 @@ export function snapSize(el: HTMLElement): void {
   el.style.minHeight = up(box.height);
 }
 
+/**
+ * Hält Elemente mit Randbild in einem Fenster eingerastet (Größe und Lage): jetzt und nach jeder Größenänderung von
+ * `container`, dem Fenster oder der Abdunklung darum (dann im folgenden Bild). Nach `WindowManager.open` aufrufen.
+ * Das Einrasten der Elemente kann das Fenster vergrößern; darum rastet es danach auch das Fenster selbst wieder ein
+ * (wie WindowManager, gleiches Ergebnis) und erst dann die Lage der Elemente. So findet der Beobachter des
+ * WindowManager das Fenster schon eingerastet vor und ändert in seinem Rückruf nichts mehr (sonst meldet der Browser
+ * „ResizeObserver loop completed with undelivered notifications"). Die Elemente dürfen ihre Breite nicht vom
+ * Fenster erben (kein Strecken), sonst wüchse beides mit jedem Einrasten weiter. Liefert das Abmelden.
+ */
+export function keepSnapped(container: HTMLElement, targets: () => HTMLElement[]): () => void {
+  const win = container.closest<HTMLElement>('.ui-window');
+  const run = (): void => {
+    const list = targets();
+    for (const t of list) snapSize(t);
+    if (win) {
+      snapSize(win);
+      snapPosition(win);
+    }
+    for (const t of list) snapPosition(t);
+  };
+  run();
+  if (typeof ResizeObserver !== 'function') return () => {};
+  // erst im nächsten Bild: Einrasten ändert die Größe der Elemente und damit des beobachteten Fensters; direkt im
+  // Beobachter gäbe das eine Schleife („ResizeObserver loop completed with undelivered notifications")
+  let frame = 0;
+  const observer = new ResizeObserver(() => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(run);
+  });
+  observer.observe(container);
+  // Fenster und Abdunklung wie WindowManager: neue Fenstergröße oder neuer Inhalt verschieben das Fenster
+  for (const outer of [win, container.closest<HTMLElement>('.ui-shade')]) {
+    if (outer) observer.observe(outer);
+  }
+  return () => {
+    cancelAnimationFrame(frame);
+    observer.disconnect();
+  };
+}
+
 /** Verschiebt das Element (position: relative) auf die nächste Lage, die ganze CSS- und Gerätepixel ist. */
 export function snapPosition(el: HTMLElement): void {
   el.style.left = '';

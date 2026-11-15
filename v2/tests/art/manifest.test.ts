@@ -113,6 +113,16 @@ describe('Quellenverzeichnis src/assets/gfx', () => {
       'ui/hinweis.png': { quelle: 'Ui/Emote/emote22.png', size: [14, 13] },
       // Kontext-Knopf der Touch-Bedienung (Task 8)
       'ui/sprechblase.png': { quelle: 'Ui/Emote/emote20.png', size: [14, 13] },
+      // Tasten-Bilder der Hilfe (Task 9)
+      'ui/taste_w.png': { quelle: 'Ui/Input/Keyboard/KeyW.png', size: [13, 13] },
+      'ui/taste_a.png': { quelle: 'Ui/Input/Keyboard/KeyA.png', size: [13, 13] },
+      'ui/taste_s.png': { quelle: 'Ui/Input/Keyboard/KeyS.png', size: [13, 13] },
+      'ui/taste_d.png': { quelle: 'Ui/Input/Keyboard/KeyD.png', size: [13, 13] },
+      'ui/taste_shift.png': { quelle: 'Ui/Input/Keyboard/KeyShift.png', size: [30, 13] },
+      'ui/taste_esc.png': { quelle: 'Ui/Input/Keyboard/KeyEscape.png', size: [18, 13] },
+      ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8].map((n) => [
+        `ui/taste_${n}.png`, { quelle: `Ui/Input/Keyboard/Key${n}.png`, size: [13, 13] as [number, number] },
+      ])),
     };
     for (const [ziel, { quelle, size }] of Object.entries(expected)) {
       expect(sources.eintraege.find((e) => e.ziel === ziel)?.quelle, ziel).toBe(quelle);

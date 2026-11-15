@@ -157,6 +157,10 @@ test('Speicher, dessen Lesen wirft: Spiel startet mit storage-unavailable, Laufe
   await page.goto('./');
   await waitForWorld(page);
   expect(await page.evaluate(() => (window as any).__emilia2.startNotice)).toBe('storage-unavailable');
+  // der Hinweis steht im Fenster „Hinweis" und hält das Spiel an, bis er bestätigt ist (Task 9)
+  await expect(page.locator('.ui-shade.is-open .ui-window[data-window="notice"]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ui-shade.is-open')).toHaveCount(0);
   const start = await player(page);
   await holdUntilMoved(page, 'KeyD', start);
   expect((await saveNow(page)).kind).not.toBe('saved');

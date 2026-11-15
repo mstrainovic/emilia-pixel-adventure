@@ -13,6 +13,7 @@ const ACTION_KEYS: Readonly<Record<string, Action>> = {
   Escape: 'cancel',
   KeyH: 'help',
   KeyM: 'menu',
+  F2: 'fps',
   Digit1: 'hotbar1',
   Digit2: 'hotbar2',
   Digit3: 'hotbar3',
@@ -49,7 +50,7 @@ function targetIn(e: KeyboardEvent, selector: string): boolean {
  * Welche Tasten das Spiel dem Browser überlässt (kein `preventDefault`, keine Handlung, nicht gehalten):
  * - Ziel in einem Eingabefeld (`input`, `select`, `textarea`, `contenteditable`): jede Taste außer `Escape`;
  * - Ziel in einem Bedienelement (`button`, `a[href]` oder Eingabefeld): `Enter` und `Space`, damit sie HTML-Knöpfe auslösen.
- * Alle anderen Tasten (Laufen, Esc, E, M, H, 1–8) wirken unverändert, auch wenn ein Knopf den Fokus hat.
+ * Alle anderen Tasten (Laufen, Esc, E, M, H, F2, 1–8) wirken unverändert, auch wenn ein Knopf den Fokus hat.
  */
 function leftToBrowser(e: KeyboardEvent): boolean {
   if (e.code !== 'Escape' && targetIn(e, FIELD_SELECTOR)) return true;

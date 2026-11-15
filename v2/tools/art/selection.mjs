@@ -295,7 +295,17 @@ export const UI = [
   { id: 'hinweis', source: 'Ui/Emote/emote22.png', x: 0, y: 0, w: 14, h: 13, use: 'Hinweis-Symbol (rotes Ausrufezeichen) über dem Dorfbewohner, zu dem die aktuelle Aufgabe führt' },
   // Touch-Bedienung (Task 8)
   { id: 'sprechblase', source: 'Ui/Emote/emote20.png', x: 0, y: 0, w: 14, h: 13, use: 'Symbol des Kontext-Knopfs (Touch), wenn er ein Gespräch beginnt: Sprechblase mit drei Punkten' },
+  // Tasten-Bilder der Hilfe (Task 9); „E" steht schon oben
+  ...['W', 'A', 'S', 'D'].map((k) => key(k.toLowerCase(), `Key${k}`, 13, `Taste ${k} in der Hilfe (laufen)`)),
+  key('shift', 'KeyShift', 30, 'Taste Shift in der Hilfe (rennen)'),
+  ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => key(String(n), `Key${n}`, 13, `Taste ${n} in der Hilfe (Schnellleiste)`)),
+  key('esc', 'KeyEscape', 18, 'Taste Esc in der Hilfe (schließen)'),
 ];
+
+/** Tasten-Bild aus Ui/Input/Keyboard (13 Bildpunkte hoch, ganzes Bild). */
+function key(id, file, w, use) {
+  return { id: `taste_${id}`, source: `Ui/Input/Keyboard/${file}.png`, x: 0, y: 0, w, h: 13, use };
+}
 
 /** Schriften, die nicht aus dem Pack kommen (für QUELLEN.md); die Lizenzdatei wird beim Bauen geprüft. */
 export const FONTS = [
