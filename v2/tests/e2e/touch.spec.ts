@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test, expect, type Browser, type Page } from '@playwright/test';
+import { MAX_DT } from '../../src/systems/movement';
 
 /*
  * Touch-Bedienung (Plan 1b, Task 8). Läuft in Chromium und WebKit, je in einem eigenen Kontext mit `hasTouch`.
@@ -83,12 +84,14 @@ async function center(page: Page, selector: string): Promise<{ x: number; y: num
 }
 
 /**
- * Stick um `dx` nach rechts auslenken und das Tempo in Spielzeit messen: nach `settle` Sekunden Anlauf werden Weg
- * und Spielzeit Bild für Bild summiert, bis `span` Sekunden beisammen sind. Bilder mit mehr als 0,1 s Spielzeit
- * (Stocken; stepMover rechnet dann nur MAX_DT) zählen nicht. Danach hebt der Finger ab.
+ * Stick um `dx` nach rechts auslenken und das Tempo messen: nach `settle` Sekunden Anlauf werden Weg und Zeit Bild für
+ * Bild summiert, bis `span` Sekunden beisammen sind. Gezählt wird die Zeit, die stepMover wirklich rechnet: die
+ * Spielzeit des Bildes, höchstens MAX_DT. So stimmt das Tempo bei jeder Bildrate, und der Weg ist immer gleich lang
+ * (Anlauf + Messung). Der Rechner der Auslieferung zeichnet das iPad-Bild mit rund 10 Bildern je Sekunde; als Bilder
+ * über 0,1 s noch ausgelassen wurden, endete die Messung dort nie (Probelauf vom 2026-11-15). Danach hebt der Finger ab.
  */
 async function measureStick(page: Page, dx: number, settle: number, span: number): Promise<{ speed: number; x: number }> {
-  return page.evaluate(({ start, dx, settle, span }) => new Promise<{ speed: number; x: number }>((resolve) => {
+  return page.evaluate(({ start, dx, settle, span, maxDt }) => new Promise<{ speed: number; x: number }>((resolve) => {
     const h = (window as any).__emilia2;
     const fire = (type: string, x: number, y: number): void => {
       (document.elementFromPoint(x, y) ?? document.body).dispatchEvent(new PointerEvent(type, {
@@ -99,17 +102,18 @@ async function measureStick(page: Page, dx: number, settle: number, span: number
     const sample = (): { x: number; t: number } => ({ x: h.player().x, t: h.state().dayNight.totalTime });
     fire('pointerdown', start.x, start.y);
     fire('pointermove', start.x + dx, start.y);
-    const t0 = sample().t;
     let prev = sample();
+    let elapsed = 0;
     let dist = 0;
     let time = 0;
     const tick = (): void => {
       const now = sample();
-      const dt = now.t - prev.t;
-      if (now.t - t0 > settle && dt > 0 && dt <= 0.1) {
+      const step = Math.min(Math.max(0, now.t - prev.t), maxDt);
+      if (elapsed >= settle) {
         dist += now.x - prev.x;
-        time += dt;
+        time += step;
       }
+      elapsed += step;
       prev = now;
       if (time >= span) {
         fire('pointerup', start.x + dx, start.y);
@@ -119,7 +123,7 @@ async function measureStick(page: Page, dx: number, settle: number, span: number
       }
     };
     requestAnimationFrame(tick);
-  }), { start: THUMB, dx, settle, span });
+  }), { start: THUMB, dx, settle, span, maxDt: MAX_DT });
 }
 
 /** Rechts neben Mama (sie steht auf 8/11), bis sie ansprechbar ist. */
@@ -460,7 +464,7 @@ test('Handy hochkant: Dreh-Hinweis, Spiel hält an; quer: weg; Tablet hochkant: 
 });
 
 test('Bilder für die Durchsicht: iPad quer und hochkant, Handy quer und hochkant', async ({ browser, baseURL, browserName }) => {
-  test.skip(browserName !== 'chromium', 'ein Satz Bilder genügt');
+  test.skip(browserName !== 'chromium' || !!process.env.CI, 'ein Satz Bilder genügt; auf dem Rechner der Auslieferung sieht sie niemand');
   mkdirSync(ARTIFACTS, { recursive: true });
   const shots = [
     { name: 'ipad-quer', width: 1080, height: 810, dpr: 2 },

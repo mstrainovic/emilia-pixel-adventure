@@ -319,14 +319,23 @@ test('Fenstergröße ändern, während D gehalten wird: kein Fehler, Bild bleibt
   });
   await nextFrames(page);
   await page.waitForTimeout(300);
+  // Emilia läuft weiter, und hier hängt die Kamera am Kartenrand: Die Figur wandert also im Bild. Ihr Ort wird
+  // deshalb vor UND nach dem Bildschirmfoto gelesen; ausgenommen wird das Rechteck um beide Orte. Auf dem Rechner
+  // der Auslieferung dauert das Foto länger, als der Spielraum um einen einzigen Ort erlaubt (Probelauf 2026-11-15).
+  const where = (): Promise<{ p: PlayerInfo; c: CameraInfo }> =>
+    page.evaluate(() => ({ p: (window as any).__emilia2.player(), c: (window as any).__emilia2.camera() }));
+  const before = await where();
   const shot = await page.screenshot({ scale: 'device', style: HIDE_UI });
   const snapshot = await grid(page);
-  const { p, c } = await page.evaluate(() => ({ p: (window as any).__emilia2.player(), c: (window as any).__emilia2.camera() }));
+  const { p, c } = await where();
   await page.keyboard.up('KeyD');
 
   // neues Raster wirklich angewandt: jeder Block einfarbig, kein Schwarz im Ausschnitt
   const png = readPng(shot);
-  expect(blockProblems(png, snapshot, figureRect(snapshot, p, c))).toEqual([]);
+  const from = figureRect(snapshot, before.p, before.c);
+  const to = figureRect(snapshot, p, c);
+  const figure = { x0: Math.min(from.x0, to.x0), x1: Math.max(from.x1, to.x1), y0: Math.min(from.y0, to.y0), y1: Math.max(from.y1, to.y1) };
+  expect(blockProblems(png, snapshot, figure)).toEqual([]);
   expect(blackPixelsInView(png, snapshot)).toBe(0);
   expect(onScreenPixel(c.scrollX, snapshot.layout.zoom) && onScreenPixel(c.scrollY, snapshot.layout.zoom)).toBe(true);
 

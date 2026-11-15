@@ -330,7 +330,7 @@ async function hudDevicePixels(page: Page): Promise<number> {
 }
 
 test('Bilder des offenen Testfensters für die Durchsicht', async ({ browser, baseURL, browserName }) => {
-  test.skip(browserName !== 'chromium', 'ein Satz Bilder genügt');
+  test.skip(browserName !== 'chromium' || !!process.env.CI, 'ein Satz Bilder genügt; auf dem Rechner der Auslieferung sieht sie niemand');
   mkdirSync(ARTIFACTS, { recursive: true });
   for (const shot of [{ width: 1280, height: 720, dpr: 1 }, { width: 1024, height: 768, dpr: 2 }]) {
     const context = await browser.newContext({ baseURL, viewport: { width: shot.width, height: shot.height }, deviceScaleFactor: shot.dpr });

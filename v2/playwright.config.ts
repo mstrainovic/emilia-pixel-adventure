@@ -7,6 +7,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // Der Rechner der Auslieferung zeichnet ohne Grafikkarte: Bildschirmfotos bei hoher Pixeldichte dauern dort bis
+  // zu fünfmal so lang wie am eigenen Rechner (Probelauf 2026-11-15: mehrere Tests bei 25 bis 30 s).
+  timeout: process.env.CI ? 90_000 : 30_000,
   // Zwei Worker: WebGL-Seiten mit Pixelprüfungen (bis Pixeldichte 3) in drei Projekten überlasten die Maschine
   // bei der Standardzahl; Zeit-Tests messen dann die Last statt des Spiels.
   workers: 2,

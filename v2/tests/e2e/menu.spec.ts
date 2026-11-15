@@ -348,7 +348,7 @@ test('Handy quer (844×390): die Hilfe scrollt per Finger, das Kreuz bleibt sich
 });
 
 test('Bilder von Menü und Hilfe für die Durchsicht', async ({ browser, baseURL, browserName }) => {
-  test.skip(browserName !== 'chromium', 'ein Satz Bilder genügt');
+  test.skip(browserName !== 'chromium' || !!process.env.CI, 'ein Satz Bilder genügt; auf dem Rechner der Auslieferung sieht sie niemand');
   mkdirSync(ARTIFACTS, { recursive: true });
   const shot = async (page: Page, name: string): Promise<void> => {
     await page.evaluate(() => document.fonts.ready);

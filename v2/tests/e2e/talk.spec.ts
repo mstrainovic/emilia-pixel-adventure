@@ -30,6 +30,11 @@ function watchErrors(page: Page): string[] {
 /** Wartet auf Welt, Test-Zugang und sichtbare Anzeige. */
 async function openWorld(page: Page): Promise<void> {
   await page.goto('./');
+  await waitForWorld(page);
+}
+
+/** Wartet, bis das Dorf steht – ohne die Seite neu aufzurufen (nach page.reload()). */
+async function waitForWorld(page: Page): Promise<void> {
   await page.waitForFunction(() => {
     const h = (window as any).__emilia2;
     return h?.ready === true && typeof h.talkState === 'function' && typeof h.skipTime === 'function' && h.pixelGrid?.deviceWidth > 1;
@@ -292,8 +297,9 @@ test('nach dem Neuladen bleibt die Aufgabe „Opas Auftrag" und die Beeren bleib
   await expect(page.locator('.hud-quest__name')).toHaveText('Opas Auftrag');
   // gespeichert wurde gleich nach der Aufgabe, nicht erst beim Verlassen der Seite
   expect(await page.evaluate(() => (window as any).__emilia2.lastSaveResult())).toMatchObject({ reason: 'quest', result: { kind: 'saved' } });
+  // nur neu laden: ein zweiter Aufruf gleich danach bräche das Laden der Bilder ab, WebKit meldet das als Fehler
   await page.reload();
-  await openWorld(page);
+  await waitForWorld(page);
   await expect(page.locator('.hud-quest__name')).toHaveText('Opas Auftrag');
   await expect(page.locator('.hotbar .ui-slot[aria-label="Beere, 5 Stück"]')).toHaveCount(1);
   expect((await state(page)).inventory.slots.some((s: { itemId: string | null; count: number }) => s.itemId === 'berry' && s.count === 5)).toBe(true);
@@ -359,7 +365,7 @@ test.describe('Gesprächsfeld und Hinweis auf ganzen Pixeln', () => {
 });
 
 test('Bilder vom Reden für die Durchsicht', async ({ browser, baseURL, browserName }) => {
-  test.skip(browserName !== 'chromium', 'ein Satz Bilder genügt');
+  test.skip(browserName !== 'chromium' || !!process.env.CI, 'ein Satz Bilder genügt; auf dem Rechner der Auslieferung sieht sie niemand');
   mkdirSync(ARTIFACTS, { recursive: true });
   for (const shot of [{ width: 1280, height: 720, dpr: 1 }, { width: 1024, height: 768, dpr: 2 }]) {
     const context = await browser.newContext({ baseURL, viewport: { width: shot.width, height: shot.height }, deviceScaleFactor: shot.dpr });

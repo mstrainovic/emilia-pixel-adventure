@@ -256,7 +256,7 @@ test.describe('Pixelgenau', () => {
 });
 
 test('Bilder der Anzeige für die Durchsicht', async ({ browser, baseURL, browserName }) => {
-  test.skip(browserName !== 'chromium', 'ein Satz Bilder genügt');
+  test.skip(browserName !== 'chromium' || !!process.env.CI, 'ein Satz Bilder genügt; auf dem Rechner der Auslieferung sieht sie niemand');
   mkdirSync(ARTIFACTS, { recursive: true });
   const shots = [
     { width: 1280, height: 720, dpr: 1 }, { width: 1920, height: 1080, dpr: 1 },

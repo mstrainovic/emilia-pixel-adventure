@@ -360,7 +360,7 @@ test('Fenster „Hinweis" zuerst, nach dem Schließen die Frage; × auf der Frag
 });
 
 test('Bilder der Hinweise für die Durchsicht', async ({ page, context, browserName }) => {
-  test.skip(browserName !== 'chromium', 'ein Satz Bilder genügt');
+  test.skip(browserName !== 'chromium' || !!process.env.CI, 'ein Satz Bilder genügt; auf dem Rechner der Auslieferung sieht sie niemand');
   mkdirSync(ARTIFACTS, { recursive: true });
   const at = LEGACY_FIRST_COMMIT.timestamp;
   await prepareStorage(page, { [SAVE_KEY]: JSON.stringify({ formatVersion: 2, savedAt: 5 }) });
