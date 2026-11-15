@@ -11,6 +11,12 @@ export interface WindowSpec {
   body: HTMLElement;
   /** Läuft nach dem Schließen, auch wenn ein anderes Fenster dieses ersetzt. */
   onClose?: () => void;
+  /**
+   * `buttons` (Fragen und Hinweise zum Speichern, Fix-Welle F6): Tippen daneben schließt nicht, und der Fokus liegt
+   * beim Öffnen auf dem Titel statt auf × – so beantwortet weder ein Danebentippen noch die Leertaste etwas. × und Esc
+   * schließen weiter (`onClose` entscheidet, was das heißt). Ohne Angabe: `any`.
+   */
+  dismiss?: 'any' | 'buttons';
 }
 
 /** Dauer der Blende in ms (wie --fade in tokens.css). */
@@ -23,8 +29,8 @@ interface OpenWindow {
   shade: HTMLElement;
   /** Fokus vor dem ersten Fenster; kehrt beim Schließen dorthin zurück. */
   previousFocus: HTMLElement | null;
-  /** Hält das Fenster auf ganzen Gerätepixeln, solange es offen ist. */
-  snapper: ResizeObserver | null;
+  /** Beendet das Einrasten (Beobachter und ein noch geplantes Bild). */
+  release: () => void;
 }
 
 /**
@@ -37,9 +43,9 @@ function snap(win: HTMLElement): void {
   snapPosition(win);
 }
 
-function keepSnapped(win: HTMLElement, shade: HTMLElement): ResizeObserver | null {
+function keepSnapped(win: HTMLElement, shade: HTMLElement): () => void {
   snap(win);
-  if (typeof ResizeObserver !== 'function') return null;
+  if (typeof ResizeObserver !== 'function') return () => {};
   // erst im nächsten Bild: Einrasten ändert die Größe des beobachteten Fensters; direkt im Beobachter meldet der
   // Browser sonst „ResizeObserver loop completed with undelivered notifications" (etwa wenn beim Start ein Fenster
   // offen ist und die Schrift nachlädt, Task 9)
@@ -50,7 +56,37 @@ function keepSnapped(win: HTMLElement, shade: HTMLElement): ResizeObserver | nul
   });
   observer.observe(win);
   observer.observe(shade);
-  return observer;
+  return () => {
+    cancelAnimationFrame(frame);
+    observer.disconnect();
+  };
+}
+
+/** Was im Fenster per Tab erreichbar ist, in Dokumentreihenfolge. */
+function tabStops(win: HTMLElement): HTMLElement[] {
+  return Array.from(win.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]'))
+    .filter((n) => n.tabIndex >= 0 && !n.hasAttribute('disabled'));
+}
+
+/** Tab und Umschalt+Tab kreisen im Fenster (Fix-Welle F15): nach dem letzten kommt der erste und umgekehrt. */
+function cycleTab(win: HTMLElement, e: KeyboardEvent): void {
+  if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const stops = tabStops(win);
+  const first = stops[0];
+  const last = stops[stops.length - 1];
+  if (!first || !last) {
+    e.preventDefault();
+    return;
+  }
+  const active = document.activeElement;
+  const inside = stops.includes(active as HTMLElement);
+  if (e.shiftKey && (active === first || !inside)) {
+    e.preventDefault();
+    last.focus({ preventScroll: true });
+  } else if (!e.shiftKey && (active === last || !inside)) {
+    e.preventDefault();
+    first.focus({ preventScroll: true });
+  }
 }
 
 function reducedMotion(): boolean {
@@ -59,9 +95,11 @@ function reducedMotion(): boolean {
 
 /**
  * Fenster-Verwalter (Spec 10): ein Fenster zur Zeit, ein zweites ersetzt das erste. Ein Fenster schließt mit ×, Esc
- * (Handlung `cancel`) und Tippen daneben, hält das Spiel an (`ui:paused`), blendet 120 ms ein und aus (ohne Blende
- * bei `prefers-reduced-motion`), meldet `ui:sound`. Der Fokus liegt beim Öffnen auf × und kehrt danach zurück.
- * Solange ein Fenster offen ist, sind die übrigen Kinder von `root` `inert` (weder Tab noch Zeiger).
+ * (Handlung `cancel`) und Tippen daneben (nicht bei `dismiss: 'buttons'`), hält das Spiel an (`ui:paused`), blendet
+ * 120 ms ein und aus (ohne Blende bei `prefers-reduced-motion`), meldet `ui:sound`. Der Fokus liegt beim Öffnen auf ×
+ * (bei `dismiss: 'buttons'` auf dem Titel), Tab kreist im Fenster, danach kehrt der Fokus zurück – aber nicht auf einen
+ * Knopf der Anzeige (die geben den Fokus ans Spiel ab, root.ts). Solange ein Fenster offen ist, sind die übrigen Kinder
+ * von `root` `inert` (weder Tab noch Zeiger).
  * Auch Gespräch und Dreh-Hinweis halten das Spiel über `setPaused` an; angehalten ist es, solange ein Grund besteht.
  */
 export class WindowManager {
@@ -79,10 +117,10 @@ export class WindowManager {
 
   open(spec: WindowSpec): void {
     const replaced = this.current;
-    const previousFocus = replaced ? replaced.previousFocus : focusedElement();
+    const previousFocus = replaced ? replaced.previousFocus : this.focusToRestore();
     if (replaced) {
       this.current = null;
-      replaced.snapper?.disconnect();
+      replaced.release();
       replaced.shade.remove();
     }
     for (const shade of this.closing) shade.remove();
@@ -106,16 +144,24 @@ export class WindowManager {
     head.append(title, close);
     win.append(head, body);
     shade.appendChild(win);
-    // Tippen daneben: nur ein Klick genau auf die Abdunklung, nicht ins Fenster
-    shade.addEventListener('click', (e) => { if (e.target === shade) this.closeIf(shade); });
+    // Tippen daneben: nur ein Klick genau auf die Abdunklung, nicht ins Fenster – und nie bei Fragen
+    const buttonsOnly = spec.dismiss === 'buttons';
+    if (!buttonsOnly) shade.addEventListener('click', (e) => { if (e.target === shade) this.closeIf(shade); });
+    win.addEventListener('keydown', (e) => cycleTab(win, e));
     this.root.appendChild(shade);
     this.makeOthersInert(shade);
 
-    this.current = { spec, shade, previousFocus, snapper: keepSnapped(win, shade) };
+    this.current = { spec, shade, previousFocus, release: keepSnapped(win, shade) };
     // Blende: erst nach dem ersten Layout sichtbar schalten, sonst springt der Übergang
     void shade.offsetWidth;
     shade.classList.add('is-open');
-    close.focus({ preventScroll: true });
+    if (buttonsOnly) {
+      // Titel: nimmt den Fokus an, liegt aber nicht in der Tab-Reihenfolge; Leertaste und Enter lösen dort nichts aus
+      title.tabIndex = -1;
+      title.focus({ preventScroll: true });
+    } else {
+      close.focus({ preventScroll: true });
+    }
     this.input.reset();
     if (replaced) replaced.spec.onClose?.();
     this.setPaused(WINDOW_REASON, true);
@@ -126,7 +172,7 @@ export class WindowManager {
     const open = this.current;
     if (!open) return;
     this.current = null;
-    open.snapper?.disconnect();
+    open.release();
     const { shade } = open;
     shade.classList.remove('is-open');
     shade.classList.add('is-closing');
@@ -185,6 +231,16 @@ export class WindowManager {
       child.inert = true;
       this.madeInert.add(child);
     }
+  }
+
+  /**
+   * Wohin der Fokus nach dem Fenster zurückkehrt: wo er jetzt ist – außer auf einem Knopf der Oberfläche außerhalb
+   * eines Fensters (Menü-Knopf, Platz): der gäbe den Fokus ans Spiel ab, die Leertaste löste ihn sonst wieder aus.
+   */
+  private focusToRestore(): HTMLElement | null {
+    const active = focusedElement();
+    if (active && this.root.contains(active) && active.closest('button') && !active.closest('.ui-window')) return null;
+    return active;
   }
 
   /** Schließt nur, wenn `shade` noch das offene Fenster ist (ein später Klick auf ein ersetztes bleibt ohne Folgen). */

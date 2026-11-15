@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { noticeText, SaveAlerts, SaveReplacer, acceptLegacy, declineLegacy } from '../../src/ui/notices';
+import { MAX_TOASTS, MIN_SHOWN_MS, displaceDelay, toastDuration } from '../../src/ui/toasts';
 import { LEGACY_FIRST_COMMIT } from '../save/legacySaves';
 import { LEGACY_SAVE_KEY } from '../../src/save/legacy';
 import { TEXTS } from '../../src/data/texts';
@@ -22,10 +23,10 @@ describe('noticeText', () => {
 });
 
 describe('SaveAlerts', () => {
-  it('ein Fehlschlag allein meldet nichts, der zweite in Folge einmal „Speichern hat nicht geklappt."', () => {
+  it('ein Fehlschlag allein meldet nichts, der zweite in Folge einmal das Fenster „Speichern klappt gerade nicht"', () => {
     const alerts = new SaveAlerts();
     expect(alerts.onResult(FULL)).toBeNull();
-    expect(alerts.onResult(UNAVAILABLE)).toBe(TEXTS['save.failed']);
+    expect(alerts.onResult(UNAVAILABLE)).toBe('failed');
     expect(alerts.onResult(UNAVAILABLE)).toBeNull();
     expect(alerts.onResult(UNAVAILABLE)).toBeNull();
   });
@@ -35,10 +36,10 @@ describe('SaveAlerts', () => {
     expect(alerts.onResult(FULL)).toBeNull();
     expect(alerts.onResult(SAVED)).toBeNull();
     expect(alerts.onResult(FULL)).toBeNull();
-    expect(alerts.onResult(FULL)).toBe(TEXTS['save.failed']);
+    expect(alerts.onResult(FULL)).toBe('failed');
   });
 
-  it('nach der Meldung einmal je Sitzung, auch nach einem Erfolg und zwei neuen Fehlschlägen nicht wieder', () => {
+  it('nach dem Fenster einmal je Sitzung, auch nach einem Erfolg und zwei neuen Fehlschlägen nicht wieder', () => {
     const alerts = new SaveAlerts();
     alerts.onResult(FULL);
     alerts.onResult(FULL);
@@ -47,22 +48,99 @@ describe('SaveAlerts', () => {
     expect(alerts.onResult(FULL)).toBeNull();
   });
 
-  it('anderer Tab: einmal je Sitzung der eigene Hinweis; zählt weder als Fehlschlag noch setzt es die Folge zurück', () => {
+  it('anderer Tab: beim ersten Mal das Fenster; zählt weder als Fehlschlag noch setzt es die Folge zurück', () => {
     const alerts = new SaveAlerts();
-    expect(alerts.onResult(OTHER_TAB)).toBe(TEXTS['save.otherTab']);
-    expect(alerts.onResult(OTHER_TAB)).toBeNull();
+    expect(alerts.onResult(OTHER_TAB)).toBe('other-tab');
+    // das Fenster ist offen (oder wartet): kein zweites
     expect(alerts.onResult(OTHER_TAB)).toBeNull();
     expect(alerts.onResult(FULL)).toBeNull();
     expect(alerts.onResult(OTHER_TAB)).toBeNull();
-    expect(alerts.onResult(FULL)).toBe(TEXTS['save.failed']);
+    expect(alerts.onResult(FULL)).toBe('failed');
   });
 
-  it('das Sofort-Speichern nach der Übernahme scheitert: gleich „Speichern hat nicht geklappt.", später nicht noch einmal', () => {
+  it('anderer Tab, ohne Neuladen geschlossen: wieder beim nächsten gesperrten Versuch', () => {
     const alerts = new SaveAlerts();
-    expect(alerts.importFailed()).toBe(TEXTS['save.failed']);
+    expect(alerts.onResult(OTHER_TAB)).toBe('other-tab');
+    alerts.otherTabClosed();
+    expect(alerts.onResult(OTHER_TAB)).toBe('other-tab');
+    expect(alerts.onResult(OTHER_TAB)).toBeNull();
+    alerts.otherTabClosed();
+    expect(alerts.onResult(OTHER_TAB)).toBe('other-tab');
+  });
+
+  it('anderer Tab, ohne Neuladen geschlossen: wieder, sobald die Seite sichtbar wird und weiter gesperrt ist', () => {
+    const alerts = new SaveAlerts();
+    // noch nie gesperrt: sichtbar werden zeigt nichts
+    expect(alerts.onVisible()).toBeNull();
+    alerts.onResult(OTHER_TAB);
+    // offen: sichtbar werden zeigt kein zweites
+    expect(alerts.onVisible()).toBeNull();
+    alerts.otherTabClosed();
+    expect(alerts.onVisible()).toBe('other-tab');
+    expect(alerts.onVisible()).toBeNull();
+    alerts.otherTabClosed();
+    // inzwischen wieder gespeichert: nicht mehr gesperrt, kein Fenster
+    alerts.onResult(SAVED);
+    expect(alerts.onVisible()).toBeNull();
+    // erneut gesperrt: wieder das Fenster
+    expect(alerts.onResult(OTHER_TAB)).toBe('other-tab');
+  });
+
+  it('das Sofort-Speichern nach der Übernahme scheitert: gleich das Fenster, später nicht noch einmal', () => {
+    const alerts = new SaveAlerts();
+    expect(alerts.importFailed()).toBe('failed');
     expect(alerts.importFailed()).toBeNull();
     alerts.onResult(FULL);
     expect(alerts.onResult(FULL)).toBeNull();
+  });
+
+  it('Marke „Nicht gespeichert": an, solange das letzte Ergebnis nicht `saved` ist', () => {
+    const alerts = new SaveAlerts();
+    expect(alerts.unsaved).toBe(false);
+    alerts.onResult(FULL);
+    expect(alerts.unsaved).toBe(true);
+    alerts.onResult(SAVED);
+    expect(alerts.unsaved).toBe(false);
+    alerts.onResult(OTHER_TAB);
+    expect(alerts.unsaved).toBe(true);
+    alerts.onResult(UNAVAILABLE);
+    expect(alerts.unsaved).toBe(true);
+    alerts.onResult({ kind: 'blocked-newer', storedVersion: 2 });
+    expect(alerts.unsaved).toBe(true);
+    alerts.onResult(SAVED);
+    expect(alerts.unsaved).toBe(false);
+  });
+
+  it('Marke beim Start: an in einer Sitzung ohne Speichern und nach gescheitertem Sofort-Speichern der Übernahme', () => {
+    expect(new SaveAlerts({ persist: true, importSave: null }).unsaved).toBe(false);
+    expect(new SaveAlerts({ persist: true, importSave: SAVED }).unsaved).toBe(false);
+    expect(new SaveAlerts({ persist: true, importSave: FULL }).unsaved).toBe(true);
+    expect(new SaveAlerts({ persist: false, importSave: null }).unsaved).toBe(true);
+  });
+});
+
+describe('Hinweise (Toasts): Dauer nach Länge, kein Verdrängen vor 3 s', () => {
+  it('Dauer = max(5 s, 4 s + 0,6 s je Wort)', () => {
+    expect(toastDuration('Level 2!')).toBe(5000);
+    expect(toastDuration('Aufgabe geschafft!')).toBe(5200);
+    expect(toastDuration('Hier geht es bald weiter.')).toBe(6400);
+    expect(toastDuration(TEXTS['backup.remind'])).toBe(4000 + 600 * 10);
+    // Leerzeichen am Rand und doppelte Leerzeichen zählen nicht als Wörter
+    expect(toastDuration('  ein   zwei   drei  ')).toBe(5800);
+  });
+
+  it('ist Platz frei, kommt ein neuer Hinweis sofort', () => {
+    expect(displaceDelay([], 1000)).toBe(0);
+    expect(displaceDelay(Array.from({ length: MAX_TOASTS - 1 }, () => 990), 1000)).toBe(0);
+  });
+
+  it('sind alle Plätze belegt, wartet er, bis der älteste 3 s stand – dann verdrängt er ihn', () => {
+    const full = Array.from({ length: MAX_TOASTS }, (_, i) => 1000 + i * 100);
+    expect(MIN_SHOWN_MS).toBe(3000);
+    expect(displaceDelay(full, 1000)).toBe(3000);
+    expect(displaceDelay(full, 2500)).toBe(1500);
+    expect(displaceDelay(full, 4000)).toBe(0);
+    expect(displaceDelay(full, 9000)).toBe(0);
   });
 });
 

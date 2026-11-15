@@ -47,6 +47,24 @@
   font-size: var(--fs-3);
 }
 
+/*
+ * Marke „Nicht gespeichert" (Fix-Welle F2): oben links unter Level und Münzen in der Anzeige (hud.ts), eine Tafel des
+ * Baukastens in der Grundschrift. Nimmt keine Zeiger an; ihre Größe zieht grid.ts auf ganze Bildpunkte nach.
+ */
+.hud-unsaved {
+  margin: 0;
+  padding: calc(5 * var(--hud-px)) calc(5 * var(--hud-px) + var(--sp-2));
+  font-size: var(--fs-1);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hud-unsaved[hidden] {
+  display: none;
+}
+
 /* ---------- Hilfe: je Zeile Bild und ein Wort ---------- */
 
 .help {

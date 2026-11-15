@@ -5,7 +5,7 @@ import { createNewGameState, type GameState } from '../../src/core/state';
 
 /*
  * Spielstand als Datei sichern und laden, Erinnerung daran (Plan 1b, Task 10). Chromium und WebKit. Zeitgrenzen nur
- * über Bedingungen und Bilder (regeln.md). Hinweise (Toasts) stehen nur 3 s: ein Beobachter, der schon vor dem Start
+ * über Bedingungen und Bilder (regeln.md). Hinweise (Toasts) stehen nur wenige Sekunden: ein Beobachter, der schon vor dem Start
  * der Seite läuft, schreibt jeden neuen mit.
  */
 
@@ -13,11 +13,12 @@ const ARTIFACTS = fileURLToPath(new URL('../../../test-artifacts/etappe-1b/', im
 const SAVE_KEY = 'emilia2_save';
 const BACKUP_SAVE_KEY = 'emilia2_save_backup';
 const FILENAME = /^emilia2-spielstand-\d{4}-\d{2}-\d{2}\.json$/;
-const SAVED = 'Gesichert!';
-const UNFIT = 'Diese Datei passt nicht.';
+const SAVED = 'Datei ist fertig. Sie liegt bei den Downloads.';
+const UNFIT = 'Das ist keine Spielstand-Datei.';
 const QUESTION = 'Diesen Spielstand laden? Der jetzige wird ersetzt.';
-const NO_STORAGE = 'Hier kann das Spiel nicht speichern.';
-const REMIND = 'Zeit für eine Sicherung: Menü, dann Spielstand sichern';
+const NO_STORAGE = 'Das Spiel kann hier nicht speichern. Beim nächsten Mal fängst du neu an.';
+const NEWER = 'Dein Spielstand ist neuer als diese Seite. Bitte lade die Seite neu.';
+const REMIND = 'Zeit zum Sichern! Öffne das Menü und wähle „Spielstand sichern“.';
 const PC = { viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 };
 
 test.use(PC);
@@ -125,7 +126,7 @@ test('sichern lädt die Datei herunter; laden mit „Nein" ändert nichts, mit �
   await openWorld(page);
   await expect(questName(page)).toHaveText('Guten Morgen!');
 
-  // sichern: ein Download mit Datum im Namen, Inhalt ist der Spielstand, Hinweis „Gesichert!", Menü zu
+  // sichern: ein Download mit Datum im Namen, Inhalt ist der Spielstand, Hinweis „Datei ist fertig …", Menü zu
   const before = Date.now();
   const download = await exportSave(page);
   expect(download.suggestedFilename()).toMatch(FILENAME);
@@ -148,8 +149,14 @@ test('sichern lädt die Datei herunter; laden mit „Nein" ändert nichts, mit �
   await importFile(page, file);
   const question = win(page, 'backup-load');
   await expect(question).toBeVisible();
+  await expect(question.locator('.ui-window__title')).toHaveText('Spielstand laden?');
   await expect(question.locator('.notice__text')).toHaveText(QUESTION);
   expect(await page.evaluate(() => (window as any).__emilia2.paused())).toBe(true);
+  // eine Frage: Fokus auf dem Titel, Tippen daneben schließt nicht (Fix-Welle F6)
+  await expect(question.locator('.ui-window__title')).toBeFocused();
+  await page.mouse.click(5, 5);
+  await frames(page, 5);
+  await expect(question).toBeVisible();
   await question.locator('.notice__button', { hasText: 'Nein' }).click();
   await expect(anyWindow(page)).toHaveCount(0);
   await frames(page, 10);
@@ -186,7 +193,7 @@ test('sichern lädt die Datei herunter; laden mit „Nein" ändert nichts, mit �
   expect(errors).toEqual([]);
 });
 
-test('eine Datei, die nicht passt: Hinweis „Diese Datei passt nicht.", nichts ändert sich', async ({ page }) => {
+test('eine Datei, die nicht passt: Hinweis „Das ist keine Spielstand-Datei.", nichts ändert sich', async ({ page }) => {
   const errors = watchErrors(page);
   await openWorld(page);
   await page.evaluate(() => (window as any).__emilia2.saveNow());
@@ -207,23 +214,59 @@ test('eine Datei, die nicht passt: Hinweis „Diese Datei passt nicht.", nichts 
   expect(errors).toEqual([]);
 });
 
-test('Erinnerung: 30 Minuten gespielt, nie gesichert → der Hinweis erscheint genau einmal', async ({ page }) => {
+test('Erinnerung beim Start: 30 Minuten gespielt, nie gesichert → nach dem Hinweis beim Start das Fenster; „Jetzt sichern" lädt herunter', async ({ page }) => {
   const errors = watchErrors(page);
   const due = createNewGameState(5);
   due.dayNight.totalTime = 1800;
   due.lastBackupAt = null;
+  // ein unbekannter Gegenstand: beim Start erst der Hinweis „repariert"
+  due.inventory.slots[1] = { itemId: 'gibt_es_nicht', count: 2 };
   await prepareStorage(page, { [SAVE_KEY]: JSON.stringify(due) });
   await openWorld(page);
-  await expect.poll(() => toasts(page)).toContain(REMIND);
-  // weitere Minuten Spielzeit: geprüft wird je Minute, gezeigt nur einmal je Sitzung
+  await expect(win(page, 'notice')).toBeVisible();
+  await frames(page, 5);
+  // nie über dem Hinweis
+  await expect(win(page, 'backup-remind')).toHaveCount(0);
+  await win(page, 'notice').locator('.notice__button', { hasText: 'Okay' }).click();
+  const remind = win(page, 'backup-remind');
+  await expect(remind).toBeVisible();
+  await expect(remind.locator('.ui-window__title')).toHaveText('Hinweis');
+  await expect(remind.locator('.notice__text')).toHaveText('Zeit zum Sichern!');
+  await expect(remind.locator('.notice__button')).toHaveText(['Jetzt sichern', 'Später']);
+  // Tippen daneben schließt nicht
+  await page.mouse.click(5, 5);
+  await frames(page, 5);
+  await expect(remind).toBeVisible();
+  const [download] = await Promise.all([page.waitForEvent('download'), remind.locator('.notice__button', { hasText: 'Jetzt sichern' }).click()]);
+  expect(download.suggestedFilename()).toMatch(FILENAME);
+  await expect(anyWindow(page)).toHaveCount(0);
+  await expect.poll(() => toasts(page)).toContain(SAVED);
+  // weitere Minuten Spielzeit: höchstens einmal je Sitzung, auch kein Hinweis mehr
   for (let i = 0; i < 3; i++) {
     await page.evaluate(() => (window as any).__emilia2.skipTime(61));
     await frames(page, 5);
   }
-  expect((await toasts(page)).filter((t) => t === REMIND)).toHaveLength(1);
-  // der Hinweis erscheint, während die Seite noch Schrift und Maßstab einrichtet: sein Einrasten löst keine Schleife aus
+  expect(await toasts(page)).not.toContain(REMIND);
+  await expect(anyWindow(page)).toHaveCount(0);
+  // das Fenster erscheint, während die Seite noch Schrift und Maßstab einrichtet: sein Einrasten löst keine Schleife aus
   expect(await resizeLoops(page)).toBe(0);
   expect(errors).toEqual([]);
+});
+
+test('Erinnerung beim Start: „Später" schließt, nichts wird heruntergeladen, sie kommt in dieser Sitzung nicht wieder', async ({ page }) => {
+  const due = createNewGameState(5);
+  due.dayNight.totalTime = 1800;
+  await prepareStorage(page, { [SAVE_KEY]: JSON.stringify(due) });
+  let downloads = 0;
+  page.on('download', () => { downloads += 1; });
+  await openWorld(page);
+  await win(page, 'backup-remind').locator('.notice__button', { hasText: 'Später' }).click();
+  await expect(anyWindow(page)).toHaveCount(0);
+  await page.evaluate(() => (window as any).__emilia2.skipTime(61));
+  await frames(page, 10);
+  expect(downloads).toBe(0);
+  expect(await toasts(page)).not.toContain(REMIND);
+  await expect(anyWindow(page)).toHaveCount(0);
 });
 
 test('Erinnerung kommt mit der Spielzeit: bei 29 Minuten noch nicht, nach der 30. Minute einmal', async ({ page }) => {
@@ -240,13 +283,21 @@ test('Erinnerung kommt mit der Spielzeit: bei 29 Minuten noch nicht, nach der 30
   expect(errors).toEqual([]);
 });
 
-test('Sitzung ohne Speichern: sichern lädt trotzdem herunter, laden endet mit „Hier kann das Spiel nicht speichern."', async ({ page }) => {
+test('Sitzung ohne lesbaren Speicher: sichern lädt trotzdem herunter, laden endet mit dem Hinweis „kann hier nicht speichern"', async ({ page }) => {
   const errors = watchErrors(page);
-  const newer = JSON.stringify({ formatVersion: 2, savedAt: 5 });
-  await prepareStorage(page, { [SAVE_KEY]: newer });
+  // der Spielstand ist nicht lesbar (wie bei gesperrtem Speicher): Hinweis storage-unavailable, die Sitzung speichert nie
+  await page.addInitScript(() => {
+    const original = Storage.prototype.getItem;
+    Storage.prototype.getItem = function getItem(this: Storage, key: string): string | null {
+      if (key === 'emilia2_save') throw new DOMException('gesperrt', 'SecurityError');
+      return original.call(this, key);
+    };
+  });
   await openWorld(page);
-  await win(page, 'notice').locator('.notice__button', { hasText: 'Gut' }).click();
+  expect(await page.evaluate(() => (window as any).__emilia2.startNotice)).toBe('storage-unavailable');
+  await win(page, 'notice').locator('.notice__button', { hasText: 'Okay' }).click();
   await expect(anyWindow(page)).toHaveCount(0);
+  await expect(page.locator('.hud-unsaved')).toBeVisible();
 
   const download = await exportSave(page);
   expect(download.suggestedFilename()).toMatch(FILENAME);
@@ -261,11 +312,31 @@ test('Sitzung ohne Speichern: sichern lädt trotzdem herunter, laden endet mit �
   await expect(anyWindow(page)).toHaveCount(0);
   await frames(page, 10);
   expect(await page.evaluate(() => (window as any).__testVorDemLaden)).toBe(true);
-  expect(await readKey(page, SAVE_KEY)).toBe(newer);
   expect(await readKey(page, BACKUP_SAVE_KEY)).toBeNull();
-  // die Fehlermeldungen des Speicherns erscheinen dabei nicht (es wurde gar nicht versucht)
-  expect(await toasts(page)).not.toContain('Speichern hat nicht geklappt.');
+  // die Fenster des Speicherns erscheinen dabei nicht (es wurde gar nicht versucht)
+  await expect(win(page, 'save-failed')).toHaveCount(0);
   expect(await resizeLoops(page)).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('Sitzung mit neuerem Spielstand: „Spielstand sichern" lädt nichts herunter, sondern sagt, dass der Stand neuer ist', async ({ page }) => {
+  const errors = watchErrors(page);
+  const newer = JSON.stringify({ formatVersion: 2, savedAt: 5 });
+  await prepareStorage(page, { [SAVE_KEY]: newer });
+  let downloads = 0;
+  page.on('download', () => { downloads += 1; });
+  await openWorld(page);
+  await win(page, 'notice').locator('.notice__button', { hasText: 'Okay' }).click();
+  await expect(anyWindow(page)).toHaveCount(0);
+  await openMenu(page);
+  await menuButton(page, 'Spielstand sichern').click();
+  await expect(anyWindow(page)).toHaveCount(0);
+  await expect.poll(() => toasts(page)).toContain(NEWER);
+  await frames(page, 10);
+  expect(downloads).toBe(0);
+  expect(await toasts(page)).not.toContain(SAVED);
+  expect(await readKey(page, SAVE_KEY)).toBe(newer);
+  expect((await state(page)).lastBackupAt).toBeNull();
   expect(errors).toEqual([]);
 });
 
@@ -331,4 +402,17 @@ test('Menü mit drei gleich breiten Knöpfen am PC und auf dem Handy quer, Rück
   await checkMenu(phone, 844, 390);
   await shot(phone, 'menue-844x390@3x');
   await phone.context().close();
+
+  // Erinnerung beim Start (Fix-Welle F4)
+  const remindContext = await browser.newContext({ baseURL, ...PC });
+  const remind = await remindContext.newPage();
+  const due = createNewGameState(5);
+  due.dayNight.totalTime = 1800;
+  await prepareStorage(remind, { [SAVE_KEY]: JSON.stringify(due) });
+  await openWorld(remind);
+  await expect(win(remind, 'backup-remind')).toBeVisible();
+  await remind.evaluate(() => document.fonts.ready);
+  await frames(remind, 10);
+  writeFileSync(`${ARTIFACTS}fix-welle-erinnerung-1280x720@1x.png`, await remind.screenshot({ scale: 'device' }));
+  await remindContext.close();
 });

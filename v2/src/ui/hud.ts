@@ -12,6 +12,8 @@ import coinUrl from '../assets/gfx/ui/muenze.png?url';
 // wenn kit.css vorher geladen ist – auch wenn dieses Modul vor root.ts geladen wird (etwa über WorldScene).
 import './kit.css';
 import './hud.css';
+// die Marke „Nicht gespeichert" gehört zu den Hinweisen zum Speichern (menu.css)
+import './menu.css';
 
 /** Zahl für die Vorlese-Beschriftung, deutsch (2,25). */
 const number = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
@@ -39,6 +41,7 @@ export class Hud {
   private readonly questName: HTMLElement;
   private readonly questDesc: HTMLElement;
   private readonly questCount: HTMLElement;
+  private readonly unsaved: HTMLElement;
   private readonly unsubscribe: Array<() => void>;
 
   constructor(root: HTMLElement, private readonly services: Services) {
@@ -68,7 +71,10 @@ export class Hud {
     this.coinNum.setAttribute('aria-hidden', 'true');
     this.coins.append(coinImg, this.coinNum);
     row.append(this.level, this.coins);
-    stats.append(this.hearts, row);
+    // Marke, solange nicht gespeichert wird (Fix-Welle F2); setzt Notices über setUnsaved
+    this.unsaved = el('p', 'hud-unsaved ui-panel', TEXTS['hud.unsaved']);
+    this.unsaved.hidden = true;
+    stats.append(this.hearts, row, this.unsaved);
 
     const corner = el('div', 'hud-corner');
     this.quest = el('section', 'hud-quest ui-panel');
@@ -119,10 +125,18 @@ export class Hud {
     this.snapPanels();
   }
 
+  /** Marke „Nicht gespeichert" oben links unter Level und Münzen zeigen oder verbergen. */
+  setUnsaved(on: boolean): void {
+    if (this.unsaved.hidden !== on) return;
+    this.unsaved.hidden = !on;
+    if (on) snapSize(this.unsaved);
+  }
+
   /** Tafeln richten sich nach ihrem Inhalt: Größe auf ganze Bildpunkte (grid.ts), sonst wird ihr Rand unscharf. */
   private snapPanels(): void {
     snapSize(this.row);
     if (!this.quest.hidden) snapSize(this.quest);
+    if (!this.unsaved.hidden) snapSize(this.unsaved);
   }
 
   destroy(): void {

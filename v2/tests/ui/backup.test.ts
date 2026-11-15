@@ -2,22 +2,24 @@ import { describe, it, expect, vi } from 'vitest';
 import { exportBackup } from '../../src/ui/backup';
 import { SaveReplacer } from '../../src/ui/notices';
 import { createNewGameState, type GameState } from '../../src/core/state';
+import type { StartNotice } from '../../src/core/services';
 import { BACKUP_SAVE_KEY, SAVE_KEY, SaveStore, parseImport, type SaveResult } from '../../src/save/store';
 
 const NOW = new Date(2026, 10, 13, 9, 0).getTime();
 
 describe('exportBackup („Spielstand sichern")', () => {
-  function run(persist: boolean, result: SaveResult = { kind: 'saved' }) {
+  function run(persist: boolean, result: SaveResult = { kind: 'saved' }, startNotice: StartNotice | null = null) {
     const calls: string[] = [];
     const state = createNewGameState(5);
     const save = { saveNow: vi.fn(() => { calls.push(`saveNow:${String(state.lastBackupAt)}`); return result; }) };
     const files: Array<{ filename: string; text: string }> = [];
-    exportBackup({ state, persist, save }, (filename, text) => { calls.push('download'); files.push({ filename, text }); }, NOW);
-    return { calls, state, save, files };
+    const done = exportBackup({ state, persist, save, startNotice }, (filename, text) => { calls.push('download'); files.push({ filename, text }); }, NOW);
+    return { calls, state, save, files, done };
   }
 
   it('setzt lastBackupAt, speichert, lädt dann herunter – die Datei trägt den Zeitpunkt', () => {
-    const { calls, state, save, files } = run(true);
+    const { calls, state, save, files, done } = run(true);
+    expect(done).toBe(true);
     expect(calls).toEqual([`saveNow:${NOW}`, 'download']);
     expect(save.saveNow).toHaveBeenCalledWith('backup');
     expect(state.lastBackupAt).toBe(NOW);
@@ -36,11 +38,21 @@ describe('exportBackup („Spielstand sichern")', () => {
     expect(files).toHaveLength(1);
   });
 
-  it('Sitzung ohne Speichern: kein Speicherversuch, die Datei mit dem jetzigen Stand kommt', () => {
-    const { calls, save, files } = run(false);
+  it('Sitzung ohne Speichern (Speicher nicht lesbar): kein Speicherversuch, die Datei mit dem jetzigen Stand kommt', () => {
+    const { calls, save, files, done } = run(false, { kind: 'saved' }, 'storage-unavailable');
+    expect(done).toBe(true);
     expect(save.saveNow).not.toHaveBeenCalled();
     expect(calls).toEqual(['download']);
     expect((JSON.parse(files[0]!.text) as GameState).lastBackupAt).toBe(NOW);
+  });
+
+  it('Sitzung mit neuerem Spielstand (save-newer): keine Datei, kein Speicherversuch, der Stand bleibt unberührt', () => {
+    const { calls, state, save, files, done } = run(false, { kind: 'saved' }, 'save-newer');
+    expect(done).toBe(false);
+    expect(save.saveNow).not.toHaveBeenCalled();
+    expect(files).toEqual([]);
+    expect(calls).toEqual([]);
+    expect(state.lastBackupAt).toBeNull();
   });
 });
 

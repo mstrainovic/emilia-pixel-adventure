@@ -113,6 +113,11 @@ describe('fillText', () => {
     expect(fillText('hud.slot.count', { name: 'Beere', n: 5 })).toBe('Beere, 5 Stück');
     expect(fillText('hud.level', {})).toBe('Level {n}');
   });
+  it('Bedien-Hinweise und Level-Anzeige (Fix-Welle F12)', () => {
+    expect(hint('move', 'keys')).toBe('Laufen mit W A S D oder den Pfeiltasten');
+    expect(hint('interact', 'touch')).toBe('Tippe auf den Knopf unten rechts');
+    expect(TEXTS['hud.levelWord']).toBe('Level');
+  });
   it('Hinweise beim Reden im Dorf', () => {
     expect(TEXTS['toast.questDone']).toBe('Aufgabe geschafft!');
     expect(fillText('toast.levelUp', { n: 2 })).toBe('Level 2!');
@@ -121,29 +126,33 @@ describe('fillText', () => {
   it('Touch-Bedienung: Beschriftung des Kontext-Knopfs je Ziel, Dreh-Hinweis', () => {
     expect(TEXTS['touch.action']).toBe('Aktion');
     expect(TEXTS['touch.talk']).toBe('Reden');
-    expect(TEXTS['rotate.hint']).toBe('Bitte dreh das Gerät quer.');
+    expect(TEXTS['rotate.hint']).toBe('Bitte dreh das Handy quer.');
   });
   it('Menü und Hilfe (Task 9): Titel, Knopf, je Bedienung genau ein Wort', () => {
     expect(TEXTS['menu.title']).toBe('Menü');
     expect(TEXTS['menu.help']).toBe('Hilfe');
     expect(TEXTS['help.title']).toBe('Hilfe');
-    const words = [TEXTS['help.move'], TEXTS['help.run'], TEXTS['help.talk'], TEXTS['help.hotbar'], TEXTS['help.close']];
-    expect(words).toEqual(['laufen', 'rennen', 'reden', 'Schnellleiste', 'schließen']);
+    const words = [TEXTS['help.move'], TEXTS['help.run'], TEXTS['help.talk'], TEXTS['help.hotbar'], TEXTS['help.menu'], TEXTS['help.close']];
+    expect(words).toEqual(['laufen', 'rennen', 'reden', 'wählen', 'Menü', 'schließen']);
     for (const w of words) expect(w).toMatch(/^\p{L}+$/u);
   });
   it('Hinweise zu Start und Speichern (Task 9), wörtlich wie im Auftrag', () => {
     expect(TEXTS['notice.title']).toBe('Hinweis');
-    expect(TEXTS['notice.ok']).toBe('Gut');
+    expect(TEXTS['notice.ok']).toBe('Okay');
+    expect(TEXTS['legacy.title']).toBe('Alter Spielstand');
+    expect(TEXTS['backup.title']).toBe('Spielstand laden?');
     expect(TEXTS['notice.save-corrupt']).toBe('Dein Spielstand war kaputt. Wir fangen neu an.');
-    expect(TEXTS['notice.save-corrupt-legacy']).toBe('Dein Spielstand war kaputt. Wir haben den aus dem alten Spiel geholt.');
-    expect(TEXTS['notice.save-repaired']).toBe('Dein Spielstand wurde repariert. Vielleicht fehlt etwas.');
-    expect(TEXTS['notice.save-newer']).toBe('Bitte lade die Seite neu, damit dein Spielstand passt.');
-    expect(TEXTS['notice.storage-unavailable']).toBe('Hier kann das Spiel nicht speichern.');
+    expect(TEXTS['notice.save-corrupt-legacy']).toBe('Dein Spielstand war kaputt. Wir nehmen den Spielstand aus dem alten Spiel.');
+    expect(TEXTS['notice.save-repaired']).toBe('Dein Spielstand war kaputt. Wir haben ihn repariert. Vielleicht fehlt etwas.');
+    expect(TEXTS['notice.save-newer']).toBe('Dein Spielstand ist neuer als diese Seite. Bitte lade die Seite neu.');
+    expect(TEXTS['notice.storage-unavailable']).toBe('Das Spiel kann hier nicht speichern. Beim nächsten Mal fängst du neu an.');
     expect(TEXTS['notice.legacy-imported']).toBe('Dein Spielstand aus dem alten Spiel ist da!');
-    expect(TEXTS['notice.legacy-failed']).toBe('Der alte Spielstand konnte nicht geholt werden.');
-    expect(TEXTS['save.failed']).toBe('Speichern hat nicht geklappt.');
-    expect(TEXTS['save.otherTab']).toBe('Das Spiel ist noch in einem anderen Fenster offen. Bitte lade die Seite neu.');
-    expect(TEXTS['legacy.question']).toBe('Im alten Spiel bist du weitergekommen. Den Stand von dort holen?');
+    expect(TEXTS['notice.legacy-failed']).toBe('Den alten Spielstand konnten wir nicht holen. Du spielst mit deinem weiter.');
+    expect(TEXTS['save.failed']).toBe('Speichern klappt gerade nicht. Sichere den Spielstand im Menü.');
+    expect(TEXTS['save.otherTab']).toBe('Das Spiel ist zweimal offen. Hier wird nicht gespeichert. Schließ das andere und lade neu.');
+    expect(TEXTS['notice.reload']).toBe('Neu laden');
+    expect(TEXTS['hud.unsaved']).toBe('Nicht gespeichert');
+    expect(TEXTS['legacy.question']).toBe('Im alten Spiel bist du weiter. Diesen Spielstand holen? Der jetzige wird ersetzt.');
     expect(TEXTS['legacy.yes']).toBe('Ja');
     expect(TEXTS['legacy.no']).toBe('Nein');
   });
@@ -151,11 +160,14 @@ describe('fillText', () => {
   it('Sicherung als Datei (Task 10), wörtlich wie im Auftrag', () => {
     expect(TEXTS['menu.saveExport']).toBe('Spielstand sichern');
     expect(TEXTS['menu.saveImport']).toBe('Spielstand laden');
-    expect(TEXTS['backup.saved']).toBe('Gesichert!');
-    expect(TEXTS['backup.unfit']).toBe('Diese Datei passt nicht.');
+    expect(TEXTS['backup.saved']).toBe('Datei ist fertig. Sie liegt bei den Downloads.');
+    expect(TEXTS['backup.unfit']).toBe('Das ist keine Spielstand-Datei.');
     expect(TEXTS['backup.question']).toBe('Diesen Spielstand laden? Der jetzige wird ersetzt.');
     expect(TEXTS['backup.yes']).toBe('Ja');
     expect(TEXTS['backup.no']).toBe('Nein');
-    expect(TEXTS['backup.remind']).toBe('Zeit für eine Sicherung: Menü, dann Spielstand sichern');
+    expect(TEXTS['backup.remind']).toBe('Zeit zum Sichern! Öffne das Menü und wähle „Spielstand sichern“.');
+    expect(TEXTS['backup.remindWindow']).toBe('Zeit zum Sichern!');
+    expect(TEXTS['backup.now']).toBe('Jetzt sichern');
+    expect(TEXTS['backup.later']).toBe('Später');
   });
 });
