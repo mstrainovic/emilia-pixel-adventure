@@ -220,6 +220,25 @@ test('hinter dem Baum liegt Emilia dahinter, davor davor', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+interface Place {
+  p: PlayerInfo;
+  c: CameraInfo;
+}
+
+/** Ort der Figur und Stand der Kamera im selben Augenblick. */
+const where = (page: Page): Promise<Place> =>
+  page.evaluate(() => ({ p: (window as any).__emilia2.player(), c: (window as any).__emilia2.camera() }));
+
+/**
+ * Rechteck um die Figur an beiden Orten, vor und nach einem Bildschirmfoto: Solange eine Taste gehalten wird, läuft
+ * Emilia während des Fotos weiter; das Foto zeigt sie irgendwo dazwischen.
+ */
+function figureSpan(snapshot: GridSnapshot, a: Place, b: Place): ReturnType<typeof figureRect> {
+  const from = figureRect(snapshot, a.p, a.c);
+  const to = figureRect(snapshot, b.p, b.c);
+  return { x0: Math.min(from.x0, to.x0), x1: Math.max(from.x1, to.x1), y0: Math.min(from.y0, to.y0), y1: Math.max(from.y1, to.y1) };
+}
+
 /** Liegt der Wert auf einem ganzen Bildschirmpixel (Vielfaches von 1/Zoom Bildpunkt)? */
 const onScreenPixel = (v: number, zoom: number): boolean => Math.abs(v * zoom - Math.round(v * zoom)) < 1e-6;
 
@@ -233,9 +252,13 @@ test('beim Laufen steht die Kamera auf ganzen Bildschirmpixeln, das Bild bleibt 
     cams.push(await camera(page));
     await page.waitForTimeout(40);
   }
+  // Die Karte ist kaum breiter als der Ausschnitt: Nach kurzer Strecke hängt die Kamera am Kartenrand, und die Figur
+  // wandert im Bild. Ihr Ort wird deshalb vor UND nach dem Bildschirmfoto gelesen (siehe figureSpan); auf dem Rechner
+  // der Auslieferung dauert das Foto länger, als der Spielraum um einen einzigen Ort erlaubt (Probelauf 2026-11-15).
+  const before = await where(page);
   const shot = await page.screenshot({ scale: 'device', style: HIDE_UI });
   const snapshot = await grid(page);
-  const at = await page.evaluate(() => ({ p: (window as any).__emilia2.player() as PlayerInfo, c: (window as any).__emilia2.camera() as CameraInfo }));
+  const after = await where(page);
   await page.keyboard.up('KeyD');
   const { zoom } = snapshot.layout;
   for (const c of cams) {
@@ -246,7 +269,7 @@ test('beim Laufen steht die Kamera auf ganzen Bildschirmpixeln, das Bild bleibt 
   expect(cams[cams.length - 1]!.scrollX).toBeGreaterThan(cams[0]!.scrollX);
   const png = readPng(shot);
   // Die Welt liegt auf einem Raster aus ganzen Blöcken; die laufende Figur rastet für sich auf Bildschirmpixel ein
-  expect(blockProblems(png, snapshot, figureRect(snapshot, at.p, at.c))).toEqual([]);
+  expect(blockProblems(png, snapshot, figureSpan(snapshot, before, after))).toEqual([]);
   // Die Kamera zeigt nie über die Karte hinaus und der Boden ist gezeichnet: kein Schwarz im Ausschnitt
   // (kein Bild des Dorfs enthält reines Schwarz; schwarz ist nur der Rand außerhalb des Ausschnitts).
   expect(blackPixelsInView(png, snapshot)).toBe(0);
@@ -322,20 +345,16 @@ test('Fenstergröße ändern, während D gehalten wird: kein Fehler, Bild bleibt
   // Emilia läuft weiter, und hier hängt die Kamera am Kartenrand: Die Figur wandert also im Bild. Ihr Ort wird
   // deshalb vor UND nach dem Bildschirmfoto gelesen; ausgenommen wird das Rechteck um beide Orte. Auf dem Rechner
   // der Auslieferung dauert das Foto länger, als der Spielraum um einen einzigen Ort erlaubt (Probelauf 2026-11-15).
-  const where = (): Promise<{ p: PlayerInfo; c: CameraInfo }> =>
-    page.evaluate(() => ({ p: (window as any).__emilia2.player(), c: (window as any).__emilia2.camera() }));
-  const before = await where();
+  const before = await where(page);
   const shot = await page.screenshot({ scale: 'device', style: HIDE_UI });
   const snapshot = await grid(page);
-  const { p, c } = await where();
+  const after = await where(page);
+  const { p, c } = after;
   await page.keyboard.up('KeyD');
 
   // neues Raster wirklich angewandt: jeder Block einfarbig, kein Schwarz im Ausschnitt
   const png = readPng(shot);
-  const from = figureRect(snapshot, before.p, before.c);
-  const to = figureRect(snapshot, p, c);
-  const figure = { x0: Math.min(from.x0, to.x0), x1: Math.max(from.x1, to.x1), y0: Math.min(from.y0, to.y0), y1: Math.max(from.y1, to.y1) };
-  expect(blockProblems(png, snapshot, figure)).toEqual([]);
+  expect(blockProblems(png, snapshot, figureSpan(snapshot, before, after))).toEqual([]);
   expect(blackPixelsInView(png, snapshot)).toBe(0);
   expect(onScreenPixel(c.scrollX, snapshot.layout.zoom) && onScreenPixel(c.scrollY, snapshot.layout.zoom)).toBe(true);
 
