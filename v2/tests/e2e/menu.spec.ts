@@ -103,8 +103,13 @@ test.describe('mit Tastatur', () => {
     await expect(talkRow.locator('.help__word')).toHaveText('reden');
     await expect(talkRow.locator('img.help__key')).toHaveAttribute('src', /taste_e/);
     const words = await helpWin.locator('.help__word').allTextContents();
-    expect(words).toEqual(['laufen', 'rennen', 'reden', 'Schnellleiste', 'schließen']);
+    expect(words).toEqual(['laufen', 'rennen', 'reden', 'wählen', 'Menü', 'schließen']);
     await expect(helpWin.locator('.help__stick')).toHaveCount(0);
+    // laufen: W A S D und daneben die Pfeiltasten; Menü: Taste M (Fix-Welle F15)
+    const moveKeys = await helpWin.locator('.help__row', { hasText: 'laufen' }).locator('img.help__key')
+      .evaluateAll((imgs) => imgs.map((i) => (i as HTMLElement).dataset.key));
+    expect(moveKeys).toEqual(['w', 'a', 's', 'd', 'up', 'left', 'down', 'right']);
+    await expect(helpWin.locator('.help__row', { hasText: 'Menü' }).locator('img.help__key')).toHaveAttribute('src', /taste_m/);
     // Tasten-Bilder ganzzahlig vergrößert: Breite und Höhe ein Vielfaches ihrer Pixel (erst, wenn alle geladen sind)
     await expect.poll(() => helpWin.locator('img.help__key').evaluateAll((imgs) =>
       imgs.every((i) => (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0))).toBe(true);
@@ -113,7 +118,7 @@ test.describe('mit Tastatur', () => {
       const r = img.getBoundingClientRect();
       return { w: r.width / img.naturalWidth, h: r.height / img.naturalHeight, loaded: img.complete && img.naturalWidth > 0 };
     }));
-    expect(sizes.length).toBe(4 + 1 + 1 + 8 + 1);
+    expect(sizes.length).toBe(4 + 4 + 1 + 1 + 8 + 1 + 1);
     for (const s of sizes) {
       expect(s.loaded).toBe(true);
       expect(s.w).toBe(s.h);
@@ -187,6 +192,65 @@ test.describe('mit Tastatur', () => {
     expect(await paused(page)).toBe(false);
   });
 
+  test('Tab und Umschalt+Tab kreisen im offenen Menü; der Menü-Knopf gibt den Fokus auch nach Enter ab', async ({ page }) => {
+    await openWorld(page);
+    const menuButton = page.locator('.hud-menu');
+    for (let i = 0; i < 12 && !(await menuButton.evaluate((n) => n === document.activeElement)); i++) await page.keyboard.press('Tab');
+    await expect(menuButton).toBeFocused();
+    await page.keyboard.press('Enter');
+    const menu = win(page, 'menu');
+    await expect(menu).toBeVisible();
+    // × hat den Fokus; danach die drei Knöpfe, dann wieder × – nie etwas außerhalb des Fensters
+    const close = menu.locator('.ui-close');
+    await expect(close).toBeFocused();
+    const order: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press('Tab');
+      order.push(await page.evaluate(() => (document.activeElement as HTMLElement | null)?.dataset.menu ?? document.activeElement?.className ?? ''));
+    }
+    expect(order).toEqual(['help', 'save-export', 'save-import', 'ui-button ui-close']);
+    await page.keyboard.press('Shift+Tab');
+    await expect(menu.locator('[data-menu="save-import"]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(anyWindow(page)).toHaveCount(0);
+    // der Fokus kehrt nicht auf den Menü-Knopf zurück: die Leertaste gehört dem Spiel
+    await expect(menuButton).not.toBeFocused();
+    await page.keyboard.press('Space');
+    await frames(page, 5);
+    await expect(anyWindow(page)).toHaveCount(0);
+  });
+
+  test('Hilfe mit Tasten auf dem Handy quer (844×390): passt aufs Bild oder rollt', async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ baseURL, viewport: { width: 844, height: 390 }, deviceScaleFactor: 3 });
+    const page = await context.newPage();
+    await openWorld(page);
+    await page.keyboard.press('KeyH');
+    const help = win(page, 'help');
+    await expect(help).toBeVisible();
+    await expect(help.locator('.help__key[data-key="up"]')).toBeVisible();
+    // das Fenster liegt im Bild; was nicht hineinpasst, rollt im Inhalt (der Kopf mit × bleibt stehen)
+    const inView = async (selector: ReturnType<typeof page.locator>): Promise<boolean> => {
+      const b = await selector.boundingBox();
+      return b !== null && b.y >= 0 && b.y + b.height <= 390 && b.x >= 0 && b.x + b.width <= 844;
+    };
+    expect(await inView(help)).toBe(true);
+    expect(await inView(help.locator('.ui-close'))).toBe(true);
+    const scrolls = await help.locator('.ui-window__body').evaluate((n) => n.scrollHeight > n.clientHeight);
+    expect(scrolls || await inView(help.locator('.help__row').last())).toBe(true);
+    await context.close();
+  });
+
+  test('?fps=1 in der Adresse: die Bildraten-Anzeige ist gleich beim Start an, F2 schaltet sie aus', async ({ page }) => {
+    await countResizeLoops(page);
+    await page.goto('./?fps=1');
+    await page.waitForFunction(() => (window as any).__emilia2?.ready === true);
+    const fps = page.locator('.fps');
+    await expect(fps).toBeVisible();
+    await expect.poll(async () => /^\d+$/.test((await fps.textContent()) ?? ''), { timeout: 10_000 }).toBe(true);
+    await page.keyboard.press('F2');
+    await expect(fps).toBeHidden();
+  });
+
   test('F2 blendet oben in der Mitte die Bilder je Sekunde ein (1 bis 240) und wieder aus', async ({ page }) => {
     await openWorld(page);
     const fps = page.locator('.fps');
@@ -232,7 +296,7 @@ test('nach einer Berührung zeigt die Hilfe Stick und Knöpfe statt der Tasten',
   await expect(help.locator('img.help__key')).toHaveCount(0);
   await expect(help.locator('.help__stick')).toHaveCount(2);
   await expect(help.locator('.help__act img')).toHaveAttribute('src', /sprechblase/);
-  expect(await help.locator('.help__word').allTextContents()).toEqual(['laufen', 'rennen', 'reden', 'Schnellleiste', 'schließen']);
+  expect(await help.locator('.help__word').allTextContents()).toEqual(['laufen', 'rennen', 'reden', 'wählen', 'schließen']);
   await help.locator('.ui-window__head .ui-close').tap();
   await expect(anyWindow(page)).toHaveCount(0);
   expect(await resizeLoops(page)).toBe(0);
@@ -300,6 +364,8 @@ test('Bilder von Menü und Hilfe für die Durchsicht', async ({ browser, baseURL
   await pc.keyboard.press('KeyH');
   await expect(win(pc, 'help')).toBeVisible();
   await shot(pc, 'hilfe-tasten-1280x720@1x');
+  // Fix-Welle F15: dieselbe Hilfe, jetzt mit Pfeiltasten und M
+  writeFileSync(`${ARTIFACTS}fix-welle-hilfe-tasten-1280x720@1x.png`, await pc.screenshot({ scale: 'device' }));
   await pcContext.close();
   for (const [w, h, dpr] of [[1080, 810, 2], [844, 390, 3]] as const) {
     const page = await touchPage(browser, baseURL, w, h, dpr);

@@ -300,6 +300,12 @@ export const UI = [
   key('shift', 'KeyShift', 30, 'Taste Shift in der Hilfe (rennen)'),
   ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => key(String(n), `Key${n}`, 13, `Taste ${n} in der Hilfe (Schnellleiste)`)),
   key('esc', 'KeyEscape', 18, 'Taste Esc in der Hilfe (schließen)'),
+  // Fix-Welle F15: Pfeiltasten neben W A S D, Taste M für das Menü
+  key('up', 'KeyUp', 13, 'Pfeiltaste hoch in der Hilfe (laufen)'),
+  key('left', 'KeyLeft', 13, 'Pfeiltaste links in der Hilfe (laufen)'),
+  key('down', 'KeyDown', 13, 'Pfeiltaste runter in der Hilfe (laufen)'),
+  key('right', 'KeyRight', 13, 'Pfeiltaste rechts in der Hilfe (laufen)'),
+  key('m', 'KeyM', 13, 'Taste M in der Hilfe (Menü)'),
 ];
 
 /** Tasten-Bild aus Ui/Input/Keyboard (13 Bildpunkte hoch, ganzes Bild). */

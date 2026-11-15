@@ -67,12 +67,29 @@
   padding: calc(5 * var(--hud-px) + var(--sp-1)) calc(5 * var(--hud-px) + var(--sp-2));
 }
 
-/* feste Breite: die Münze daneben liegt so nicht hinter einer Textbreite */
+/*
+ * feste Breite: die Münze daneben liegt so nicht hinter einer Textbreite. Platz für „Level 30" (Wort und zwei Ziffern);
+ * 96 px sind bei Dichte 1, 1,25 und 1,5 ganze Gerätepixel, 48 Bildpunkte ohnehin.
+ */
 .hud-level {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
-  width: max(var(--tap), calc(24 * var(--hud-px)));
+  width: max(calc(2 * var(--tap)), calc(48 * var(--hud-px)));
+}
+
+/* Wort und Zahl auf einer Grundlinie */
+.hud-level__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  white-space: nowrap;
+}
+
+.hud-level__word {
+  font-size: var(--fs-2);
+  font-weight: 700;
+  line-height: 1;
 }
 
 /*
@@ -87,15 +104,15 @@
   line-height: 1;
 }
 
-/* schmaler Fortschrittsbalken bis zum nächsten Level */
+/* schmaler Fortschrittsbalken bis zum nächsten Level: Münzgelb auf Tinte (10,7 : 1, auch bei Rot-Grün-Schwäche) */
 .hud-level__bar {
   height: calc(2 * var(--hud-px));
-  background: var(--c-wood);
+  background: var(--c-ink);
 }
 
 .hud-level__fill {
   height: 100%;
-  background: var(--c-ok);
+  background: var(--c-coin);
 }
 
 /* Bild oben bündig (ganze Pixel), nur die Zahl wird mittig dazu gesetzt */
@@ -182,6 +199,18 @@
   pointer-events: auto;
 }
 
+/*
+ * Fokus außerhalb von Fenstern (Menü-Knopf, Plätze, Kontext-Knopf) liegt über Gras und Weg: Ring in Tinte (8,4 : 1
+ * auf Gras, 6,1 : 1 auf Weg) mit einem Bildpunkt Papier dazwischen, statt des Akzents (unter 3 : 1).
+ */
+.hud-menu:focus-visible,
+.touch-act__button:focus-visible,
+.hotbar .ui-slot:focus-visible {
+  outline: calc(2 * var(--hud-px)) solid var(--c-ink);
+  outline-offset: var(--hud-px);
+  box-shadow: 0 0 0 var(--hud-px) var(--c-paper);
+}
+
 /* ---------- unten Mitte: Schnellleiste ---------- */
 
 .hotbar {
@@ -209,21 +238,27 @@
 
 /*
  * Gewählter Platz: auf dem grünen Platz-Bild hebt sich der Akzent nur durch den Farbton ab (Helligkeit etwa 2:1).
- * Darum ein heller Strich in Papierfarbe direkt am Platz und darum ein breiter Ring in der Akzentfarbe.
+ * Darum innen ein Strich in Papier, dazwischen der Akzent und außen Tinte – der äußere Ring hebt sich auf Gras und Weg
+ * ab (8,4 bzw. 6,1 : 1). Ist der gewählte Platz zugleich fokussiert, liegt der Fokusring außen herum.
  */
 .hotbar .ui-slot.is-selected {
   box-shadow:
     0 0 0 var(--hud-px) var(--c-paper),
-    0 0 0 calc(3 * var(--hud-px)) var(--c-accent);
+    0 0 0 calc(2 * var(--hud-px)) var(--c-accent),
+    0 0 0 calc(3 * var(--hud-px)) var(--c-ink);
+}
+
+.hotbar .ui-slot.is-selected:focus-visible {
+  outline-offset: calc(4 * var(--hud-px));
+  box-shadow:
+    0 0 0 var(--hud-px) var(--c-paper),
+    0 0 0 calc(2 * var(--hud-px)) var(--c-accent),
+    0 0 0 calc(3 * var(--hud-px)) var(--c-ink),
+    0 0 0 calc(4 * var(--hud-px)) var(--c-paper);
 }
 
 .hotbar .ui-slot:focus {
   outline: none;
-}
-
-.hotbar .ui-slot:focus-visible {
-  outline: calc(2 * var(--hud-px)) dashed var(--c-ink);
-  outline-offset: calc(4 * var(--hud-px));
 }
 
 /* absolut, mittig im Platz: Rahmen links und oben 3 Bildpunkte (kit.css), Inhalt Platz − 4, Symbol 16 */
@@ -336,6 +371,29 @@
   display: block;
   font-size: var(--fs-2);
   line-height: 1.3;
+}
+
+/*
+ * Tastenbild „E" (13×13 Bildpunkte) unten rechts im Feld. Absolut vom Rand des eingerasteten Felds aus gesetzt (wie die
+ * Symbole im Platz): im Fluss läge es bei Dichte 1,25 neben Textbreiten nicht auf ganzen Gerätepixeln. Der Text hält
+ * rechts Platz dafür frei.
+ */
+.dialogue__key {
+  position: absolute;
+  right: calc(5 * var(--hud-px) + var(--sp-3));
+  bottom: calc(5 * var(--hud-px) + var(--sp-2));
+  width: calc(13 * var(--hud-px));
+  height: calc(13 * var(--hud-px));
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.dialogue__box:has(.dialogue__key:not([hidden])) {
+  padding-right: calc(18 * var(--hud-px) + var(--sp-3) + var(--sp-2));
+}
+
+.dialogue__key[hidden] {
+  display: none;
 }
 
 /* ---------- oben Mitte: kurze Hinweise (Task 7) ---------- */

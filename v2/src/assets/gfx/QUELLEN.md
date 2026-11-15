@@ -125,6 +125,11 @@ Eine Namensnennung ist nicht verlangt; wir nennen die Urheber trotzdem gern.
 | taste_7 | ui/taste_7.png | Ui/Input/Keyboard/Key7.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 7 in der Hilfe (Schnellleiste) | CC0 1.0 |
 | taste_8 | ui/taste_8.png | Ui/Input/Keyboard/Key8.png | 0,0 13×13 | unverändert ausgeschnitten | Taste 8 in der Hilfe (Schnellleiste) | CC0 1.0 |
 | taste_esc | ui/taste_esc.png | Ui/Input/Keyboard/KeyEscape.png | 0,0 18×13 | unverändert ausgeschnitten | Taste Esc in der Hilfe (schließen) | CC0 1.0 |
+| taste_up | ui/taste_up.png | Ui/Input/Keyboard/KeyUp.png | 0,0 13×13 | unverändert ausgeschnitten | Pfeiltaste hoch in der Hilfe (laufen) | CC0 1.0 |
+| taste_left | ui/taste_left.png | Ui/Input/Keyboard/KeyLeft.png | 0,0 13×13 | unverändert ausgeschnitten | Pfeiltaste links in der Hilfe (laufen) | CC0 1.0 |
+| taste_down | ui/taste_down.png | Ui/Input/Keyboard/KeyDown.png | 0,0 13×13 | unverändert ausgeschnitten | Pfeiltaste runter in der Hilfe (laufen) | CC0 1.0 |
+| taste_right | ui/taste_right.png | Ui/Input/Keyboard/KeyRight.png | 0,0 13×13 | unverändert ausgeschnitten | Pfeiltaste rechts in der Hilfe (laufen) | CC0 1.0 |
+| taste_m | ui/taste_m.png | Ui/Input/Keyboard/KeyM.png | 0,0 13×13 | unverändert ausgeschnitten | Taste M in der Hilfe (Menü) | CC0 1.0 |
 
 ## Schriften
 

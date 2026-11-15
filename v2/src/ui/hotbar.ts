@@ -171,7 +171,9 @@ export class Hotbar {
       view.name = name;
       const isSelected = i === selected;
       view.button.classList.toggle('is-selected', isSelected);
-      view.button.setAttribute('aria-pressed', String(isSelected));
+      // für Vorlese-Programme: genau ein Platz ist der gewählte (keine acht Umschalter)
+      if (isSelected) view.button.setAttribute('aria-current', 'true');
+      else view.button.removeAttribute('aria-current');
     });
   }
 

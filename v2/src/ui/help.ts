@@ -12,9 +12,13 @@ import './menu.css';
 /** Kennung des Hilfe-Fensters. */
 export const HELP_ID = 'help';
 
-/** Bild einer Bedienung: Tasten-Bilder (gfx/ui/taste_*.png) oder ein Teil der Touch-Bedienung. */
+/**
+ * Bild einer Bedienung: Tasten-Bilder (gfx/ui/taste_*.png) in einer Reihe, Tastenkreuze (je vier Tasten: oben, links,
+ * unten, rechts; nebeneinander) oder ein Teil der Touch-Bedienung.
+ */
 export type HelpPicture =
-  | { kind: 'keys'; keys: readonly string[]; cross?: boolean }
+  | { kind: 'keys'; keys: readonly string[] }
+  | { kind: 'crosses'; sets: ReadonlyArray<readonly string[]> }
   | { kind: 'stick'; run: boolean }
   | { kind: 'act' }
   | { kind: 'slot' }
@@ -34,10 +38,12 @@ const DEFAULT_KEY_WIDTH = 13;
 /** Was die Hilfe je Gerät zeigt, in dieser Reihenfolge. */
 export const HELP_ROWS: Readonly<Record<InputDevice, readonly HelpRow[]>> = {
   keys: [
-    { word: 'help.move', picture: { kind: 'keys', keys: ['w', 'a', 's', 'd'], cross: true } },
+    // W A S D und daneben die Pfeiltasten (Fix-Welle F15)
+    { word: 'help.move', picture: { kind: 'crosses', sets: [['w', 'a', 's', 'd'], ['up', 'left', 'down', 'right']] } },
     { word: 'help.run', picture: { kind: 'keys', keys: ['shift'] } },
     { word: 'help.talk', picture: { kind: 'keys', keys: ['e'] } },
     { word: 'help.hotbar', picture: { kind: 'keys', keys: ['1', '2', '3', '4', '5', '6', '7', '8'] } },
+    { word: 'help.menu', picture: { kind: 'keys', keys: ['m'] } },
     { word: 'help.close', picture: { kind: 'keys', keys: ['esc'] } },
   ],
   touch: [
@@ -60,17 +66,27 @@ function pixelImage(className: string, name: string, w: number, h: number): HTML
   return img;
 }
 
+/** Tasten-Bild mit seiner Kennung (`data-key`). */
+function keyImage(key: string): HTMLImageElement {
+  const img = pixelImage('help__key', `taste_${key}`, KEY_WIDTH[key] ?? DEFAULT_KEY_WIDTH, KEY_HEIGHT);
+  img.dataset.key = key;
+  return img;
+}
+
 /** Das Bild einer Zeile; nur Schmuck (das Wort daneben trägt die Bedeutung). */
 function picture(p: HelpPicture): HTMLElement {
   const box = el('div', 'help__pic');
   box.setAttribute('aria-hidden', 'true');
   switch (p.kind) {
     case 'keys':
-      if (p.cross) box.classList.add('help__pic--cross');
-      for (const key of p.keys) {
-        const img = pixelImage('help__key', `taste_${key}`, KEY_WIDTH[key] ?? DEFAULT_KEY_WIDTH, KEY_HEIGHT);
-        img.dataset.key = key;
-        box.appendChild(img);
+      for (const key of p.keys) box.appendChild(keyImage(key));
+      break;
+    case 'crosses':
+      // je Kreuz: die erste Taste oben in der Mitte, die anderen drei darunter (menu.css)
+      for (const set of p.sets) {
+        const cross = el('div', 'help__cross');
+        for (const key of set) cross.appendChild(keyImage(key));
+        box.appendChild(cross);
       }
       break;
     case 'stick': {

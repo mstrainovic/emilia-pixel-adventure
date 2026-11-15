@@ -143,6 +143,8 @@ services.backup.addTo(services.menu);
 // nicht bei offenem Gespräch oder angehaltenem Spiel (der Knopf ist bei offenem Fenster ohnehin inert)
 services.hud.onMenu = () => { if (!windows.paused) services.menu.open(); };
 services.fps = new FpsMeter(uiRoot.element);
+// ?fps=1 in der Adresse: Anzeige gleich an (zum Messen auf dem iPad, das keine Taste F2 hat)
+if (new URLSearchParams(window.location.search).get('fps') === '1') services.fps.toggle();
 announceProgress(services);
 const notices = new Notices(services, () => window.location.reload());
 game.registry.set(SERVICES_KEY, services);

@@ -127,6 +127,11 @@ describe('Quellenverzeichnis src/assets/gfx', () => {
       'ui/taste_d.png': { quelle: 'Ui/Input/Keyboard/KeyD.png', size: [13, 13] },
       'ui/taste_shift.png': { quelle: 'Ui/Input/Keyboard/KeyShift.png', size: [30, 13] },
       'ui/taste_esc.png': { quelle: 'Ui/Input/Keyboard/KeyEscape.png', size: [18, 13] },
+      // Pfeiltasten und M in der Hilfe (Fix-Welle F15)
+      ...Object.fromEntries((['up', 'left', 'down', 'right', 'm'] as const).map((k) => [
+        `ui/taste_${k}.png`,
+        { quelle: `Ui/Input/Keyboard/Key${k === 'm' ? 'M' : k[0]!.toUpperCase() + k.slice(1)}.png`, size: [13, 13] as [number, number] },
+      ])),
       ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8].map((n) => [
         `ui/taste_${n}.png`, { quelle: `Ui/Input/Keyboard/Key${n}.png`, size: [13, 13] as [number, number] },
       ])),

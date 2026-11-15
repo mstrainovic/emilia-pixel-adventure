@@ -2,6 +2,7 @@ import type { Services } from '../core/services';
 import type { TalkView } from '../core/session';
 import { el } from './el';
 import { snapPosition, snapSize } from './grid';
+import { iconUrl } from './images';
 import type { WindowManager } from './windows';
 // Baukasten vor hud.css: gleich spezifische Regeln aus hud.css (etwa der Innenabstand einer Tafel) gelten nur,
 // wenn kit.css vorher geladen ist – auch wenn dieses Modul vor root.ts geladen wird (etwa über WorldScene).
@@ -19,7 +20,8 @@ function snap(box: HTMLElement): void {
 
 /**
  * Das Gesprächsfeld (Spec 6.7, „Tod der Dialogwand"): unten Mitte über der Schnellleiste, links das Gesicht, daneben
- * der Name und darunter der eine Satz in höchstens zwei Zeilen. Es wächst nach oben und schneidet nie Text ab.
+ * der Name und darunter der eine Satz in höchstens zwei Zeilen. Es wächst nach oben und schneidet nie Text ab. Mit
+ * Tastatur steht unten rechts klein das Tastenbild „E" als Zeichen, womit es weitergeht (mit Touch nicht).
  * Kein Fenster (keine Abdunklung, nichts wird `inert`), hält das Spiel aber an, solange es offen ist. Geschlossen wird
  * es von der Welt-Szene (E, Leertaste, Enter, Esc) oder per Tippen/Klick auf das Feld (`hide`).
  */
@@ -29,6 +31,7 @@ export class DialogueBox {
   private readonly face: HTMLImageElement;
   private readonly name: HTMLElement;
   private readonly lines: HTMLElement;
+  private readonly key: HTMLImageElement;
   private open = false;
   private snapper: ResizeObserver | null = null;
   /** Ausstehendes Einrasten aus dem Beobachter (requestAnimationFrame); 0 = keins. */
@@ -46,7 +49,12 @@ export class DialogueBox {
     this.name = el('p', 'dialogue__name');
     this.lines = el('p', 'dialogue__lines');
     text.append(this.name, this.lines);
-    this.box.append(this.face, text);
+    this.key = el('img', 'dialogue__key');
+    this.key.src = iconUrl('taste_e');
+    this.key.alt = '';
+    this.key.draggable = false;
+    this.key.setAttribute('aria-hidden', 'true');
+    this.box.append(this.face, text, this.key);
     this.element.appendChild(this.box);
     // Tippen oder Klicken auf das Feld schließt es (Task 8 schließt zusätzlich per Tippen ins Spielbild)
     this.box.addEventListener('click', () => this.hide());
@@ -58,6 +66,7 @@ export class DialogueBox {
     this.name.textContent = view.name;
     this.lines.replaceChildren(...view.lines.map((line) => el('span', 'dialogue__line', line)));
     this.face.hidden = faceImage === '';
+    this.key.hidden = this.services.input.device !== 'keys';
     if (faceImage !== '' && this.face.getAttribute('src') !== faceImage) this.face.src = faceImage;
     this.element.hidden = false;
     this.box.setAttribute('aria-label', view.name);

@@ -228,6 +228,9 @@ export class TouchControls {
     this.icon.hidden = !talk;
     this.button.classList.toggle('is-idle', !talk);
     this.button.setAttribute('aria-label', talk ? TEXTS['touch.talk'] : TEXTS['touch.action']);
+    // ohne Ziel nicht nur blass, auch für Vorlese-Programme ohne Wirkung
+    if (talk) this.button.removeAttribute('aria-disabled');
+    else this.button.setAttribute('aria-disabled', 'true');
   }
 
   /** Randbild scharf: Größe in ganzen Bildpunkten, Lage auf ganzen Gerätepixeln (grid.ts). */

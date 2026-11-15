@@ -91,6 +91,18 @@ test('mit Mama reden: Feld mit einem Satz, Spiel hält an, danach Aufgabe gescha
   await expect(box(page)).toBeVisible();
   await expect(box(page).locator('.dialogue__name')).toHaveText('Mama Tanja');
   await expect(box(page).locator('.dialogue__face')).toHaveAttribute('src', /mama_tanja-gesicht/);
+  // mit Tastatur: unten rechts das Tastenbild „E", womit es weitergeht (Fix-Welle F13)
+  const key = box(page).locator('.dialogue__key');
+  await expect(key).toBeVisible();
+  await expect(key).toHaveAttribute('src', /taste_e/);
+  const corner = await box(page).evaluate((b) => {
+    const r = b.getBoundingClientRect();
+    const k = b.querySelector('.dialogue__key')!.getBoundingClientRect();
+    return { right: r.right - k.right, bottom: r.bottom - k.bottom, keyLeft: k.left, textRight: b.querySelector('.dialogue__text')!.getBoundingClientRect().right };
+  });
+  expect(corner.right).toBeLessThan(40);
+  expect(corner.bottom).toBeLessThan(40);
+  expect(corner.keyLeft).toBeGreaterThanOrEqual(corner.textRight);
   // höchstens zwei Zeilen, jede auch im Bild genau eine Zeile hoch
   const lines = box(page).locator('.dialogue__line');
   expect(await lines.count()).toBeGreaterThanOrEqual(1);
@@ -311,6 +323,11 @@ test.describe('Gesprächsfeld und Hinweis auf ganzen Pixeln', () => {
       // warten, bis das Feld eingerastet ist (ResizeObserver)
       await frames(page, 3);
       await check('.dialogue__box');
+      // das Tastenbild „E": ein Pixelbild, also ganze Gerätepixel (wie Herzen und Symbole) und 13 Bildpunkte groß
+      const key = await measure('.dialogue__key');
+      const device = (v: number): boolean => Math.abs(v * dpr - Math.round(v * dpr)) <= 0.01;
+      if (!device(key.left) || !device(key.top)) problems.push(`.dialogue__key: Ecke ${key.left},${key.top}`);
+      if (Math.abs(key.width / key.hud - 13) > 0.01 || Math.abs(key.height / key.hud - 13) > 0.01) problems.push(`.dialogue__key: Größe ${key.width}×${key.height}`);
       await pressE(page, false);
       await expect(toasts(page).first()).toBeVisible();
       await frames(page, 3);
@@ -336,6 +353,8 @@ test('Bilder vom Reden für die Durchsicht', async ({ browser, baseURL, browserN
     await pressE(page, true);
     await frames(page, 3);
     writeFileSync(`${ARTIFACTS}task-7-gespraech-${name}.png`, await page.screenshot({ scale: 'device' }));
+    // Fix-Welle F13: das Feld mit dem Zeichen „E" unten rechts
+    writeFileSync(`${ARTIFACTS}fix-welle-gespraech-e-${name}.png`, await page.screenshot({ scale: 'device' }));
     if (shot.dpr === 1) {
       await pressE(page, false);
       await expect(toasts(page).filter({ hasText: 'Aufgabe geschafft!' })).toBeVisible();

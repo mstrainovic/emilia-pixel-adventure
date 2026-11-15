@@ -64,10 +64,15 @@
     "ui/taste_8.png",
     "ui/taste_a.png",
     "ui/taste_d.png",
+    "ui/taste_down.png",
     "ui/taste_e.png",
     "ui/taste_esc.png",
+    "ui/taste_left.png",
+    "ui/taste_m.png",
+    "ui/taste_right.png",
     "ui/taste_s.png",
     "ui/taste_shift.png",
+    "ui/taste_up.png",
     "ui/taste_w.png",
     "ui/zahlen.ttf"
   ],
@@ -1554,6 +1559,76 @@
       },
       "aenderungen": "unverändert ausgeschnitten",
       "verwendung": "Taste Esc in der Hilfe (schließen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "taste_up",
+      "ziel": "ui/taste_up.png",
+      "quelle": "Ui/Input/Keyboard/KeyUp.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Pfeiltaste hoch in der Hilfe (laufen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "taste_left",
+      "ziel": "ui/taste_left.png",
+      "quelle": "Ui/Input/Keyboard/KeyLeft.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Pfeiltaste links in der Hilfe (laufen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "taste_down",
+      "ziel": "ui/taste_down.png",
+      "quelle": "Ui/Input/Keyboard/KeyDown.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Pfeiltaste runter in der Hilfe (laufen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "taste_right",
+      "ziel": "ui/taste_right.png",
+      "quelle": "Ui/Input/Keyboard/KeyRight.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Pfeiltaste rechts in der Hilfe (laufen)",
+      "lizenz": "CC0 1.0"
+    },
+    {
+      "kennung": "taste_m",
+      "ziel": "ui/taste_m.png",
+      "quelle": "Ui/Input/Keyboard/KeyM.png",
+      "ausschnitt": {
+        "x": 0,
+        "y": 0,
+        "w": 13,
+        "h": 13
+      },
+      "aenderungen": "unverändert ausgeschnitten",
+      "verwendung": "Taste M in der Hilfe (Menü)",
       "lizenz": "CC0 1.0"
     }
   ]

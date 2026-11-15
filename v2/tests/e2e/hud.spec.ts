@@ -25,7 +25,15 @@ test('neues Spiel: fünf volle Herzen, Level 1, 0 Münzen, Aufgabe mit Mamas Ges
   await openWorld(page, errors);
   await expect(hearts(page)).toHaveAttribute('aria-label', '5 von 5 Herzen');
   expect(await quarters(page)).toEqual(['4', '4', '4', '4', '4']);
+  // sichtbar „Level 1": das Wort in der Leseschrift, die Zahl in der Ziffernschrift
+  await expect(page.locator('.hud-level__word')).toHaveText('Level');
+  await expect(page.locator('.hud-level__word')).toHaveCSS('font-family', /Nunito/);
   await expect(page.locator('.hud-level__num')).toHaveText('1');
+  await expect(page.locator('.hud-level__num')).toHaveCSS('font-family', /EmiliaZahlen/);
+  await expect(page.locator('.hud-level')).toHaveAttribute('aria-label', 'Level 1');
+  // Balken: Münzgelb auf Tinte (Fix-Welle F14)
+  await expect(page.locator('.hud-level__bar')).toHaveCSS('background-color', 'rgb(20, 27, 27)');
+  await expect(page.locator('.hud-level__fill')).toHaveCSS('background-color', 'rgb(241, 196, 113)');
   await expect(page.locator('.hud-coins__num')).toHaveText('0');
   const quest = page.locator('.hud-quest');
   await expect(quest).toBeVisible();
@@ -39,9 +47,11 @@ test('neues Spiel: fünf volle Herzen, Level 1, 0 Münzen, Aufgabe mit Mamas Ges
   await expect(first).toHaveAttribute('aria-label', 'Holzschwert');
   await expect(first).toHaveAttribute('title', 'Holzschwert');
   await expect(first).toHaveClass(/is-selected/);
-  await expect(first).toHaveAttribute('aria-pressed', 'true');
+  // für Vorlese-Programme: genau ein Platz ist der gewählte, keine acht Umschalter
+  await expect(first).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('.hotbar .is-selected')).toHaveCount(1);
-  await expect(page.locator('.hotbar [aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.locator('.hotbar [aria-current="true"]')).toHaveCount(1);
+  await expect(page.locator('.hotbar [aria-pressed]')).toHaveCount(0);
 
   const menu = page.locator('.hud-menu');
   await expect(menu).toBeVisible();
@@ -65,11 +75,47 @@ test('Schnellleiste: Taste 3 wählt Platz 3, Klick auf Platz 1 wählt Platz 1 un
   // nach dem Zeiger-Klick hat der Platz keinen Fokus mehr: die Leertaste gehört wieder dem Spiel
   expect(await page.evaluate(() => document.activeElement?.closest('.hotbar') ?? null)).toBeNull();
 
-  // per Tastatur erreichbar: Fokus auf Platz 2, Enter wählt ihn
+  // per Tastatur erreichbar: Fokus auf Platz 2, Enter wählt ihn – und gibt den Fokus danach ebenso ab (Fix-Welle F15)
   await slots(page).nth(1).focus();
   await page.keyboard.press('Enter');
   await expect(slots(page).nth(1)).toHaveClass(/is-selected/);
   expect(await selected(page)).toBe(1);
+  await expect(slots(page).nth(1)).toHaveAttribute('aria-current', 'true');
+  expect(await page.evaluate(() => document.activeElement?.closest('.hotbar') ?? null)).toBeNull();
+  // die Leertaste danach wählt nicht wieder Platz 2, sie gehört dem Spiel
+  await page.keyboard.press('Digit3');
+  await page.keyboard.press('Space');
+  await frames(page, 3);
+  await expect(slots(page).nth(2)).toHaveClass(/is-selected/);
+});
+
+test('Level 30 passt in die feste Breite der Tafel; die Münze liegt daneben', async ({ page }) => {
+  await openWorld(page);
+  await expect.poll(() => page.evaluate(() => document.fonts.check('bold 20px Nunito') && document.fonts.check('27px EmiliaZahlen', '30'))).toBe(true);
+  const fit = await page.evaluate(() => {
+    document.querySelector('.hud-level__num')!.textContent = '30';
+    const level = document.querySelector('.hud-level')!.getBoundingClientRect();
+    const label = document.querySelector<HTMLElement>('.hud-level__label')!;
+    const coin = document.querySelector('.hud-coins__img')!.getBoundingClientRect();
+    return { label: label.scrollWidth, width: level.width, coinLeft: coin.left, levelRight: level.right };
+  });
+  expect(fit.label).toBeLessThanOrEqual(fit.width);
+  expect(fit.coinLeft).toBeGreaterThan(fit.levelRight);
+});
+
+test('Fokus per Tab auf dem Menü-Knopf: Ring in Tinte mit einem Bildpunkt Papier dazwischen', async ({ page }) => {
+  await openWorld(page);
+  const menu = page.locator('.hud-menu');
+  for (let i = 0; i < 12 && !(await menu.evaluate((n) => n === document.activeElement)); i++) await page.keyboard.press('Tab');
+  await expect(menu).toBeFocused();
+  const ring = await menu.evaluate((n) => {
+    const s = getComputedStyle(n);
+    return { color: s.outlineColor, style: s.outlineStyle, offset: parseFloat(s.outlineOffset), shadow: s.boxShadow };
+  });
+  expect(ring.color).toBe('rgb(20, 27, 27)');
+  expect(ring.style).toBe('solid');
+  expect(ring.offset).toBeGreaterThan(0);
+  expect(ring.shadow).toContain('rgb(252, 226, 202)');
 });
 
 test('Lebenspunkte 9: Herzen voll, voll, viertel, leer, leer', async ({ page }) => {
@@ -124,12 +170,15 @@ test('kein Element der Anzeige überdeckt bei 1280×720 die Bildmitte', async ({
   await context.close();
 });
 
-test('Handy quer 812×375@2x: Herzen, Tafel, Aufgabe, Menü-Knopf und Schnellleiste überlappen sich nicht', async ({ browser, baseURL }) => {
+test('Handy quer 812×375@2x: Herzen, Tafel, Marke, Aufgabe, Menü-Knopf und Schnellleiste überlappen sich nicht', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ baseURL, viewport: { width: 812, height: 375 }, deviceScaleFactor: 2 });
   const page = await context.newPage();
+  // eine Sitzung, die nicht speichert (neuerer Stand): die Marke „Nicht gespeichert" steht
+  await page.addInitScript(() => localStorage.setItem('emilia2_save', JSON.stringify({ formatVersion: 2, savedAt: 5 })));
   await openWorld(page);
   await expect(page.locator('.hud-quest')).toBeVisible();
-  const parts = ['.hud-hearts', '.hud-row', '.hud-quest', '.hud-menu', '.hotbar'];
+  await expect(page.locator('.hud-unsaved')).toBeVisible();
+  const parts = ['.hud-hearts', '.hud-row', '.hud-unsaved', '.hud-quest', '.hud-menu', '.hotbar'];
   const boxes = await Promise.all(parts.map(async (s) => ({ s, box: (await page.locator(s).boundingBox())! })));
   const overlaps: string[] = [];
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
@@ -195,4 +244,27 @@ test('Bilder der Anzeige für die Durchsicht', async ({ browser, baseURL, browse
     writeFileSync(`${ARTIFACTS}task-6-anzeige-${shot.width}x${shot.height}@${shot.dpr}x.png`, await page.screenshot({ scale: 'device' }));
     await context.close();
   }
+  // Fix-Welle: „Level 1" und die Marke „Nicht gespeichert" (Sitzung mit neuerem Stand, Hinweis geschlossen)
+  for (const shot of [{ width: 1280, height: 720, dpr: 1 }, { width: 812, height: 375, dpr: 2 }]) {
+    const context = await browser.newContext({ baseURL, viewport: { width: shot.width, height: shot.height }, deviceScaleFactor: shot.dpr });
+    const page = await context.newPage();
+    await page.addInitScript(() => localStorage.setItem('emilia2_save', JSON.stringify({ formatVersion: 2, savedAt: 5 })));
+    await openWorld(page);
+    await page.locator('.ui-window .notice__button', { hasText: 'Okay' }).click();
+    await expect(page.locator('.ui-shade')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => document.fonts.check('bold 16px Nunito') && document.fonts.check('16px EmiliaZahlen', '0'))).toBe(true);
+    await expect(page.locator('.hud-unsaved')).toBeVisible();
+    await frames(page, 3);
+    writeFileSync(`${ARTIFACTS}fix-welle-anzeige-${shot.width}x${shot.height}@${shot.dpr}x.png`, await page.screenshot({ scale: 'device' }));
+    await context.close();
+  }
 });
+
+/** Wartet `count` gezeichnete Bilder ab (Spielzeit statt Wanduhr). */
+async function frames(page: Page, count: number): Promise<void> {
+  await page.evaluate((n) => new Promise<void>((resolve) => {
+    let left = n;
+    const step = (): void => { if (--left <= 0) resolve(); else requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }), count);
+}

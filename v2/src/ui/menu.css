@@ -91,18 +91,23 @@
   gap: var(--hud-px);
 }
 
-/* W über A S D */
-.help__pic--cross {
+/* Tastenkreuz: W über A S D (Pfeil hoch über links, runter, rechts); zwei Kreuze mit Luft dazwischen */
+.help__cross {
   display: grid;
   grid-template-columns: repeat(3, max-content);
+  gap: var(--hud-px);
 }
 
-.help__pic--cross > :first-child {
+.help__cross + .help__cross {
+  margin-left: calc(4 * var(--hud-px));
+}
+
+.help__cross > :first-child {
   grid-row: 1;
   grid-column: 2;
 }
 
-.help__pic--cross > :not(:first-child) {
+.help__cross > :not(:first-child) {
   grid-row: 2;
 }
 

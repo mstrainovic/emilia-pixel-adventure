@@ -202,6 +202,12 @@ body,
   border-image: url('../assets/gfx/ui/knopf_gedrueckt.png') 3 2 2 2 fill / 3px 2px 2px 2px stretch;
 }
 
+/* gedrückt: Beschriftung in Papier auf dem dunkleren Knopf (4,6 : 1 statt 3,0 : 1) */
+.ui-button:active,
+.ui-button.is-pressed {
+  color: var(--c-paper);
+}
+
 .ui-button:focus {
   outline: none;
 }

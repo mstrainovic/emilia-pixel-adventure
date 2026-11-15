@@ -35,8 +35,8 @@ export function scaleVariables(snapshot: PixelGridSnapshot): Record<string, stri
 /**
  * Wurzel der HTML-Oberfläche über dem Spielbild. Setzt auf `host` den Maßstab (siehe kit.css) und hält ihn bei jeder
  * neuen Messung des Pixelrasters aktuell; die Bausteine hängen sich in `element` ein.
- * Knöpfe außerhalb von Fenstern geben den Fokus nach einem Zeiger-Klick wieder ab: sonst löste die Leertaste danach
- * den Knopf aus, statt das Spiel zu bedienen (Tastatur-Klicks behalten den Fokus).
+ * Knöpfe außerhalb von Fenstern geben den Fokus nach dem Auslösen wieder ab – per Zeiger wie per Tastatur (Enter,
+ * Leertaste): sonst löste die Leertaste danach den Knopf aus, statt das Spiel zu bedienen (Fix-Welle F15).
  */
 export class UiRoot {
   readonly element: HTMLElement;
@@ -68,8 +68,6 @@ export class UiRoot {
   }
 
   private readonly onClick = (e: MouseEvent): void => {
-    // detail 0: Klick per Tastatur (Enter, Leertaste); dann bleibt der Fokus, wo er ist
-    if (e.detail === 0) return;
     const target = e.target as Element | null;
     const button = target?.closest('button');
     if (button && !button.closest('.ui-window')) button.blur();

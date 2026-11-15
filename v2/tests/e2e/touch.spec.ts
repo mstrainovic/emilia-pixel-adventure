@@ -163,14 +163,19 @@ test('neben Mama: Finger 1 hält den Stick, Finger 2 tippt den Kontext-Knopf →
   await expect(button).not.toHaveClass(/is-idle/);
   await expect(button).toHaveAttribute('aria-label', 'Reden');
   const knopf = await center(page, '.touch-act__button');
+  await expect(button).not.toHaveAttribute('aria-disabled');
   await tap(page, 2, knopf.x, knopf.y);
   await expect.poll(async () => (await talkState(page)).open).toBe(true);
   expect((await talkState(page)).talks).toBe(1);
+  // mit Touch kein Tastenbild „E" im Gesprächsfeld
+  await expect(page.locator('.dialogue__box')).toBeVisible();
+  await expect(page.locator('.dialogue__key')).toBeHidden();
   // das Gespräch hält an und lässt den Stick los: Emilia läuft danach nicht weiter
   expect((await touchState(page)).held).toBe(false);
   await finger(page, 'pointerup', 1, THUMB.x + 3, THUMB.y);
-  // ohne Ziel (angehalten) ist der Knopf blass
+  // ohne Ziel (angehalten) ist der Knopf blass und für Vorlese-Programme ohne Wirkung
   await expect(button).toHaveClass(/is-idle/);
+  await expect(button).toHaveAttribute('aria-disabled', 'true');
 
   // Knopf schließt genau einmal, ohne wieder zu öffnen
   await tap(page, 2, knopf.x, knopf.y);
@@ -391,7 +396,7 @@ test('Handy hochkant: Dreh-Hinweis, Spiel hält an; quer: weg; Tablet hochkant: 
     const errors = watchErrors(page);
     await openWorld(page);
     await expect(hint(page)).toBeVisible();
-    await expect(hint(page)).toContainText('Bitte dreh das Gerät quer.');
+    await expect(hint(page)).toContainText('Bitte dreh das Handy quer.');
     expect(await page.evaluate(() => (window as any).__emilia2.paused())).toBe(true);
     // der Hinweis deckt alles ab: weder Daumen noch Taste bewegen Emilia
     const start = await player(page);

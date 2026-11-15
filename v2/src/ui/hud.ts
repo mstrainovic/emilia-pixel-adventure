@@ -19,7 +19,8 @@ import './menu.css';
 const number = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
 
 /**
- * Die Grundanzeige (Spec 10): oben links Herzen, darunter Level mit Fortschrittsbalken und Münzen; oben rechts die
+ * Die Grundanzeige (Spec 10): oben links Herzen, darunter „Level 1" mit Fortschrittsbalken und Münzen (und, solange
+ * nicht gespeichert wird, die Marke „Nicht gespeichert"); oben rechts die
  * aktuelle Aufgabe mit dem Gesicht ihres Gebers und der Menü-Knopf. Liegt als `div.hud` direkt in der Wurzel der
  * Oberfläche (so macht der Fenster-Verwalter sie bei offenem Fenster `inert`). Zeichnet nur bei `stats:changed`
  * und `quest:changed` neu.
@@ -54,13 +55,16 @@ export class Hud {
     this.row = row;
     this.level = el('div', 'hud-level');
     this.level.setAttribute('role', 'img');
+    // sichtbar „Level 1": das Wort in der Leseschrift, die Zahl in der Ziffernschrift (vorgelesen über aria-label)
+    const label = el('span', 'hud-level__label');
+    label.setAttribute('aria-hidden', 'true');
     this.levelNum = el('span', 'hud-level__num');
-    this.levelNum.setAttribute('aria-hidden', 'true');
+    label.append(el('span', 'hud-level__word', TEXTS['hud.levelWord']), this.levelNum);
     const bar = el('div', 'hud-level__bar');
     bar.setAttribute('aria-hidden', 'true');
     this.levelFill = el('div', 'hud-level__fill');
     bar.appendChild(this.levelFill);
-    this.level.append(this.levelNum, bar);
+    this.level.append(label, bar);
     this.coins = el('div', 'hud-coins');
     this.coins.setAttribute('role', 'img');
     const coinImg = el('img', 'hud-coins__img');
