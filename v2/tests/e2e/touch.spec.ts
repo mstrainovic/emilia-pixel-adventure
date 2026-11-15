@@ -77,7 +77,8 @@ async function frames(page: Page, count: number): Promise<void> {
 
 /** Mitte eines Elements in CSS-Pixeln. */
 async function center(page: Page, selector: string): Promise<{ x: number; y: number }> {
-  const box = (await page.locator(selector).boundingBox())!;
+  const box = await page.locator(selector).boundingBox();
+  if (box === null) throw new Error(`${selector} ist nicht sichtbar`);
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
@@ -345,19 +346,48 @@ test('Schnellleiste: 500 ms auf Platz 1 → „Holzschwert" erscheint 2 s lang; 
   await expect(page.locator(slot(2))).toHaveClass(/is-selected/);
   await page.waitForTimeout(1000);
   await expect(tip).toBeHidden();
-  // langes Drücken auf Platz 1: Name erscheint, die Wahl bleibt bei Platz 3
-  const first = await center(page, slot(0));
-  await finger(page, 'pointerdown', 2, first.x, first.y);
-  await expect(tip).toBeVisible({ timeout: 5000 });
-  await expect(tip).toHaveText('Holzschwert');
-  await finger(page, 'pointerup', 2, first.x, first.y);
-  await page.locator(slot(0)).dispatchEvent('click');
+  // langes Drücken auf Platz 1: Name erscheint, die Wahl bleibt bei Platz 3. Alles in einem Schritt in der Seite: ein
+  // Beobachter schreibt mit, sobald der Name erscheint (Text und Lage), dann hebt der Finger ab – keine Rundreisen in
+  // den 2 s, in denen der Name steht (sonst kann ein stockender Rechner ihn verpassen)
+  const shown = await page.evaluate((selector) => new Promise<{
+    text: string; tip: { top: number; bottom: number; center: number }; slot: { top: number; center: number };
+  } | null>((resolve) => {
+    const slotEl = document.querySelector<HTMLElement>(selector)!;
+    const tipEl = document.querySelector<HTMLElement>('.hotbar__tip')!;
+    const r = slotEl.getBoundingClientRect();
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const fire = (type: string): void => {
+      slotEl.dispatchEvent(new PointerEvent(type, {
+        pointerId: 2, pointerType: 'touch', isPrimary: false, clientX: x, clientY: y, button: 0,
+        buttons: type === 'pointerup' ? 0 : 1, bubbles: true, cancelable: true, composed: true,
+      }));
+    };
+    const giveUp = window.setTimeout(() => { observer.disconnect(); fire('pointerup'); resolve(null); }, 10_000);
+    const observer = new MutationObserver(() => {
+      if (tipEl.hidden) return;
+      observer.disconnect();
+      window.clearTimeout(giveUp);
+      const t = tipEl.getBoundingClientRect();
+      const s = slotEl.getBoundingClientRect();
+      const result = {
+        text: tipEl.textContent ?? '',
+        tip: { top: t.top, bottom: t.bottom, center: t.left + t.width / 2 },
+        slot: { top: s.top, center: s.left + s.width / 2 },
+      };
+      fire('pointerup');
+      // der Browser schickt nach dem Abheben einen Klick: er wählt nach langem Drücken nicht
+      slotEl.click();
+      resolve(result);
+    });
+    observer.observe(tipEl, { attributes: true, attributeFilter: ['hidden'], childList: true, subtree: true });
+    fire('pointerdown');
+  }), slot(0));
+  expect(shown, 'der Name ist nach langem Drücken nicht erschienen').not.toBeNull();
+  expect(shown?.text).toBe('Holzschwert');
   await expect(page.locator(slot(2))).toHaveClass(/is-selected/);
   // der Name steht über Platz 1 und verschwindet wieder
-  const tipBox = (await tip.boundingBox())!;
-  const slotBox = (await page.locator(slot(0)).boundingBox())!;
-  expect(tipBox.y + tipBox.height).toBeLessThanOrEqual(slotBox.y);
-  expect(Math.abs(tipBox.x + tipBox.width / 2 - (slotBox.x + slotBox.width / 2))).toBeLessThanOrEqual(2);
+  expect(shown?.tip.bottom ?? Infinity).toBeLessThanOrEqual(shown?.slot.top ?? -Infinity);
+  expect(Math.abs((shown?.tip.center ?? 0) - (shown?.slot.center ?? Infinity))).toBeLessThanOrEqual(2);
   await expect(tip).toBeHidden({ timeout: 10_000 });
 });
 

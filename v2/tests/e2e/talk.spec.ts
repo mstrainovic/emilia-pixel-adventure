@@ -170,47 +170,67 @@ test('E gehalten öffnet das Gespräch genau einmal; zwei schnelle Drücke nach 
   await page.keyboard.up('KeyE');
   await frames(page, 5);
   expect(await talkState(page)).toMatchObject({ open: true, talks: 1 });
-  // Nach dem Loslassen schließt ein weiterer Druck, gleich darauf zwei Drücke im Abstand von 100 ms SPIELZEIT – alles
-  // in der Seite, Bild für Bild, ohne Rundreisen und ohne Wanduhr. Gemessen wird, wie viel Spielzeit seit dem Schließen
-  // bei jedem Druck vergangen war; beide müssen in der Sperre (0,3 s) liegen, sonst ist der Lauf ungültig.
-  const run = await page.evaluate(() => new Promise<{ atFirst: number; atSecond: number; talks: number; open: boolean }>((resolve) => {
-    const h = (window as any).__emilia2;
-    const clock = (): number => h.state().dayNight.totalTime;
-    const tap = (): void => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE', key: 'e', bubbles: true }));
-      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE', key: 'e', bubbles: true }));
-    };
-    tap();
-    let closedAt = -1, atFirst = -1, atSecond = -1, after = 0;
-    const step = (): void => {
-      const s = h.talkState();
-      if (closedAt < 0) {
-        if (!s.open) { closedAt = clock(); tap(); }
-      } else if (s.open) {
-        // wieder offen: das Spiel steht, die Spielzeit liefe nicht weiter – sofort melden
-        resolve({ atFirst, atSecond, talks: s.talks, open: s.open });
-        return;
-      } else if (atFirst < 0) {
-        // ein Bild später ist der erste Druck abgeholt: so viel Spielzeit war seit dem Schließen vergangen
-        atFirst = clock() - closedAt;
-      } else if (atSecond < 0) {
-        if (clock() - closedAt >= 0.1) { atSecond = clock() - closedAt; tap(); }
-      } else if (++after >= 10) {
-        resolve({ atFirst, atSecond, talks: s.talks, open: s.open });
-        return;
-      }
+  // Ein Lauf (bei offenem Gespräch): ein Druck schließt, gleich darauf zwei Drücke im Abstand von 100 ms SPIELZEIT –
+  // alles in der Seite, Bild für Bild, ohne Rundreisen und ohne Wanduhr. Gemessen wird, wie viel Spielzeit seit dem
+  // Schließen bei jedem Druck vergangen war. Gültig ist der Lauf nur, wenn beide in der Sperre (0,3 s) lagen (ein Bild
+  // Verzug für das Abholen eingerechnet). Stockte der Rechner, ist er ungültig und wird wiederholt (bis zu 5-mal).
+  // Öffnet ein Druck das Gespräch wieder, zählt, wann: noch in der Sperre ist es ein Fehler, danach war der Lauf ungültig.
+  const run = (): Promise<{ atFirst: number; atSecond: number; reopenedAt: number; talks: number; open: boolean }> =>
+    page.evaluate(() => new Promise((resolve) => {
+      const h = (window as any).__emilia2;
+      const clock = (): number => h.state().dayNight.totalTime;
+      const tap = (): void => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE', key: 'e', bubbles: true }));
+        window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE', key: 'e', bubbles: true }));
+      };
+      tap();
+      let closedAt = -1, atFirst = -1, atSecond = -1, after = 0;
+      const step = (): void => {
+        const s = h.talkState();
+        if (closedAt < 0) {
+          if (!s.open) { closedAt = clock(); tap(); }
+        } else if (s.open) {
+          // wieder offen: das Spiel steht, die Spielzeit läuft nicht weiter – sie sagt, wann der Druck abgeholt wurde
+          resolve({ atFirst, atSecond, reopenedAt: clock() - closedAt, talks: s.talks, open: s.open });
+          return;
+        } else if (atFirst < 0) {
+          // ein Bild später ist der erste Druck abgeholt: so viel Spielzeit war seit dem Schließen vergangen
+          atFirst = clock() - closedAt;
+        } else if (atSecond < 0) {
+          if (clock() - closedAt >= 0.1) { atSecond = clock() - closedAt; tap(); }
+        } else if (++after >= 10) {
+          resolve({ atFirst, atSecond, reopenedAt: -1, talks: s.talks, open: s.open });
+          return;
+        }
+        requestAnimationFrame(step);
+      };
       requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }));
-  // kein neues Gespräch; beide Drücke lagen sicher in der Sperre (ein Bild Verzug für das Abholen eingerechnet)
-  expect(run, 'ein Druck in der Sperre hat das Gespräch wieder geöffnet').toMatchObject({ open: false, talks: 1 });
-  expect(run.atFirst, 'erster Druck kam erst nach der Sperre – Rechner hat gestockt, Lauf ungültig').toBeLessThan(0.15);
-  expect(run.atSecond, 'zweiter Druck kam erst nach der Sperre – Rechner hat gestockt, Lauf ungültig').toBeLessThan(0.2);
+    }));
+  let valid = false;
+  const tries: string[] = [];
+  for (let attempt = 1; attempt <= 5 && !valid; attempt++) {
+    // jeder Lauf beginnt mit offenem Gespräch
+    if (!(await talkState(page)).open) {
+      await cooledDown(page);
+      await pressE(page, true);
+    }
+    const talksBefore = (await talkState(page)).talks;
+    const r = await run();
+    tries.push(JSON.stringify(r));
+    if (r.open) {
+      // wieder offen: lag der Druck noch in der Sperre, ist das ein Fehler; sonst hat der Rechner gestockt
+      expect(r.reopenedAt, `ein Druck in der Sperre hat das Gespräch wieder geöffnet (Lauf ${attempt})`).toBeGreaterThanOrEqual(0.2);
+      continue;
+    }
+    expect(r.talks, `kein neues Gespräch (Lauf ${attempt})`).toBe(talksBefore);
+    valid = r.atFirst < 0.15 && r.atSecond < 0.2;
+  }
+  expect(valid, `kein gültiger Lauf in 5 Versuchen – der Rechner hat jedes Mal gestockt: ${tries.join(' ')}`).toBe(true);
   // nichts klemmt: nach der Sperre öffnet E wieder
+  const talks = (await talkState(page)).talks;
   await cooledDown(page);
   await pressE(page, true);
-  expect((await talkState(page)).talks).toBe(2);
+  expect((await talkState(page)).talks).toBe(talks + 1);
   expect(errors).toEqual([]);
 });
 

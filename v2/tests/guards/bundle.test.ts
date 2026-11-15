@@ -64,6 +64,30 @@ describe('gebautes Paket dist/v2', () => {
     expect(names.some((n) => /zahlen[^/]*\.ttf$/.test(n))).toBe(true);
   });
 
+  it('CSS-Reihenfolge: alle Regeln aus kit.css stehen vor denen aus hud.css und menu.css', () => {
+    requireBuild();
+    // gleich spezifische Regeln aus hud.css und menu.css (Innenabstand einer Tafel, Fokusring der Anzeige) gelten nur,
+    // wenn sie nach kit.css stehen; die Reihenfolge ergibt sich aus der Reihenfolge der Importe (Fix-Welle F20)
+    const sheets = files.filter((f) => f.endsWith('.css')).map((f) => readFileSync(f, 'utf8'));
+    const css = sheets.find((s) => s.includes('.ui-shade{')) ?? '';
+    const at = (needle: string): number => {
+      const i = css.indexOf(needle);
+      expect(i, `„${needle}" fehlt im gebauten CSS`).toBeGreaterThanOrEqual(0);
+      return i;
+    };
+    // erste und letzte Regel aus kit.css, erste aus hud.css und menu.css
+    const kitStart = at('.ui-root{');
+    const kitEnd = at('.rotate-hint__text{');
+    expect(kitStart).toBeLessThan(kitEnd);
+    for (const other of ['.hud{', '.hud-stats{', '.toasts{', '.dialogue{', '.menu{', '.notice__text{', '.hud-unsaved{', '.help{', '.fps{']) {
+      expect(at(other), other).toBeGreaterThan(kitEnd);
+    }
+    // Stichproben gleich spezifischer Paare: die spätere Regel gewinnt
+    expect(at('.hud-menu:focus-visible')).toBeGreaterThan(at('.ui-button:focus-visible'));
+    // nur ein Stilblatt: sonst bestimmte die Ladereihenfolge der Dateien, nicht die der Regeln
+    expect(sheets).toHaveLength(1);
+  });
+
   it('bleibt unter 4 MB', () => {
     requireBuild();
     const total = files.reduce((sum, f) => sum + statSync(f).size, 0);

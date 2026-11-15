@@ -20,11 +20,11 @@ import { readPng } from './helpers/png';
  * vier Strecken stand Emilia jedes Mal genau auf 101/232, 101/198, 139/150, 139/176.
  * An keiner Wand rutscht Emilia um die Ecke: jeder Überstand ist größer als CORNER_NUDGE (5 px).
  */
-const LEGS: readonly { keys: readonly string[]; ms: number }[] = [
-  { keys: ['KeyA'], ms: 8000 },
-  { keys: ['KeyW'], ms: 2500 },
-  { keys: ['KeyW', 'KeyD'], ms: 4500 },
-  { keys: ['KeyS'], ms: 2500 },
+const LEGS: readonly { name: string; keys: readonly string[]; ms: number }[] = [
+  { name: '1. A: auf Zeile 14 nach links bis an den Busch 5/14', keys: ['KeyA'], ms: 8000 },
+  { name: '2. W: Spalte 6 hinauf bis an den Busch 6/11', keys: ['KeyW'], ms: 2500 },
+  { name: '3. W+D: schräg an Mama vorbei in die Ecke 8/9 zwischen Haus und Truhe', keys: ['KeyW', 'KeyD'], ms: 4500 },
+  { name: '4. S: Spalte 8 hinab bis an Mama', keys: ['KeyS'], ms: 2500 },
 ];
 
 const LEGACY_SAVE_KEY = 'emilia_pixel_adventure_save';
@@ -100,7 +100,8 @@ test('Durchspiel im gebauten Paket: mit festen Tasten zu Mama, reden, Platz 3, H
   await expect(page.locator('.ui-window')).toHaveCount(0);
   expect(await legacyKeys(page)).toEqual([null, null]);
 
-  for (const leg of LEGS) await hold(page, leg.keys, leg.ms);
+  // je Wegstück ein Schritt: scheitert der Durchspiel-Test, nennt der Bericht das Wegstück
+  for (const leg of LEGS) await test.step(`Weg ${leg.name}`, () => hold(page, leg.keys, leg.ms));
 
   await talkToMama(page);
   await expectAfterMama(page);
