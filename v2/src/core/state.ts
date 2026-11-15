@@ -18,6 +18,7 @@ export interface GameState {
   savedAt: number;
   importedLegacyAt: number | null;      // Zeitstempel des alten Stands bei der letzten Übernahme
   legacyDeclinedAt: number | null;      // Zeitstempel des alten Stands, dessen Übernahme abgelehnt wurde
+  lastBackupAt: number | null;          // wann zuletzt als Datei gesichert (Uhrzeit des Geräts); null = noch nie
   player: { map: MapId; x: number; y: number; hp: number };   // x/y: Fußpunkt in Kacheln (Gleitkomma); hp in Lebenspunkten, 4 je Herz
   inventory: { slots: Array<{ itemId: string | null; count: number }>; selectedHotbar: number; coins: number };
   pendingItems: Array<{ itemId: string; count: number }>;   // Belohnungen, die noch keinen Platz hatten
@@ -52,6 +53,7 @@ export function createEmptyGameState(now: number): GameState {
     savedAt: now,
     importedLegacyAt: null,
     legacyDeclinedAt: null,
+    lastBackupAt: null,
     player: { ...HUB_START, hp: 20 },
     inventory: {
       slots: Array.from({ length: INVENTORY_SLOTS }, () => ({ itemId: null, count: 0 })),

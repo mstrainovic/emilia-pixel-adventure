@@ -227,6 +227,24 @@ describe('normalizeState: legacyDeclinedAt', () => {
   });
 });
 
+describe('normalizeState: lastBackupAt', () => {
+  it('ergänzt ein fehlendes Feld zu null, ohne etwas zu verlieren', () => {
+    const raw = base(); delete raw.lastBackupAt;
+    const { state, report } = run(raw);
+    expect(state.lastBackupAt).toBeNull();
+    expect(report).toEqual(CLEAN);
+  });
+
+  it('behält einen gültigen Wert und verwirft Unfug', () => {
+    const raw = base(); raw.lastBackupAt = 1_700_000_000_000;
+    expect(run(raw).state.lastBackupAt).toBe(1_700_000_000_000);
+    for (const bad of ['x', Number.NaN, Infinity, null]) {
+      raw.lastBackupAt = bad;
+      expect(run(raw).state.lastBackupAt, String(bad)).toBeNull();
+    }
+  });
+});
+
 describe('normalizeState: pendingItems', () => {
   it('ergänzt ein fehlendes Feld zu [] ohne Verlust', () => {
     const raw = base(); delete raw.pendingItems;

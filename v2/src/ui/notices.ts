@@ -5,6 +5,7 @@ import type { SaveResult, SaveStore } from '../save/store';
 import { TEXTS } from '../data/texts';
 import { el } from './el';
 import { keepSnapped } from './grid';
+import type { WindowManager } from './windows';
 // Baukasten vor menu.css (gleich spezifische Regeln, siehe toasts.ts)
 import './kit.css';
 import './menu.css';
@@ -58,18 +59,26 @@ export class SaveAlerts {
 }
 
 /**
- * „Ja" auf die Frage nach dem alten Stand: holen, den gespeicherten Stand ersetzen (der bisherige liegt danach unter
- * BACKUP_SAVE_KEY), dann das Speichern anhalten – sonst schriebe das Speichern beim Verlassen der Seite den alten Stand
- * aus dem Arbeitsspeicher über den gerade ersetzten. `true`: jetzt neu laden. `false`: nichts ersetzt, weiterspielen.
+ * Ersetzt den gespeicherten Stand (der bisherige liegt danach unter BACKUP_SAVE_KEY) und hält dann das Speichern an –
+ * sonst schriebe das Speichern beim Verlassen der Seite den alten Stand aus dem Arbeitsspeicher über den gerade
+ * ersetzten (Plan 1b, Vorab 4). `true`: jetzt neu laden. `false`: nichts ersetzt, das Speichern läuft weiter.
+ * Gemeinsam für die Übernahme des alten Stands und das Laden aus Datei (backup.ts).
  */
+export function replaceSaved(
+  store: Pick<SaveStore, 'replaceWith'>, save: Pick<SaveService, 'stop'>, state: GameState, now: number,
+): boolean {
+  if (store.replaceWith(state, now).kind !== 'saved') return false;
+  save.stop();
+  return true;
+}
+
+/** „Ja" auf die Frage nach dem alten Stand: holen, dann wie replaceSaved. `false`: nichts ersetzt, weiterspielen. */
 export function acceptLegacy(
   store: Pick<SaveStore, 'importLegacy' | 'replaceWith'>, save: Pick<SaveService, 'stop'>, now: number,
 ): boolean {
   const imported = store.importLegacy(now);
   if (imported.kind !== 'ok') return false;
-  if (store.replaceWith(imported.state, now).kind !== 'saved') return false;
-  save.stop();
-  return true;
+  return replaceSaved(store, save, imported.state, now);
 }
 
 /**
@@ -101,6 +110,9 @@ export function toastWhenRunning(services: Pick<Services, 'bus' | 'windows' | 't
     else show();
   };
 }
+
+/** Ein Knopf eines kleinen Fensters; `close`: schließt danach das Fenster. */
+export interface NoticeButton { label: string; close: boolean; onClick?: () => void }
 
 /** Inhalt eines kleinen Fensters: ein Satz und große Knöpfe darunter. */
 function noticeBody(text: string, buttons: ReadonlyArray<{ label: string; onClick: () => void }>): HTMLElement {
@@ -168,28 +180,32 @@ export class Notices {
     ], () => { if (!decided) declineLegacy(state, store, save); });
   }
 
-  /** Kleines Fenster mit Satz und Knöpfen; `onClose` läuft bei jedem Schließen (auch ×, Esc, daneben). */
-  private openWindow(
-    id: string, text: string,
-    buttons: ReadonlyArray<{ label: string; close: boolean; onClick?: () => void }>,
-    onClose: () => void,
-  ): void {
-    const { windows } = this.services;
-    const body = noticeBody(text, buttons.map((b) => ({
-      label: b.label,
-      onClick: () => {
-        b.onClick?.();
-        if (b.close) windows.close();
-      },
-    })));
-    let release: (() => void) | null = null;
-    windows.open({
-      id, title: TEXTS['notice.title'], body,
-      onClose: () => {
-        release?.();
-        onClose();
-      },
-    });
-    release = keepSnapped(body, () => Array.from(body.querySelectorAll<HTMLElement>('.notice__button')));
+  private openWindow(id: string, text: string, buttons: readonly NoticeButton[], onClose: () => void): void {
+    openNotice(this.services.windows, id, text, buttons, onClose);
   }
+}
+
+/**
+ * Kleines Fenster „Hinweis" mit Satz und Knöpfen (Hinweis beim Start, Fragen); `onClose` läuft bei jedem Schließen
+ * (auch ×, Esc, daneben). Die Knöpfe rasten ein (grid.ts).
+ */
+export function openNotice(
+  windows: WindowManager, id: string, text: string, buttons: readonly NoticeButton[], onClose: () => void,
+): void {
+  const body = noticeBody(text, buttons.map((b) => ({
+    label: b.label,
+    onClick: () => {
+      b.onClick?.();
+      if (b.close) windows.close();
+    },
+  })));
+  let release: (() => void) | null = null;
+  windows.open({
+    id, title: TEXTS['notice.title'], body,
+    onClose: () => {
+      release?.();
+      onClose();
+    },
+  });
+  release = keepSnapped(body, () => Array.from(body.querySelectorAll<HTMLElement>('.notice__button')));
 }

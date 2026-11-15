@@ -147,4 +147,15 @@ describe('fillText', () => {
     expect(TEXTS['legacy.yes']).toBe('Ja');
     expect(TEXTS['legacy.no']).toBe('Nein');
   });
+
+  it('Sicherung als Datei (Task 10), wörtlich wie im Auftrag', () => {
+    expect(TEXTS['menu.saveExport']).toBe('Spielstand sichern');
+    expect(TEXTS['menu.saveImport']).toBe('Spielstand laden');
+    expect(TEXTS['backup.saved']).toBe('Gesichert!');
+    expect(TEXTS['backup.unfit']).toBe('Diese Datei passt nicht.');
+    expect(TEXTS['backup.question']).toBe('Diesen Spielstand laden? Der jetzige wird ersetzt.');
+    expect(TEXTS['backup.yes']).toBe('Ja');
+    expect(TEXTS['backup.no']).toBe('Nein');
+    expect(TEXTS['backup.remind']).toBe('Zeit für eine Sicherung: Menü, dann Spielstand sichern');
+  });
 });

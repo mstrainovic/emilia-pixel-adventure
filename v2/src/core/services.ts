@@ -16,6 +16,7 @@ import type { Toasts } from '../ui/toasts';
 import type { Menu } from '../ui/menu';
 import type { Help } from '../ui/help';
 import type { FpsMeter } from '../ui/fps';
+import type { Backup } from '../ui/backup';
 
 /** Was beim Start zu erklären ist (Fenster „Hinweis“, ui/notices.ts). */
 export type StartNotice = 'save-corrupt' | 'save-corrupt-legacy' | 'save-repaired' | 'save-newer'
@@ -112,6 +113,8 @@ export interface Services {
   help: Help;
   /** Bildraten-Anzeige (F2); die Welt-Szene meldet jedes Bild. */
   fps: FpsMeter;
+  /** Sicherung als Datei (zwei Knöpfe im Menü) und Erinnerung daran; die Welt-Szene ruft je Bild `backup.tick`. */
+  backup: Backup;
 }
 
 /** Schlüssel der Dienste in `game.registry`. */

@@ -165,7 +165,8 @@ export class WorldScene extends Phaser.Scene {
    *    Gespräch, Dreh-Hinweis): Tasten 1–8 der Schnellleiste (hotbar.handleInput), dann `interact` → Gespräch mit dem
    *    ansprechbaren Dorfbewohner oder nichts (während der Sperre nach einem Gespräch nur abgenommen).
    * 4. Nur wenn das Spiel nicht angehalten ist: Spielerin rechnen, die gelaufene Strecke in den Spielstand schreiben,
-   *    die Uhr des Spieltags weiterstellen (session.tick), Sperre ablaufen lassen, Ausgänge prüfen
+   *    die Uhr des Spieltags weiterstellen (session.tick), Erinnerung an eine Sicherung prüfen (backup.tick, je Minute
+   *    Spielzeit), Sperre ablaufen lassen, Ausgänge prüfen
    * 5. Ziel des Kontexts neu bestimmen (`context:changed` bei Wechsel), Bilder über den Köpfen setzen; Ort in den
    *    Spielstand, Kamera rechnen, Tiefe und Zeichenposition setzen – erst hier wird gerundet (auf ganze
    *    Bildschirmpixel), Figur und Kamera aus denselben Gleitkommawerten dieses Bildes.
@@ -173,7 +174,7 @@ export class WorldScene extends Phaser.Scene {
    */
   override update(_time: number, delta: number): void {
     const dt = delta / 1000;
-    const { input, windows, session, hotbar, dialogue, menu, help, fps } = this.services;
+    const { input, windows, session, hotbar, dialogue, menu, help, fps, backup } = this.services;
     input.frame(dt);
     windows.handleInput(input);
     if (input.consume('fps')) fps.toggle();
@@ -200,6 +201,7 @@ export class WorldScene extends Phaser.Scene {
       const walked = Math.hypot((after.x - before.x) / this.tileSize.width, (after.y - before.y) / this.tileSize.height);
       this.services.state.progression.stats.distanceWalked += walked;
       session.tick(dt);
+      backup.tick();
       this.talkCooldown = Math.max(0, this.talkCooldown - dt);
       this.checkExit();
     }

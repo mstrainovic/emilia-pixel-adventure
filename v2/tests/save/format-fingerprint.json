@@ -142,6 +142,7 @@
       "inventory.coins",
       "inventory.selectedHotbar",
       "inventory.slots",
+      "lastBackupAt",
       "legacyDeclinedAt",
       "openedChests",
       "pendingItems",

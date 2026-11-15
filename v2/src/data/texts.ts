@@ -59,6 +59,15 @@ export const TEXTS = {
   'legacy.question': 'Im alten Spiel bist du weitergekommen. Den Stand von dort holen?',
   'legacy.yes': 'Ja',
   'legacy.no': 'Nein',
+  // Sicherung als Datei (Task 10): zwei Knöpfe im Menü, Hinweise, Rückfrage vor dem Laden, Erinnerung
+  'menu.saveExport': 'Spielstand sichern',
+  'menu.saveImport': 'Spielstand laden',
+  'backup.saved': 'Gesichert!',
+  'backup.unfit': 'Diese Datei passt nicht.',
+  'backup.question': 'Diesen Spielstand laden? Der jetzige wird ersetzt.',
+  'backup.yes': 'Ja',
+  'backup.no': 'Nein',
+  'backup.remind': 'Zeit für eine Sicherung: Menü, dann Spielstand sichern',
   /** Probefenster der Browser-Tests (nur über den Test-Zugang erreichbar). */
   'test.title': 'Probefenster',
   'test.body': 'Hier steht später etwas Schönes.',

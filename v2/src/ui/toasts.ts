@@ -15,6 +15,8 @@ interface Shown {
   node: HTMLElement;
   timer: number;
   snapper: ResizeObserver | null;
+  /** Ausstehendes Einrasten aus dem Beobachter (requestAnimationFrame); 0 = keins. */
+  frame: number;
 }
 
 /** Tafel auf ganze Bildpunkte und ganze Gerätepixel (grid.ts), sonst wird ihr Randbild unscharf. */
@@ -54,15 +56,19 @@ export class Toasts {
     node.appendChild(el('span', 'toast__text', text));
     this.element.appendChild(node);
 
-    let snapper: ResizeObserver | null = null;
     snap(node);
+    const entry: Shown = { node, snapper: null, frame: 0, timer: window.setTimeout(() => this.remove(entry), TOAST_MS) };
     if (typeof ResizeObserver === 'function') {
-      // neue Fenstergröße, neuer Maßstab, nachgeladene Schrift, ein Nachbar verschwindet: wieder einrasten
-      snapper = new ResizeObserver(() => snap(node));
-      snapper.observe(node);
-      snapper.observe(this.element);
+      // neue Fenstergröße, neuer Maßstab, nachgeladene Schrift, ein Nachbar verschwindet: wieder einrasten – erst im
+      // nächsten Bild, wie in windows.ts. Im Rückruf selbst änderte das Einrasten die Größe des beobachteten Elements,
+      // und der Browser meldete „ResizeObserver loop …" (gemessen bei einem Hinweis gleich beim Start, Task 10).
+      entry.snapper = new ResizeObserver(() => {
+        cancelAnimationFrame(entry.frame);
+        entry.frame = requestAnimationFrame(() => snap(node));
+      });
+      entry.snapper.observe(node);
+      entry.snapper.observe(this.element);
     }
-    const entry: Shown = { node, snapper, timer: window.setTimeout(() => this.remove(entry), TOAST_MS) };
     this.shown.push(entry);
   }
 
@@ -72,6 +78,7 @@ export class Toasts {
     this.shown.splice(i, 1);
     window.clearTimeout(entry.timer);
     entry.snapper?.disconnect();
+    cancelAnimationFrame(entry.frame);
     entry.node.remove();
   }
 }

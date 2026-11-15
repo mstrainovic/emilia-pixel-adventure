@@ -24,6 +24,7 @@ import { Menu } from './ui/menu';
 import { Help } from './ui/help';
 import { FpsMeter } from './ui/fps';
 import { Notices, toastWhenRunning } from './ui/notices';
+import { Backup } from './ui/backup';
 import { el } from './ui/el';
 import { TEXTS, fillText } from './data/texts';
 import { QUESTS } from './data/quests';
@@ -131,10 +132,13 @@ services.toasts = new Toasts(uiRoot.element);
 // Touch-Bedienung: Stick-Zone als erstes Kind (unter Anzeige und Schnellleiste), Kontext-Knopf und Dreh-Hinweis zuletzt
 new TouchControls(uiRoot.element, services, touch, host);
 new RotateHint(uiRoot.element, windows);
-// Menü (M, Menü-Knopf) mit dem Knopf „Hilfe"; Hilfe (H); Bildraten-Anzeige (F2). Weitere Menü-Knöpfe mit menu.add.
+// Menü (M, Menü-Knopf) mit den Knöpfen „Hilfe", „Spielstand sichern", „Spielstand laden"; Hilfe (H);
+// Bildraten-Anzeige (F2). Weitere Menü-Knöpfe mit menu.add.
 services.help = new Help(windows, input);
 services.menu = new Menu(windows);
 services.menu.add({ id: 'help', label: TEXTS['menu.help'], onSelect: () => services.help.open() });
+services.backup = new Backup(services, document, () => window.location.reload());
+services.backup.addTo(services.menu);
 // nicht bei offenem Gespräch oder angehaltenem Spiel (der Knopf ist bei offenem Fenster ohnehin inert)
 services.hud.onMenu = () => { if (!windows.paused) services.menu.open(); };
 services.fps = new FpsMeter(uiRoot.element);
@@ -146,6 +150,8 @@ pixelGrid.start();
 if (start.persist) save.start(document, window);
 // Hinweis beim Start, danach die Frage nach dem alten Stand (erst jetzt: die Oberfläche hat ihren Maßstab)
 notices.start();
+// Erinnerung an eine Sicherung als Datei, falls fällig (wartet, bis ein Hinweis-Fenster zu ist)
+services.backup.start();
 
 if (testHooksEnabled) {
   const publish = (): void => installTestHooks({ pixelGrid: pixelGrid.snapshot });

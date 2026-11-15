@@ -18,7 +18,8 @@ export const REJECTED_SAVE_KEY = 'emilia2_save_rejected';
 export const BACKUP_SAVE_KEY = 'emilia2_save_backup';
 
 export type SaveReason = 'timer' | 'map-change' | 'quest' | 'boss' | 'build' | 'campfire' | 'page-hide'
-  | 'legacy-declined';   // „Nein" auf die Frage nach einem neueren alten Stand (Task 9)
+  | 'legacy-declined'   // „Nein" auf die Frage nach einem neueren alten Stand (Task 9)
+  | 'backup';           // „Spielstand sichern" im Menü, vor dem Download (Task 10)
 
 export type LoadResult =
   | { kind: 'ok'; state: GameState; repair: RepairReport | null }   // null = nichts repariert
